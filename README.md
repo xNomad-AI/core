@@ -1,5 +1,5 @@
 # core
-The comprehensive core service for running, trading, and engaging with AI-NFTs.
+The comprehensive core service for running, indexing, and engaging with AI-NFTs.
 
 # Features
 - One-click deployment of AI-NFT indexing and AI agent runtime services.
