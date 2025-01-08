@@ -1,0 +1,10 @@
+node_modules
+dist
+.github
+test
+.env.example
+redis
+.idea
+.git
+.vscode
+db

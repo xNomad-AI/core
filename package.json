@@ -21,9 +21,16 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@ai16z/eliza": "^0.1.6",
+    "@elizaos/plugin-tee": "^0.1.7",
     "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/schedule": "^4.1.2",
+    "@solana/web3.js": "^1.98.0",
+    "@types/dockerode": "^3.3.34",
+    "dockerode": "^4.0.3",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },

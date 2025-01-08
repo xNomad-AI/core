@@ -1,10 +1,19 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
+import { AgentModule } from './agent/agent.module.js';
+import { SharedModule } from './shared/shared.module.js';
+import { NftModule } from './nft/nft.module.js';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    AgentModule,
+    SharedModule,
+    NftModule,
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
