@@ -27,9 +27,7 @@ export class MongoService implements OnModuleInit {
     // TODO
   }
 
-  private getCollection<T extends Document>(
-    name: CollectionName,
-  ): Collection<T> {
+  private getCollection<T>(name: CollectionName): Collection<T> {
     const collection = COLLECTIONS.find((item) => item.name === name);
 
     if (!collection) {
