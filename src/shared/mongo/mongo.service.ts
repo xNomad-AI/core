@@ -16,7 +16,7 @@ export class MongoService implements OnModuleInit {
   }
 
   onModuleInit() {
-    const source = `${this.appConfig.get('MONGO')}`;
+    const source = `${this.appConfig.get('MONGODB_URL')}`;
     const maskedSource = `${source.slice(0, 10)}*****${source.slice(-15)}`;
     this.client = new MongoClient(source);
     this.logger.log(`Initialized mongo: ${maskedSource}`);
