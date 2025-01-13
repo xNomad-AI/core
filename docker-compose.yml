@@ -1,0 +1,13 @@
+services:
+  phala:
+    image: phalanetwork/tappd-simulator:latest
+    container_name: phala-tee-simulator
+    ports:
+      - "8090:8090"
+    restart: always
+  mongodb:
+    image: mongo:4.4
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    restart: always

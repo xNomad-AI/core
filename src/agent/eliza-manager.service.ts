@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import Docker from 'dockerode';
 import { readFileSync } from 'fs';
-import { Character } from '@ai16z/eliza';
+import { Character } from '@elizaos/core';
 import { ConfigService } from '@nestjs/config';
 import { PhalaService } from '../shared/phala.service.js';
 import { writeFileSync } from 'node:fs';
+import { startAgent } from '../eliza/starter/index.js';
+import { DirectClient } from '@elizaos/client-direct';
 
 export type ElizaAgentConfig = {
   chain: 'solana' | string;
@@ -15,6 +16,8 @@ export type ElizaAgentConfig = {
 
 @Injectable()
 export class ElizaManagerService {
+  private elizaClient = new DirectClient();
+
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly appConfig: ConfigService,
@@ -23,47 +26,17 @@ export class ElizaManagerService {
     logger.setContext(ElizaManagerService.name);
   }
 
-  async startAgent(config: ElizaAgentConfig) {
-    return await this.createLocalPod(config);
+  async startNftAgent(config: ElizaAgentConfig) {
+    return await this.startAgentNative(config);
   }
 
-  async createLocalPod(agentConfig: ElizaAgentConfig) {
+  async startAgentNative(config: ElizaAgentConfig) {
     const envVars = this.getElizaEnvs();
-    const nftSalt = `${agentConfig.chain}:${agentConfig.nftId}`;
-    const characterFile = this.createCharacterFile(
-      agentConfig.character,
-      `${nftSalt}`,
-    );
-    envVars.set('WALLET_SECRET_SALT', nftSalt);
-    envVars.set('TEE_MODE', 'LOCAL');
-
-    const docker = new Docker();
-    const container = await docker.createContainer({
-      Image: 'xnomad/eliza:0.1.7',
-      Tty: true,
-      ExposedPorts: { '8080/tcp': {} },
-      HostConfig: {
-        PortBindings: { '8080/tcp': [{ HostPort: '8080' }] },
-        Binds: [characterFile], // Mount JSON file
-      },
-      Env: [...envVars.values()],
-      Cmd: ['pnpm', 'start', '--character', characterFile],
-    });
-    await container.start();
-  }
-
-  async createRemotePod(agentConfig: ElizaAgentConfig) {
-    const envVars = this.getElizaEnvs();
-    envVars.set(
-      'WALLET_SECRET_SALT',
-      `${agentConfig.chain}:${agentConfig.nftId}`,
-    );
-    envVars.set('TEE_MODE', 'PRODUCTION');
-    const pod = await this.phala.createTeePod(agentConfig, [
-      ...envVars.values(),
-    ]);
-    const pubkey = await this.phala.getPubkeyByPodId(pod.id.toString());
-    return { ...pod, pubkey };
+    envVars.set('WALLET_SECRET_SALT', `${config.chain}:${config.nftId}`);
+    envVars.set('TEE_MODE', this.appConfig.get<string>('TEE_MODE'));
+    // Set unique runtime environment variables for each agent
+    config.character.settings.secrets = Object.fromEntries(envVars);
+    startAgent(config.character, this.elizaClient);
   }
 
   getElizaEnvs(): Map<string, string> {

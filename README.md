@@ -17,9 +17,10 @@ EVM (Coming soon)
 ## Quick Start
 ```shell
 pnpm install
-
 # copy and edit the .env file
 cp .env.example .env 
+# copy and edit the eliza config file
+cp eliza/.env.example eliza/.env
 
 pnpm start
 ```

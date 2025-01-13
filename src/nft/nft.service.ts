@@ -8,6 +8,7 @@ import {
   NftSearchOptions,
   transformToAINft,
 } from './nft.types.js';
+import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -15,6 +16,7 @@ export class NftService implements OnApplicationBootstrap {
     private readonly logger: TransientLoggerService,
     private readonly nftgo: NftgoService,
     private readonly mongoService: MongoService,
+    private readonly elizaManager: ElizaManagerService,
   ) {
     this.logger.setContext('NftService');
   }
@@ -23,12 +25,38 @@ export class NftService implements OnApplicationBootstrap {
     this.subscribeAINfts().catch((e) => {
       this.logger.error(e);
     });
+    this.startAIAgents().catch((e) => {
+      this.logger.error(e);
+    });
   }
 
+  // Start AI agents for all indexed NFTs
+  async startAIAgents() {
+    const cursor = await this.mongoService.nfts
+      .find({})
+      .addCursorFlag('noCursorTimeout', true)
+      .sort({ _id: 1 });
+    while (await cursor.hasNext()) {
+      const nft = await cursor.next();
+      if (!nft || nft.aiAgent.engine != 'eliza') {
+        continue;
+      }
+      this.elizaManager.startNftAgent({
+        chain: nft.chain,
+        nftId: nft.nftId,
+        character: nft.aiAgent.character,
+      });
+    }
+  }
+
+  // Subscribe to AI NFTs via NFTGO API
   async subscribeAINfts(): Promise<void> {
-    const collections = await this.nftgo.getAICollections();
+    const collections = await this.nftgo.getAICollections('solana');
     for (const collection of collections) {
-      const result = await this.nftgo.getAINftsByCollection(collection.id);
+      const result = await this.nftgo.getAINftsByCollection(
+        'solana',
+        collection.id,
+      );
       const nfts = result.nfts.map((nft) => transformToAINft(nft));
       await this.mongoService.nfts.bulkWrite(
         nfts.map((nft) => ({

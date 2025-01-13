@@ -33,6 +33,7 @@ export class NftgoAINft {
     score: number;
     rank: number;
   };
+  extra_info: Record<string, unknown>;
   created: {
     minted_to: string;
     quantity: number;
@@ -174,8 +175,8 @@ export class NftgoService {
     return response.data as AICollectionMetrics;
   }
 
-  async getAICollections(): Promise<NftgoAICollection[]> {
-    const url = `${this.endpoint}/v1/ai-collections`;
+  async getAICollections(chain: string): Promise<NftgoAICollection[]> {
+    const url = `${this.endpoint}/${chain}/v1/ai-collections`;
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -187,13 +188,14 @@ export class NftgoService {
   }
 
   async getAINftsByCollection(
+    chain: string,
     collectionId: string,
     options?: {
       limit?: number;
       cursor?: string;
     },
   ) {
-    const url = `${this.endpoint}/v1/ai-collection/nfts`;
+    const url = `${this.endpoint}/${chain}/v1/ai-collection/nfts`;
     const config = {
       headers: {
         'Content-Type': 'application/json',

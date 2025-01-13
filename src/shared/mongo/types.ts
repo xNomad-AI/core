@@ -1,4 +1,5 @@
 import { COLLECTIONS } from './configs.js';
+import { Character } from '@elizaos/core';
 
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
@@ -18,6 +19,7 @@ export interface AINft {
   nftId: string;
   collectionId: string;
   collectionName: string;
+  chain: string;
   contractAddress: string;
   tokenId: string;
   tokenURI: string;
@@ -31,6 +33,12 @@ export interface AINft {
     score: number;
     rank: number;
   };
+  aiAgent: AIAgent;
   updatedAt: Date;
   createdAt: Date;
+}
+
+export interface AIAgent {
+  engine: 'eliza';
+  character: Character;
 }
