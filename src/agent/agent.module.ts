@@ -6,6 +6,6 @@ import { ElizaManagerService } from './eliza-manager.service.js';
   imports: [],
   providers: [ElizaManagerService],
   controllers: [AgentController],
-  exports: [],
+  exports: [ElizaManagerService],
 })
 export class AgentModule {}

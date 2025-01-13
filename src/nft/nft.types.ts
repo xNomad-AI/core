@@ -1,4 +1,4 @@
-import { AINft } from '../shared/mongo/types.js';
+import { AIAgent, AINft } from '../shared/mongo/types.js';
 import { NftgoAINft } from '../shared/nftgo.service.js';
 import { IsOptional, IsString, IsInt, Max, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
@@ -17,6 +17,7 @@ export type NftSearchSortBy = 'rarityDesc' | 'numberAsc' | 'numberDesc';
 export function transformToAINft(nft: NftgoAINft): AINft {
   return {
     nftId: nft.nft_id,
+    chain: nft.chain,
     collectionId: nft.collection_name,
     collectionName: nft.collection_name,
     contractAddress: nft.contract_address,
@@ -26,6 +27,7 @@ export function transformToAINft(nft: NftgoAINft): AINft {
     tokenURI: nft.image,
     rarity: nft.rarity,
     traits: nft.traits,
+    aiAgent: nft.extra_info['ai_agent'] as AIAgent,
     updatedAt: new Date(),
     createdAt: new Date(),
   };
