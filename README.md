@@ -1,7 +1,7 @@
-# core
+# core 🤖
 The comprehensive core service for running, indexing, and engaging with AI-NFTs is detailed in the [xNomad Documentation](https://docs.xnomad.ai/).
 
-## Features
+## ✨ Features
 
 - AI-NFT Indexing Service
 - AI Agent Runtime Service for AI-NFTs, based on the Eliza Framework
@@ -10,11 +10,11 @@ The comprehensive core service for running, indexing, and engaging with AI-NFTs 
 - NFT Owner Permission Verification Support
 - TEE Environment Compatibility
 
-## Supported Blockchains
-Solana
-EVM (Coming soon)
+## ⛓️ Supported Blockchains
+- Solana
+- EVM (Coming soon)
 
-## Quick Start
+## 🚀 Quick Start
 ```shell
 pnpm install
 # copy and edit the .env file
@@ -25,11 +25,11 @@ cp eliza/.env.example eliza/.env
 pnpm start
 ```
 
-## License
+## 📜  License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## Community & Contact
+## 📞 Contact
 - **Website**: [xnomad.ai](https://xnomad.ai)
 - **Twitter**: [@xNomadAI](https://x.com/xNomadAI)
 
