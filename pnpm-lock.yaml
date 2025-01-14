@@ -92,6 +92,9 @@ importers:
       dockerode:
         specifier: ^4.0.3
         version: 4.0.3
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       mongodb:
         specifier: ^6.12.0
         version: 6.12.0(socks@2.8.3)

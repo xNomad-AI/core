@@ -41,12 +41,14 @@ export class NftService implements OnApplicationBootstrap {
       if (!nft || nft.aiAgent.engine != 'eliza') {
         continue;
       }
+      this.logger.log(`Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`);
       this.elizaManager.startNftAgent({
         chain: nft.chain,
         nftId: nft.nftId,
         character: nft.aiAgent.character,
       });
     }
+    await this.elizaManager.startAgentServer();
   }
 
   // Subscribe to AI NFTs via NFTGO API

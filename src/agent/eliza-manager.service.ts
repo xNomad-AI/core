@@ -1,17 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { readFileSync } from 'fs';
 import { Character } from '@elizaos/core';
 import { ConfigService } from '@nestjs/config';
 import { PhalaService } from '../shared/phala.service.js';
 import { writeFileSync } from 'node:fs';
 import { startAgent } from '../eliza/starter/index.js';
 import { DirectClient } from '@elizaos/client-direct';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { UtilsService } from '../shared/utils.service.js';
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export type ElizaAgentConfig = {
   chain: 'solana' | string;
   nftId: string;
   character: Character;
+  agentSettings?: { [key: string]: string }
 };
 
 @Injectable()
@@ -26,33 +33,31 @@ export class ElizaManagerService {
     logger.setContext(ElizaManagerService.name);
   }
 
+
+  async startAgentServer(){
+    this.elizaClient.start(this.appConfig.get<number>('AGENT_SERVER_PORT'));
+  }
+
   async startNftAgent(config: ElizaAgentConfig) {
-    return await this.startAgentNative(config);
+    return await this.startAgentLocal(config);
   }
 
-  async startAgentNative(config: ElizaAgentConfig) {
+  async startAgentLocal(config: ElizaAgentConfig) {
     const envVars = this.getElizaEnvs();
-    envVars.set('WALLET_SECRET_SALT', `${config.chain}:${config.nftId}`);
-    envVars.set('TEE_MODE', this.appConfig.get<string>('TEE_MODE'));
+    envVars['WALLET_SECRET_SALT'] = `${config.chain}:${config.nftId}`;
+    envVars['TEE_MODE'] =  this.appConfig.get<string>('TEE_MODE');
     // Set unique runtime environment variables for each agent
-    config.character.settings.secrets = Object.fromEntries(envVars);
+    config.character.settings.secrets = {...envVars, ...config.agentSettings};
     startAgent(config.character, this.elizaClient);
+    this.elizaClient.startAgent = async (character: Character) => {
+      // wrap it so we don't have to inject directClient later
+      return startAgent(character, this.elizaClient);
+    };
   }
 
-  getElizaEnvs(): Map<string, string> {
-    const envFileContent = readFileSync('../eliza/.env', 'utf-8');
-    const envVars = envFileContent
-      .split('\n')
-      .filter((line) => line.trim() !== '' && !line.startsWith('#'))
-      .map((line) => {
-        const [key, value] = line.split('=');
-        if (key && value) {
-          return [key.trim(), value.trim()] as [string, string];
-        }
-        return null;
-      })
-      .filter((item): item is [string, string] => item !== null);
-    return new Map(envVars);
+  getElizaEnvs(): Record<string, string> {
+    const elizaEnvPath = path.resolve(__dirname, '../../.env.agent-eliza')
+    return UtilsService.getEnvFromFile(elizaEnvPath);
   }
 
   createCharacterFile(character: Character, filename: string) {

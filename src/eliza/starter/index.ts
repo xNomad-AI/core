@@ -63,13 +63,9 @@ export async function startAgent(
     character.username ??= character.name;
 
     const token = getTokenForProvider(character.modelProvider, character);
-    const dataDir = path.join(__dirname, '../data/', character.name);
+    const dataFile = path.join(__dirname, '../data/', `${character.name}.db`);
 
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-
-    const db = initializeDatabase(dataDir);
+    const db = initializeDatabase(dataFile);
 
     await db.init();
 

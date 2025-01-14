@@ -14,13 +14,24 @@ The comprehensive core service for running, indexing, and engaging with AI-NFTs 
 - Solana
 - EVM (Coming soon)
 
+## 🔐 Secure TEE Configuration
+
+Each NFT agent operates with a TEE-protected private account, ensuring secure and private management of assets corresponding to NFT holders. The TEE environment is powered by **Phala Network**, providing robust protection for sensitive operations.
+
+### Development Environment
+For development purposes, you can use docker-compose to launch Phala Docker, providing a simulated TEE environment.
+### Production Environment
+In production, the core server operates within a Phala Confidential VM, with the TEE environment secured by the Phala Network to ensure robust end-to-end security and compliance for real-world deployments. For more details, refer to the Phala Cloud Documentation.
+
+With this setup, you can confidently manage NFT-related assets in a fully private and secure manner, leveraging the power of TEE to enhance user trust and platform reliability.
+
 ## 🚀 Quick Start
 ```shell
 pnpm install
 # copy and edit the .env file
 cp .env.example .env 
 # copy and edit the eliza config file
-cp eliza/.env.example eliza/.env
+cp .env.agent-eliza.example .env.agent-eliza
 
 pnpm start
 ```
