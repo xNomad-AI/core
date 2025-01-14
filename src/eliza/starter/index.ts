@@ -1,39 +1,51 @@
 import { DirectClient } from '@elizaos/client-direct';
 import {
-  AgentRuntime,
   elizaLogger,
   stringToUuid,
-  type Character,
+  type Character, AgentRuntime, ICacheManager, IDatabaseAdapter,
 } from '@elizaos/core';
-import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
-import { createNodePlugin } from '@elizaos/plugin-node';
-import { solanaPlugin } from '@elizaos/plugin-solana';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initializeDbCache } from './cache/index.js';
 import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
+import { createNodePlugin } from '@elizaos/plugin-node';
+import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
+import { solanaPlugin } from '@elizaos/plugin-solana';
+import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let nodePlugin: any | undefined;
 
-export function createAgent(
+function getSecret(character: Character, secret: string) {
+  return character.settings?.secrets?.[secret] || process.env[secret];
+}
+
+export async function createAgent(
   character: Character,
-  db: any,
-  cache: any,
-  token: string,
-) {
+  db: IDatabaseAdapter,
+  cache: ICacheManager,
+  token: string
+): Promise<AgentRuntime> {
   elizaLogger.success(
     elizaLogger.successesTitle,
-    'Creating runtime for character',
-    character.name,
+    "Creating runtime for character",
+    character.name
   );
 
-  nodePlugin ??= createNodePlugin();
+
+  const teeMode = getSecret(character, "TEE_MODE") || "OFF";
+  const walletSecretSalt = getSecret(character, "WALLET_SECRET_SALT");
+
+  // Validate TEE configuration
+  if (teeMode !== TEEMode.OFF && !walletSecretSalt) {
+    elizaLogger.error(
+      "WALLET_SECRET_SALT required when TEE_MODE is enabled"
+    );
+    throw new Error("Invalid TEE configuration");
+  }
 
   return new AgentRuntime({
     databaseAdapter: db,
@@ -43,8 +55,14 @@ export function createAgent(
     character,
     plugins: [
       bootstrapPlugin,
-      nodePlugin,
-      character.settings?.secrets?.WALLET_PUBLIC_KEY ? solanaPlugin : null,
+      getSecret(character, "SOLANA_PUBLIC_KEY") ||
+      (getSecret(character, "WALLET_PUBLIC_KEY") &&
+        !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))
+        ? solanaPlugin
+        : null,
+      ...(teeMode !== TEEMode.OFF && walletSecretSalt
+        ? [teePlugin, solanaPlugin]
+        : []),
     ].filter(Boolean),
     providers: [],
     actions: [],
@@ -53,6 +71,7 @@ export function createAgent(
     cacheManager: cache,
   });
 }
+
 
 export async function startAgent(
   character: Character,
@@ -70,7 +89,7 @@ export async function startAgent(
     await db.init();
 
     const cache = initializeDbCache(character, db);
-    const runtime = createAgent(character, db, cache, token);
+    const runtime = await createAgent(character, db, cache, token);
 
     await runtime.initialize();
 
@@ -87,7 +106,6 @@ export async function startAgent(
       `Error starting agent for character ${character.name}:`,
       error,
     );
-    console.error(error);
     throw error;
   }
 }
