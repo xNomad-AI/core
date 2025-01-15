@@ -13,7 +13,6 @@ import { initializeDbCache } from './cache/index.js';
 import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
-import { createNodePlugin } from '@elizaos/plugin-node';
 import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
 import { solanaPlugin } from '@elizaos/plugin-solana';
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';

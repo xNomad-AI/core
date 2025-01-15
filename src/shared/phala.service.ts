@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TransientLoggerService } from './transient-logger.service.js';
-import { ElizaAgentConfig } from '../agent/eliza-manager.service.js';
 
 export class PhalaPod {
   name: string;
@@ -33,16 +32,5 @@ export class PhalaService {
   ) {
     this.endpoint = this.appConfig.get<string>('PHALA_ENDPOINT')!;
     this.accessToken = this.appConfig.get<string>('PHALA_ACCESS_TOKEN')!;
-  }
-
-  async getPubkeyByPodId(podId: string) {
-    return '';
-  }
-
-  async createTeePod(
-    agentConfig: ElizaAgentConfig,
-    envs: string[],
-  ): Promise<PhalaPod> {
-    return new PhalaPod();
   }
 }
