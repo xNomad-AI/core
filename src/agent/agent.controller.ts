@@ -8,6 +8,6 @@ export class AgentController {
 
   @Post('/')
   async startNFTAgent(@Body() body: CreateAgentDto) {
-    await this.elizaManager.startNftAgent(body);
+    await this.elizaManager.startAgentLocal(body);
   }
 }
