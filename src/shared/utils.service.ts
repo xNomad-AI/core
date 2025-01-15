@@ -15,7 +15,7 @@ export class UtilsService {
     return input.status === 'rejected';
   }
 
-  static getEnvFromFile(filepath: string): Record<string, string>{
+  static getEnvFromFile(filepath: string): Record<string, string> {
     const envFileContent = readFileSync(filepath, 'utf-8');
     const envVars = envFileContent
       .split('\n')
@@ -30,5 +30,4 @@ export class UtilsService {
       .filter((item): item is [string, string] => item !== null);
     return Object.fromEntries(envVars);
   }
-
 }

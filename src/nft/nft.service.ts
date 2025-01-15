@@ -41,7 +41,9 @@ export class NftService implements OnApplicationBootstrap {
       if (!nft || nft.aiAgent.engine != 'eliza') {
         continue;
       }
-      this.logger.log(`Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`);
+      this.logger.log(
+        `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
+      );
       this.elizaManager.startAgentLocal({
         chain: nft.chain,
         nftId: nft.nftId,

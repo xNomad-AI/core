@@ -2,7 +2,10 @@ import { DirectClient } from '@elizaos/client-direct';
 import {
   elizaLogger,
   stringToUuid,
-  type Character, AgentRuntime, ICacheManager, IDatabaseAdapter,
+  type Character,
+  AgentRuntime,
+  ICacheManager,
+  IDatabaseAdapter,
 } from '@elizaos/core';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -18,7 +21,6 @@ import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
 function getSecret(character: Character, secret: string) {
   return character.settings?.secrets?.[secret] || process.env[secret];
 }
@@ -27,24 +29,21 @@ export async function createAgent(
   character: Character,
   db: IDatabaseAdapter,
   cache: ICacheManager,
-  token: string
+  token: string,
 ): Promise<AgentRuntime> {
   elizaLogger.success(
     elizaLogger.successesTitle,
-    "Creating runtime for character",
-    character.name
+    'Creating runtime for character',
+    character.name,
   );
 
-
-  const teeMode = getSecret(character, "TEE_MODE") || "OFF";
-  const walletSecretSalt = getSecret(character, "WALLET_SECRET_SALT");
+  const teeMode = getSecret(character, 'TEE_MODE') || 'OFF';
+  const walletSecretSalt = getSecret(character, 'WALLET_SECRET_SALT');
 
   // Validate TEE configuration
   if (teeMode !== TEEMode.OFF && !walletSecretSalt) {
-    elizaLogger.error(
-      "WALLET_SECRET_SALT required when TEE_MODE is enabled"
-    );
-    throw new Error("Invalid TEE configuration");
+    elizaLogger.error('WALLET_SECRET_SALT required when TEE_MODE is enabled');
+    throw new Error('Invalid TEE configuration');
   }
 
   return new AgentRuntime({
@@ -55,9 +54,9 @@ export async function createAgent(
     character,
     plugins: [
       bootstrapPlugin,
-      getSecret(character, "SOLANA_PUBLIC_KEY") ||
-      (getSecret(character, "WALLET_PUBLIC_KEY") &&
-        !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))
+      getSecret(character, 'SOLANA_PUBLIC_KEY') ||
+      (getSecret(character, 'WALLET_PUBLIC_KEY') &&
+        !getSecret(character, 'WALLET_PUBLIC_KEY')?.startsWith('0x'))
         ? solanaPlugin
         : null,
       ...(teeMode !== TEEMode.OFF && walletSecretSalt
@@ -71,7 +70,6 @@ export async function createAgent(
     cacheManager: cache,
   });
 }
-
 
 export async function startAgent(
   character: Character,
