@@ -10,7 +10,6 @@ import path from 'path';
 import { UtilsService } from '../shared/utils.service.js';
 import { DeriveKeyProvider } from '@elizaos/plugin-tee';
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -18,7 +17,7 @@ export type ElizaAgentConfig = {
   chain: string;
   nftId: string;
   character: Character;
-  agentSettings?: { [key: string]: string }
+  agentSettings?: { [key: string]: string };
 };
 
 @Injectable()
@@ -38,13 +37,16 @@ export class ElizaManagerService {
     };
   }
 
-  startAgentServer() {
+   startAgentServer() {
     this.elizaClient.start(this.appConfig.get<number>('AGENT_SERVER_PORT'));
   }
 
   async startAgentLocal(config: ElizaAgentConfig) {
     const envVars = this.getElizaEnvs();
-    envVars['WALLET_SECRET_SALT'] = ElizaManagerService.getAgentSecretSalt(config.chain, config.nftId);
+    envVars['WALLET_SECRET_SALT'] = ElizaManagerService.getAgentSecretSalt(
+      config.chain,
+      config.nftId,
+    );
     envVars['TEE_MODE'] = this.appConfig.get<string>('TEE_MODE');
     // Set unique runtime environment variables for each agent
     config.character.settings.secrets = { ...envVars, ...config.agentSettings };
@@ -65,7 +67,9 @@ export class ElizaManagerService {
     nftId: string,
     agentId: string,
   ): Promise<{ solana: string; evm: string }> {
-    const provider: DeriveKeyProvider = new DeriveKeyProvider(this.appConfig.get<string>('TEE_MODE'));
+    const provider: DeriveKeyProvider = new DeriveKeyProvider(
+      this.appConfig.get<string>('TEE_MODE'),
+    );
     const secrectSalt = ElizaManagerService.getAgentSecretSalt(chain, nftId);
     const solanaResult = await provider.deriveEd25519Keypair(
       secrectSalt,
