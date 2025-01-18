@@ -1,4 +1,8 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { NftgoService } from '../shared/nftgo.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
@@ -11,6 +15,7 @@ import {
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { NFT_PERMISSION_DENIED_EXCEPTION } from '../shared/exceptions/nft-permission-denied-exception.js';
 import { OnEvent } from '@nestjs/event-emitter';
+import { AddressService } from '../address/address.service.js';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -19,6 +24,7 @@ export class NftService implements OnApplicationBootstrap {
     private readonly nftgo: NftgoService,
     private readonly mongo: MongoService,
     private readonly elizaManager: ElizaManagerService,
+    private readonly addressService: AddressService,
   ) {
     this.logger.setContext(NftService.name);
   }
@@ -65,10 +71,19 @@ export class NftService implements OnApplicationBootstrap {
     ownerAddress: string;
     signature: string;
   }): Promise<void> {
-    const { chain, nftId, ownerAddress } = parms;
+    const { chain, nftId, ownerAddress, signature } = parms;
     this.logger.log(
       `Claiming initial funds for NFT ${nftId}, owner: ${ownerAddress}`,
     );
+    const isValid = await this.addressService.verifySignature(
+      chain,
+      ownerAddress,
+      'claim',
+      signature,
+    );
+    if (!isValid) {
+      throw new BadRequestException('Invalid signature');
+    }
     const owner = await this.mongo.nftOwners.findOne({
       chain,
       nftId,
@@ -76,6 +91,8 @@ export class NftService implements OnApplicationBootstrap {
     if (owner?.ownerAddress !== ownerAddress) {
       throw NFT_PERMISSION_DENIED_EXCEPTION;
     }
+
+    // TODO request mint site for initial funds
   }
 
   async getCollections(chain: string): Promise<AICollection[]> {

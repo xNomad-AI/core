@@ -76,3 +76,14 @@ export interface KeyStore {
   key: string;
   value: any;
 }
+
+export interface AddressNonce {
+  chain: string;
+  address: string;
+  nonceType: NonceType;
+  message: string;
+  expiration: Date;
+  updatedAt: Date;
+}
+
+export type NonceType = 'claim' | 'login';

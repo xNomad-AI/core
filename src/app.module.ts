@@ -4,6 +4,7 @@ import { SharedModule } from './shared/shared.module.js';
 import { NftModule } from './nft/nft.module.js';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AddressModule } from './address/address.module.js';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       isGlobal: true,
     }),
     EventEmitterModule.forRoot(),
+    AddressModule,
     AgentModule,
     SharedModule,
     NftModule,

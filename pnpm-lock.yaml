@@ -86,6 +86,9 @@ importers:
       better-sqlite3:
         specifier: ^11.7.2
         version: 11.7.2
+      bs58:
+        specifier: ^6.0.0
+        version: 6.0.0
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1

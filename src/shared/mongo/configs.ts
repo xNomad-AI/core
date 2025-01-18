@@ -66,4 +66,15 @@ export const COLLECTIONS = [
       },
     ],
   },
+  {
+    db: DB_NAME,
+    name: 'addressNonces',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        account: 1,
+        type: 1,
+      },
+    ],
+  },
 ] as const;
