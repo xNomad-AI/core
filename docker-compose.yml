@@ -11,3 +11,16 @@ services:
     ports:
       - "27017:27017"
     restart: always
+    environment:
+      - MONGO_REPL_SET_NAME=rs0
+    command: mongod --replSet rs0 --bind_ip 0.0.0.0 --bind_ip_all
+  mongodb-init-replica-set:
+    container_name: mongodb-init-replica-set
+    image: mongo:4.4
+    command: bash -c "sleep 5 && mongo mongodb:27017 --eval 'rs.initiate()'"
+    depends_on:
+      - mongodb
+    deploy:
+      resources:
+        limits:
+          memory: 256m

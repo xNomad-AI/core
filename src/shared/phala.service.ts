@@ -30,7 +30,7 @@ export class PhalaService {
     private readonly logger: TransientLoggerService,
     private readonly appConfig: ConfigService,
   ) {
-    this.endpoint = this.appConfig.get<string>('PHALA_ENDPOINT')!;
-    this.accessToken = this.appConfig.get<string>('PHALA_ACCESS_TOKEN')!;
+    this.endpoint = this.appConfig.get<string>('PHALA_ENDPOINT');
+    this.accessToken = this.appConfig.get<string>('PHALA_ACCESS_TOKEN');
   }
 }

@@ -31,3 +31,7 @@ export class UtilsService {
     return Object.fromEntries(envVars);
   }
 }
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

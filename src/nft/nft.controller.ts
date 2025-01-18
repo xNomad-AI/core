@@ -10,8 +10,15 @@ export class NftController {
   async claimInitialFunds(
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
+    @Query('ownerAddress') ownerAddress: string,
+    @Query('signature') signature: string,
   ) {
-    await this.nftService.claimInitialFunds(chain, nftId);
+    await this.nftService.claimInitialFunds({
+      chain,
+      nftId,
+      ownerAddress,
+      signature,
+    });
   }
 
   @Get('/:chain/collections')
