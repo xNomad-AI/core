@@ -4,18 +4,18 @@ import { TransientLoggerService } from './transient-logger.service.js';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-export class NftgoAICollection {
+export class AICollection {
   id: string;
   name: string;
   created_at: string;
 }
 
-export class NftgoAINftsResponse {
+export class CollectionNfts {
   next_cursor: string;
-  nfts: NftgoAINft[];
+  nfts: Nft[];
 }
 
-export class NftgoAINft {
+export class Nft {
   nft_id: string;
   chain: string;
   contract_address: string;
@@ -59,7 +59,42 @@ export class NftgoAINft {
   };
 }
 
-export class AICollectionMetrics {
+export class CollectionTxs {
+  next_cursor?: string;
+  transactions: NftTx[];
+}
+
+export class NftTx {
+  blockchain: string;
+  from_address: string;
+  to_address: string;
+  action: string;
+  quantity: number;
+  tx_hash: string;
+  time: number;
+  block_number: number;
+  nft: {
+    contract_address: string;
+    token_id: string;
+    name: string;
+    blockchain: string;
+    image: string;
+    contract_type: string;
+  };
+  price?: {
+    value: number;
+    crypto_unit: string;
+    usd: number;
+    eth_value: number;
+    payment_token: {
+      address: string;
+      symbol: string;
+      decimals: number;
+    };
+  };
+}
+
+export class CollectionMetrics {
   collection_id: string;
   collection_name: string;
   circulating_supply: number;
@@ -157,13 +192,11 @@ export class NftgoService {
     private readonly appConfig: ConfigService,
     private readonly httpService: HttpService,
   ) {
-    this.endpoint = this.appConfig.get<string>('NFTGO_ENDPOINT')!;
-    this.apikey = this.appConfig.get<string>('NFTGO_API_KEY')!;
+    this.endpoint = this.appConfig.get<string>('NFTGO_ENDPOINT');
+    this.apikey = this.appConfig.get<string>('NFTGO_API_KEY');
   }
 
-  async getCollectionMetrics(
-    collectionId: string,
-  ): Promise<AICollectionMetrics> {
+  async getCollectionMetrics(collectionId: string): Promise<CollectionMetrics> {
     const url = `${this.endpoint}/v1/collection/metrics?collection_id=${collectionId}`;
     const config = {
       headers: {
@@ -172,10 +205,10 @@ export class NftgoService {
       },
     };
     const response = await firstValueFrom(this.httpService.get(url, config));
-    return response.data as AICollectionMetrics;
+    return response.data as CollectionMetrics;
   }
 
-  async getAICollections(chain: string): Promise<NftgoAICollection[]> {
+  async getAICollections(chain: string): Promise<AICollection[]> {
     const url = `${this.endpoint}/${chain}/v1/ai-collections`;
     const config = {
       headers: {
@@ -184,10 +217,37 @@ export class NftgoService {
       },
     };
     const response = await firstValueFrom(this.httpService.get(url, config));
-    return response.data as NftgoAICollection[];
+    return response.data as AICollection[];
   }
 
-  async getAINftsByCollection(
+  async getCollectionTxs(
+    _chain: string,
+    collectionId: string,
+    options?: {
+      limit?: number;
+      startTime?: number;
+      cursor?: string;
+    },
+  ) {
+    const url = `${this.endpoint}/v1/history/collection/transactions`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': this.apikey,
+      },
+      params: {
+        limit: options?.limit,
+        cursor: options?.cursor,
+        start_time: options?.startTime,
+        collection_id: collectionId,
+        asc: true,
+      },
+    };
+    const response = await firstValueFrom(this.httpService.get(url, config));
+    return response.data as CollectionTxs;
+  }
+
+  async getCollectionNfts(
     chain: string,
     collectionId: string,
     options?: {
@@ -195,7 +255,7 @@ export class NftgoService {
       cursor?: string;
     },
   ) {
-    const url = `${this.endpoint}/${chain}/v1/ai-collection/nfts`;
+    const url = `${this.endpoint}/${chain}/v1/collection/nfts`;
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -208,6 +268,6 @@ export class NftgoService {
       },
     };
     const response = await firstValueFrom(this.httpService.get(url, config));
-    return response.data as NftgoAINftsResponse;
+    return response.data as CollectionNfts;
   }
 }

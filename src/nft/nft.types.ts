@@ -1,5 +1,10 @@
-import { AIAgent, AINft } from '../shared/mongo/types.js';
-import { NftgoAINft } from '../shared/nftgo.service.js';
+import {
+  AIAgent,
+  AINft,
+  AINftActivity,
+  AINftOwner,
+} from '../shared/mongo/types.js';
+import { Nft, NftTx } from '../shared/nftgo.service.js';
 import { IsOptional, IsString, IsInt, Max, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -14,7 +19,7 @@ export type NftSearchOptions = {
 
 export type NftSearchSortBy = 'rarityDesc' | 'numberAsc' | 'numberDesc';
 
-export function transformToAINft(nft: NftgoAINft): AINft {
+export function transformToAINft(nft: Nft): AINft {
   return {
     nftId: nft.nft_id,
     chain: nft.chain,
@@ -66,3 +71,39 @@ export interface AssetsByCollection {
     nfts: AINft[];
   };
 }
+
+export function transformToActivity(
+  collectionId: string,
+  tx: NftTx,
+): AINftActivity {
+  return {
+    action: tx.action,
+    collectionId: collectionId,
+    blockNumber: tx.block_number,
+    chain: tx.blockchain,
+    contractAddress: tx.nft.contract_address,
+    contractType: tx.nft.contract_type,
+    createdAt: new Date(),
+    from: tx.from_address,
+    quantity: tx.quantity,
+    time: new Date(tx.time * 1000),
+    to: tx.to_address,
+    tokenId: tx.nft.contract_address,
+    txHash: tx.tx_hash,
+    updatedAt: new Date(),
+  };
+}
+
+export function transformToOwner(activity: AINftActivity): AINftOwner {
+  return {
+    chain: activity.chain,
+    collectionId: activity.collectionId,
+    contractAddress: activity.contractAddress,
+    tokenId: activity.tokenId,
+    createdAt: new Date(),
+    ownerAddress: activity.to,
+    updatedAt: new Date(),
+  };
+}
+
+export const NEW_AI_NFT_EVENT = 'new-ai-nft';

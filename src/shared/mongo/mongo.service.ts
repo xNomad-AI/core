@@ -2,7 +2,14 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Collection, Document, MongoClient } from 'mongodb';
 import { TransientLoggerService } from '../transient-logger.service.js';
 import { COLLECTIONS } from './configs.js';
-import { CollectionName, AICollection, AINft } from './types.js';
+import {
+  CollectionName,
+  AICollection,
+  AINft,
+  AINftOwner,
+  AINftActivity,
+  KeyStore,
+} from './types.js';
 import { ConfigService } from '@nestjs/config';
 import { UtilsService } from '../utils.service.js';
 
@@ -28,8 +35,7 @@ export class MongoService implements OnModuleInit {
     const startTime = Date.now();
     const settled = await Promise.allSettled(
       COLLECTIONS.map(async ({ db, name, indexes, uniqueIndexes }) => {
-        const collection = this.client.db(db).collection<any>(name);
-
+        const collection = this.client.db(db).collection(name);
         if (indexes.length > 0) {
           await Promise.all(
             indexes.map((index: Record<string, number>) =>
@@ -88,5 +94,31 @@ export class MongoService implements OnModuleInit {
 
   get nfts() {
     return this.getCollection<AINft>('nfts');
+  }
+
+  get nftOwners() {
+    return this.getCollection<AINftOwner>('nftOwners');
+  }
+
+  get nftActivities() {
+    return this.getCollection<AINftActivity>('nftActivities');
+  }
+
+  // global key-value storage
+  private get keyStore() {
+    return this.getCollection<KeyStore>('keyStore');
+  }
+
+  async updateKeyStore<T>(key: string, value: T, session?) {
+    await this.keyStore.updateOne(
+      { key },
+      { $set: { value } },
+      { upsert: true, session },
+    );
+  }
+
+  async getKeyStore(key: string, session?) {
+    const result = await this.keyStore.findOne({ key }, { session });
+    return result?.value;
   }
 }

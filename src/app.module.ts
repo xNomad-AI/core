@@ -3,12 +3,14 @@ import { AgentModule } from './agent/agent.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { NftModule } from './nft/nft.module.js';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    EventEmitterModule.forRoot(),
     AgentModule,
     SharedModule,
     NftModule,

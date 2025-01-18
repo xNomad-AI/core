@@ -31,4 +31,39 @@ export const COLLECTIONS = [
       },
     ],
   },
+  {
+    db: DB_NAME,
+    name: 'nftOwners',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        chain: 1,
+        contractAddress: 1,
+        tokenId: 1,
+      },
+    ],
+  },
+  {
+    db: DB_NAME,
+    name: 'nftActivities',
+    indexes: [{ txHash: 1 }],
+    uniqueIndexes: [
+      {
+        chain: 1,
+        txHash: 1,
+        contractAddress: 1,
+        tokenId: 1,
+      },
+    ],
+  },
+  {
+    db: DB_NAME,
+    name: 'keyStore',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        key: 1,
+      },
+    ],
+  },
 ] as const;

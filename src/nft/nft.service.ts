@@ -5,26 +5,25 @@ import { MongoService } from '../shared/mongo/mongo.service.js';
 import { AICollection, AINft } from '../shared/mongo/types.js';
 import {
   AssetsByCollection,
+  NEW_AI_NFT_EVENT,
   NftSearchOptions,
-  transformToAINft,
 } from './nft.types.js';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
+import { NFT_PERMISSION_DENIED_EXCEPTION } from '../shared/exceptions/nft-permission-denied-exception.js';
+import { OnEvent } from '@nestjs/event-emitter';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly nftgo: NftgoService,
-    private readonly mongoService: MongoService,
+    private readonly mongo: MongoService,
     private readonly elizaManager: ElizaManagerService,
   ) {
-    this.logger.setContext('NftService');
+    this.logger.setContext(NftService.name);
   }
 
   onApplicationBootstrap() {
-    this.subscribeAINfts().catch((e) => {
-      this.logger.error(e);
-    });
     this.startAIAgents().catch((e) => {
       this.logger.error(e);
     });
@@ -32,14 +31,22 @@ export class NftService implements OnApplicationBootstrap {
 
   // Start AI agents for all indexed NFTs
   async startAIAgents() {
-    const cursor = await this.mongoService.nfts
+    const cursor = await this.mongo.nfts
       .find({})
       .addCursorFlag('noCursorTimeout', true)
       .sort({ _id: 1 });
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
-      if (!nft || nft.aiAgent.engine != 'eliza') {
-        continue;
+      await this.handleNewAINfts([nft]);
+    }
+    await this.elizaManager.startAgentServer();
+  }
+
+  @OnEvent(NEW_AI_NFT_EVENT, { async: true })
+  async handleNewAINfts(nfts: AINft[]) {
+    for (const nft of nfts) {
+      if (nft?.aiAgent.engine !== 'eliza') {
+        return;
       }
       this.logger.log(
         `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
@@ -50,41 +57,29 @@ export class NftService implements OnApplicationBootstrap {
         character: nft.aiAgent.character,
       });
     }
-    await this.elizaManager.startAgentServer();
   }
 
-  // Subscribe to AI NFTs via NFTGO API
-  async subscribeAINfts(): Promise<void> {
-    const collections = await this.nftgo.getAICollections('solana');
-    for (const collection of collections) {
-      const result = await this.nftgo.getAINftsByCollection(
-        'solana',
-        collection.id,
-      );
-      const nfts = result.nfts.map((nft) => transformToAINft(nft));
-      await this.mongoService.nfts.bulkWrite(
-        nfts.map((nft) => ({
-          updateOne: {
-            filter: { id: nft.nftId },
-            update: { $set: nft },
-            upsert: true,
-          },
-        })),
-      );
+  async claimInitialFunds(parms: {
+    chain: string;
+    nftId: string;
+    ownerAddress: string;
+    signature: string;
+  }): Promise<void> {
+    const { chain, nftId, ownerAddress } = parms;
+    this.logger.log(
+      `Claiming initial funds for NFT ${nftId}, owner: ${ownerAddress}`,
+    );
+    const owner = await this.mongo.nftOwners.findOne({
+      chain,
+      nftId,
+    });
+    if (owner?.ownerAddress !== ownerAddress) {
+      throw NFT_PERMISSION_DENIED_EXCEPTION;
     }
   }
 
-  async claimInitialFunds(chain: string, nftId: string): Promise<void> {
-    this.logger.log(`Claiming initial funds for NFT ${nftId}`);
-    // check ownership
-    // get nft private account
-    // claim
-  }
-
   async getCollections(chain: string): Promise<AICollection[]> {
-    const collections = await this.mongoService.collections
-      .find({ chain })
-      .toArray();
+    const collections = await this.mongo.collections.find({ chain }).toArray();
     return collections;
   }
 
@@ -107,7 +102,7 @@ export class NftService implements OnApplicationBootstrap {
           sort['rarity.score'] = -1;
       }
     }
-    const nfts = await this.mongoService.nfts
+    const nfts = await this.mongo.nfts
       .find(filter, {
         sort,
         limit: opts.limit,
@@ -127,7 +122,7 @@ export class NftService implements OnApplicationBootstrap {
       owner,
       collectionId,
     };
-    const nfts = await this.mongoService.nfts.find(filter).toArray();
+    const nfts = await this.mongo.nfts.find(filter).toArray();
     // group by collection
     const assets: AssetsByCollection = nfts.reduce((acc, nft) => {
       if (!acc[nft.collectionId]) {

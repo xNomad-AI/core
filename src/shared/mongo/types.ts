@@ -38,7 +38,41 @@ export interface AINft {
   createdAt: Date;
 }
 
+export interface AINftActivity {
+  _id?: string;
+  chain: string;
+  collectionId: string;
+  from: string;
+  to: string;
+  action: string;
+  quantity: number;
+  txHash: string;
+  time: Date;
+  blockNumber: number;
+  tokenId: string;
+  contractAddress: string;
+  contractType: string;
+  updatedAt: Date;
+  createdAt: Date;
+}
+
+export interface AINftOwner {
+  _id?: string;
+  chain: string;
+  ownerAddress: string;
+  collectionId: string;
+  contractAddress: string;
+  tokenId: string;
+  updatedAt: Date;
+  createdAt: Date;
+}
+
 export interface AIAgent {
   engine: 'eliza';
   character: Character;
+}
+
+export interface KeyStore {
+  key: string;
+  value: any;
 }
