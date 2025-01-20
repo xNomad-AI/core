@@ -93,7 +93,7 @@ export class BirdeyeService {
     const limit = params.limit || 100;
     const config = {
       method: 'GET',
-      url: `${this.endpoint}/trader/txs/seek_by_time?address=${params.address}&tx_type=all&before_time=${params.beforeTime || ''}&after_time=${params.afterTime || ''}&sort_type=desc&limit=${limit}`,
+      url: `${this.endpoint}/trader/txs/seek_by_time?address=${params.address}&tx_type=swap&before_time=${params.beforeTime || ''}&after_time=${params.afterTime || ''}&limit=${limit}`,
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apikey,
@@ -112,7 +112,7 @@ export class BirdeyeService {
   async getWalletPortfolio(params: { chain: string; address: string }) {
     const config = {
       method: 'GET',
-      url: `${this.endpoint}/wallet/token_list?wallet=${params.address}`,
+      url: `${this.endpoint}/v1/wallet/token_list?wallet=${params.address}`,
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apikey,
