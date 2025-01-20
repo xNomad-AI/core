@@ -5,7 +5,7 @@ export const COLLECTIONS = [
     db: DB_NAME,
     name: 'collections',
     indexes: [],
-    uniqueIndexes: [{ collectionId: 1 }],
+    uniqueIndexes: [{ id: 1 }],
   },
   {
     db: DB_NAME,

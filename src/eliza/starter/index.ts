@@ -73,9 +73,10 @@ export async function createAgent(
 export async function startAgent(
   character: Character,
   directClient: DirectClient,
+  nftId?: string,
 ) {
   try {
-    character.id ??= stringToUuid(character.name);
+    character.id ??= stringToUuid(nftId || character.name);
     character.username ??= character.name;
 
     const token = getTokenForProvider(character.modelProvider, character);

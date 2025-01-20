@@ -3,6 +3,7 @@ import { sleep } from '../shared/utils.service.js';
 import {
   NEW_AI_NFT_EVENT,
   transformToActivity,
+  transformToAICollection,
   transformToAINft,
   transformToOwner,
 } from './nft.types.js';
@@ -42,7 +43,23 @@ export class NftSyncService implements OnApplicationBootstrap {
   }
 
   async getAICollections() {
-    const collections = await this.nftgo.getAICollections('solana');
+    const cids = this.config.get<string>('NFTGO_SOLANA_AI_COLLECTIONS');
+    if (!cids) {
+      this.logger.warn('NFTGO_SOLANA_AI_COLLECTIONS is not set');
+      return [];
+    }
+    const collections = (await this.nftgo.getAICollections('solana', cids))
+      .map(transformToAICollection);
+    this.logger.log(`Fetched ${collections.length} AI collections`);
+
+    const bulkOperations = collections.map((coll) => ({
+      updateOne: {
+        filter: { id: coll.id },
+        update: { $set: coll },
+        upsert: true,
+      },
+    }));
+    await this.mongo.collections.bulkWrite(bulkOperations);
     return collections;
   }
 

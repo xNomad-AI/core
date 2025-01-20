@@ -1,10 +1,10 @@
 import {
-  AIAgent,
+  AIAgent, AICollection,
   AINft,
   AINftActivity,
   AINftOwner,
 } from '../shared/mongo/types.js';
-import { Nft, NftTx } from '../shared/nftgo.service.js';
+import { Collection, Nft, NftTx } from '../shared/nftgo.service.js';
 import { IsOptional, IsString, IsInt, Max, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -103,6 +103,22 @@ export function transformToOwner(activity: AINftActivity): AINftOwner {
     createdAt: new Date(),
     ownerAddress: activity.to,
     updatedAt: new Date(),
+  };
+}
+
+export function transformToAICollection(
+  coll: Collection
+): AICollection {
+  return {
+    id: coll.collection_id,
+    name: coll.name,
+    chain: coll.chain,
+    logo: coll.logo,
+    categories: coll.categories,
+    contracts: coll.contracts,
+    description: coll.description,
+    createdAt: new Date(),
+    updatedAt: new Date()
   };
 }
 

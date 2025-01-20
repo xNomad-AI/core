@@ -4,10 +4,16 @@ import { TransientLoggerService } from './transient-logger.service.js';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-export class AICollection {
-  id: string;
+export class Collection {
+  collection_id: string;
   name: string;
-  created_at: string;
+  chain: string;
+  logo: string;
+  hasRarity: boolean;
+  description: string;
+  totalsupply: number;
+  categories?: string[];
+  contracts?: string[];
 }
 
 export class CollectionNfts {
@@ -208,16 +214,20 @@ export class NftgoService {
     return response.data as CollectionMetrics;
   }
 
-  async getAICollections(chain: string): Promise<AICollection[]> {
-    const url = `${this.endpoint}/${chain}/v1/ai-collections`;
+  // ids: comma separated collection ids
+  async getAICollections(chain: string, cids: string): Promise<Collection[]> {
+    const url = `${this.endpoint}/${chain}/v1/collections/ids`;
     const config = {
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apikey,
       },
+      params:{
+        cids
+      }
     };
     const response = await firstValueFrom(this.httpService.get(url, config));
-    return response.data as AICollection[];
+    return response.data?.collections as Collection[];
   }
 
   async getCollectionTxs(
