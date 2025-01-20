@@ -29,8 +29,8 @@ export class ElizaManagerService {
   ) {
     logger.setContext(ElizaManagerService.name);
     this.elizaClient = new DirectClient();
-    this.elizaClient.startAgent = async (character: Character) => {
-      return startAgent(character, this.elizaClient);
+    this.elizaClient.startAgent = async (character: Character, nftId?: string) => {
+      return startAgent(character, this.elizaClient, nftId);
     };
   }
 
@@ -51,7 +51,7 @@ export class ElizaManagerService {
         ...envVars,
         ...config.agentSettings,
       };
-      await startAgent(config.character, this.elizaClient);
+      await startAgent(config.character, this.elizaClient, config.nftId);
     } catch (e) {
       this.logger.error(
         `Failed to start agent for NFT ${config.nftId}: ${e.message}`,

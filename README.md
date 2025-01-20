@@ -26,14 +26,30 @@ In production, the core server operates within a Phala Confidential VM, with the
 With this setup, you can confidently manage NFT-related assets in a fully private and secure manner, leveraging the power of TEE to enhance user trust and platform reliability.
 
 ## 🚀 Quick Start
+
+### Setup Prerequisites
+```shell
+docker-compose up -d
+```
+### Start Application Locally
 ```shell
 pnpm install
+
 # copy and edit the .env file
 cp .env.example .env 
 # copy and edit the eliza config file
 cp .env.agent-eliza.example .env.agent-eliza
 
 pnpm start
+```
+### Start Application on Phala Network
+```shell
+# copy and edit the .env file
+cp .env.example .env 
+# copy and edit the eliza config file
+cp .env.agent-eliza.example .env.agent-eliza
+docker build --platform linux/amd64 -t xnomadai/core:<YOUR_IMAGE_VERSION> .
+TEE_MODE=PRODUCTION docker-compose -f docker-compose-core.yml up
 ```
 
 ## 📜  License

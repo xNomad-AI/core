@@ -8,7 +8,6 @@ import {
   IDatabaseAdapter,
 } from '@elizaos/core';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { initializeDbCache } from './cache/index.js';
 import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
@@ -16,9 +15,6 @@ import { initializeDatabase } from './database/index.js';
 import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
 import { solanaPlugin } from '@elizaos/plugin-solana';
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 function getSecret(character: Character, secret: string) {
   return character.settings?.secrets?.[secret] || process.env[secret];
@@ -73,13 +69,14 @@ export async function createAgent(
 export async function startAgent(
   character: Character,
   directClient: DirectClient,
+  nftId?: string,
 ) {
   try {
-    character.id ??= stringToUuid(character.name);
+    character.id ??= stringToUuid(nftId || character.name);
     character.username ??= character.name;
 
     const token = getTokenForProvider(character.modelProvider, character);
-    const dataFile = path.join(__dirname, '../data/', `${character.name}.db`);
+    const dataFile = path.join(process.cwd(), '.db_data/agent', `${character.name}.db`);
 
     const db = initializeDatabase(dataFile);
 

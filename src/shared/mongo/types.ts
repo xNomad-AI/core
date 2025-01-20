@@ -4,18 +4,22 @@ import { Character } from '@elizaos/core';
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
 export interface AICollection {
-  _id?: string;
+  id: string;
   chain: string;
-  collectionId: string;
-  collectionName: string;
+  name: string;
+  logo: string;
+  hasRarity?: boolean;
+  description?: string;
+  categories?: string[];
+  contracts?: string[];
   twitter?: string;
   discord?: string;
   website?: string;
+  updatedAt: Date;
   createdAt: Date;
 }
 
 export interface AINft {
-  _id?: string;
   nftId: string;
   collectionId: string;
   collectionName: string;
@@ -57,7 +61,6 @@ export interface AINftActivity {
 }
 
 export interface AINftOwner {
-  _id?: string;
   chain: string;
   ownerAddress: string;
   collectionId: string;
@@ -76,3 +79,14 @@ export interface KeyStore {
   key: string;
   value: any;
 }
+
+export interface AddressNonce {
+  chain: string;
+  address: string;
+  nonceType: NonceType;
+  message: string;
+  expiration: Date;
+  updatedAt: Date;
+}
+
+export type NonceType = 'claim' | 'login';

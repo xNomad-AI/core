@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  core:
+    image: xnomadai/core:0.1.0
+    container_name: core
+    ports:
+      - "8080:8080"
+      - "3000:3000"
+    volumes:
+      - ./.db_data/agent:/app/db_data/agent
+      - .env:/app/.env
+      - .env.agent-eliza:/app/.env.agent-eliza
+    restart: always
+networks:
+  core_local:
+    driver: bridge
