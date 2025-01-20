@@ -27,7 +27,7 @@
     "@elizaos/client-direct": "0.1.7",
     "@elizaos/client-discord": "0.1.7",
     "@elizaos/client-telegram": "0.1.7",
-    "@elizaos/client-twitter": "0.1.7",
+    "@elizaos/client-twitter": "0.1.7-alpha.2",
     "@elizaos/core": "0.1.7",
     "@elizaos/plugin-bootstrap": "0.1.7",
     "@elizaos/plugin-image-generation": "0.1.7",

@@ -37,7 +37,7 @@ export class NftService implements OnApplicationBootstrap {
 
   // Start AI agents for all indexed NFTs
   async startAIAgents() {
-    const cursor = await this.mongo.nfts
+    const cursor = this.mongo.nfts
       .find({})
       .addCursorFlag('noCursorTimeout', true)
       .sort({ _id: 1 });
