@@ -72,7 +72,7 @@ export class NftSyncService implements OnApplicationBootstrap {
         { collectionId },
         { sort: { time: -1 } },
       );
-      startTime = latestTx?.time?.getTime() / 1000 + 1;
+      startTime = latestTx?.time ? (latestTx.time.getTime() / 1000 + 1) : undefined;
     }
     do {
       try {

@@ -248,8 +248,9 @@ export class NftgoService {
       params: {
         limit: options?.limit,
         cursor: options?.cursor,
-        start_time: options?.startTime,
+        start_time: options?.startTime || undefined,
         collection_id: collectionId,
+        actions: 'all',
         asc: true,
       },
     };
