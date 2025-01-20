@@ -11,7 +11,7 @@ export class AddressService {
     const prompt = nonceType === 'login' ? 'sign in' : 'claim funds';
     const now = new Date();
     const expiration = new Date(now.getTime() + 60 * 1000);
-    const message = `xNomad-core wants to ${prompt} with your account: ${address}, ${now.toISOString()}`;
+    const message = `xNomadAI-core wants to ${prompt} with your account: ${address}, ${now.toISOString()}`;
     const nonce: AddressNonce = {
       chain,
       address,

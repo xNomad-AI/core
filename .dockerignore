@@ -8,3 +8,4 @@ redis
 .git
 .vscode
 db
+.db_data
