@@ -170,9 +170,7 @@ export class NftService implements OnApplicationBootstrap {
           },
         },
         {
-          $match: {
-            ownerAddress: 'DK6tS6744sJKVqGDQDVejazWvs9gyJqEbpZkengHKvU9',
-          },
+          $match: filter,
         },
         {
           $unwind: {

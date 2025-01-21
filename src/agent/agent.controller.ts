@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { CreateAgentDto } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
 
