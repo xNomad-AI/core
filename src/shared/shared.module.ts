@@ -9,7 +9,19 @@ import { BirdeyeService } from './birdeye.service.js';
 @Global()
 @Module({
   imports: [HttpModule],
-  providers: [TransientLoggerService, PhalaService, NftgoService, MongoService, BirdeyeService],
-  exports: [TransientLoggerService, PhalaService, NftgoService, MongoService, BirdeyeService],
+  providers: [
+    TransientLoggerService,
+    PhalaService,
+    NftgoService,
+    MongoService,
+    BirdeyeService,
+  ],
+  exports: [
+    TransientLoggerService,
+    PhalaService,
+    NftgoService,
+    MongoService,
+    BirdeyeService,
+  ],
 })
 export class SharedModule {}

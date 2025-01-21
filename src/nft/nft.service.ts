@@ -133,15 +133,60 @@ export class NftService implements OnApplicationBootstrap {
     return await this.nftgo.getCollectionMetrics(collectionId);
   }
 
-  async getNftsByOwner(chain: string, owner: string, collectionId?: string) {
+  async getNftsByOwner(
+    chain: string,
+    ownerAddress: string,
+    collectionId?: string,
+  ) {
     const filter = {
       chain,
-      owner,
+      ownerAddress,
       collectionId,
     };
-    const nfts = await this.mongo.nfts.find(filter).toArray();
+    const nftDocs = await this.mongo.nftOwners
+      .aggregate([
+        {
+          $lookup: {
+            from: 'nfts',
+            let: {
+              chain: '$chain',
+              contractAddress: '$contractAddress',
+              tokenId: '$tokenId',
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$chain', '$$chain'] },
+                      { $eq: ['$contractAddress', '$$contractAddress'] },
+                      { $eq: ['$tokenId', '$$tokenId'] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'nft',
+          },
+        },
+        {
+          $match: filter,
+        },
+        {
+          $unwind: {
+            path: '$nft',
+          },
+        },
+        {
+          $project: {
+            nft: 1,
+          },
+        },
+      ])
+      .toArray();
     // group by collection
-    const assets: AssetsByCollection = nfts.reduce((acc, nft) => {
+    const assets: AssetsByCollection = nftDocs.reduce((acc, nftDoc) => {
+      const nft = nftDoc.nft;
       if (!acc[nft.collectionId]) {
         acc[nft.collectionId] = {
           collectionId: nft.collectionId,
@@ -149,7 +194,7 @@ export class NftService implements OnApplicationBootstrap {
           nfts: [],
         };
       }
-      acc[nft.collectionId].nft.push(nft);
+      acc[nft.collectionId].nfts.push(nft);
       return acc;
     }, {});
     return assets;

@@ -1,5 +1,6 @@
 import {
-  AIAgent, AICollection,
+  AIAgent,
+  AICollection,
   AINft,
   AINftActivity,
   AINftOwner,
@@ -20,15 +21,18 @@ export type NftSearchOptions = {
 export type NftSearchSortBy = 'rarityDesc' | 'numberAsc' | 'numberDesc';
 
 export function transformToAINft(nft: Nft): AINft {
+  // solana and some non-evm chain's NFT has either token_id or contract_address, not both
+  const tokenId = nft.token_id || nft.contract_address;
+  const contractAddress = nft.contract_address || nft.token_id;
   return {
-    nftId: nft.nft_id,
-    chain: nft.chain,
-    collectionId: nft.collection_name,
+    nftId: `${nft.blockchain}:${contractAddress}:${tokenId}`,
+    chain: nft.blockchain,
+    collectionId: nft.collection.collection_id,
     collectionName: nft.collection_name,
-    contractAddress: nft.contract_address,
+    contractAddress: contractAddress,
     image: nft.image,
     name: nft.name,
-    tokenId: nft.token_id,
+    tokenId: tokenId,
     tokenURI: nft.image,
     rarity: nft.rarity,
     traits: nft.traits,
@@ -81,14 +85,14 @@ export function transformToActivity(
     collectionId: collectionId,
     blockNumber: tx.block_number,
     chain: tx.blockchain,
-    contractAddress: tx.nft.contract_address,
+    contractAddress: tx.nft.contract_address || tx.nft.token_id,
+    tokenId: tx.nft.token_id || tx.nft.contract_address,
     contractType: tx.nft.contract_type,
     createdAt: new Date(),
     from: tx.from_address,
     quantity: tx.quantity,
     time: new Date(tx.time * 1000),
     to: tx.to_address,
-    tokenId: tx.nft.contract_address,
     txHash: tx.tx_hash,
     updatedAt: new Date(),
   };
@@ -106,19 +110,17 @@ export function transformToOwner(activity: AINftActivity): AINftOwner {
   };
 }
 
-export function transformToAICollection(
-  coll: Collection
-): AICollection {
+export function transformToAICollection(coll: Collection): AICollection {
   return {
     id: coll.collection_id,
     name: coll.name,
-    chain: coll.chain,
+    chain: coll.blockchain,
     logo: coll.logo,
     categories: coll.categories,
     contracts: coll.contracts,
     description: coll.description,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   };
 }
 

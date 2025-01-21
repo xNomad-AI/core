@@ -29,18 +29,18 @@ export class AgentAccountController {
   async getTxs(
     @Query('chain') chain: string,
     @Query('address') address: string,
-    @Query('beforeTime')beforeTime: number,
+    @Query('beforeTime') beforeTime: number,
     @Query('afterTime') afterTime: number,
     @Query('limit') limit: number,
   ) {
-    return await this.birdEye.getTxs({address, afterTime, beforeTime, limit});
+    return await this.birdEye.getTxs({ address, afterTime, beforeTime, limit });
   }
 
   @Get('/defi/portfolio')
   async getPortfolio(
     @Query('chain') chain: string,
-    @Query('address') address: string
+    @Query('address') address: string,
   ) {
-    return await this.birdEye.getWalletPortfolio({chain, address});
+    return await this.birdEye.getWalletPortfolio({ chain, address });
   }
 }

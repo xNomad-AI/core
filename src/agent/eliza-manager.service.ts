@@ -29,7 +29,10 @@ export class ElizaManagerService {
   ) {
     logger.setContext(ElizaManagerService.name);
     this.elizaClient = new DirectClient();
-    this.elizaClient.startAgent = async (character: Character, nftId?: string) => {
+    this.elizaClient.startAgent = async (
+      character: Character,
+      nftId?: string,
+    ) => {
       return startAgent(character, this.elizaClient, nftId);
     };
   }
