@@ -9,7 +9,6 @@ services:
     restart: always
     networks: 
     - core_local
-
   mongodb:
     image: mongo:4.4
     container_name: mongodb
@@ -18,24 +17,20 @@ services:
     restart: always
     environment:
       - MONGO_REPL_SET_NAME=rs0
-    command: mongod --replSet rs0 --bind_ip 0.0.0.0 --bind_ip_all
+    command: >
+      bash -c "
+        mongod --replSet rs0 --bind_ip 0.0.0.0 --bind_ip_all &
+        sleep 5 &&
+        mongo mongodb:27017 --eval 'rs.initiate()' &&
+        wait"
     volumes:
       - ./.db_data/mongo:/data/db
-    networks: 
-    - core_local
-
-  mongodb-init-replica-set:
-    container_name: mongodb-init-replica-set
-    image: mongo:4.4
-    command: bash -c "sleep 10 && mongo mongodb:27017 --eval 'rs.initiate()'"
-    depends_on:
-      - mongodb
-    networks: 
-    - core_local
-    deploy:
-      resources:
-        limits:
-          memory: 256m
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "rs.status()"]
+      start_period: 5s
+      interval: 5s
+      retries: 10
+      timeout: 30s
 
 networks:
   core_local:

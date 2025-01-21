@@ -2,16 +2,19 @@ version: '3.8'
 
 services:
   core:
-    image: xnomadai/core:0.1.0
+    image: xnomadai/core:0.1.1
     container_name: core
     ports:
       - "8080:8080"
       - "3000:3000"
     volumes:
       - ./.db_data/agent:/app/db_data/agent
-      - .env:/app/.env
-      - .env.agent-eliza:/app/.env.agent-eliza
+      - /var/run/tappd.sock:/var/run/tappd.sock
     restart: always
-networks:
-  core_local:
-    driver: bridge
+    depends_on:
+      - mongodb
+    command: >
+      sh -c '
+        echo "${CORE_SERVER}" | base64 -d > /app/.env &&
+        echo "${CORE_AGENT}" | base64 -d > /app/.env.agent-eliza &&
+        node dist/main.js'
