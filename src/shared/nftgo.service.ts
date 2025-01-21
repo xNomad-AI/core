@@ -7,7 +7,7 @@ import { firstValueFrom } from 'rxjs';
 export class Collection {
   collection_id: string;
   name: string;
-  chain: string;
+  blockchain: string;
   logo: string;
   hasRarity: boolean;
   description: string;
@@ -22,11 +22,9 @@ export class CollectionNfts {
 }
 
 export class Nft {
-  nft_id: string;
-  chain: string;
+  blockchain: string;
   contract_address: string;
   token_id: string;
-  owner_addresses: string[];
   collection_name: string;
   name: string;
   description: string;
@@ -39,6 +37,9 @@ export class Nft {
     score: number;
     rank: number;
   };
+  collection: {
+    collection_id: string;
+  }
   extra_info: Record<string, unknown>;
   created: {
     minted_to: string;
