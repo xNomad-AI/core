@@ -1,5 +1,6 @@
 import {
-  AIAgent, AICollection,
+  AIAgent,
+  AICollection,
   AINft,
   AINftActivity,
   AINftOwner,
@@ -109,9 +110,7 @@ export function transformToOwner(activity: AINftActivity): AINftOwner {
   };
 }
 
-export function transformToAICollection(
-  coll: Collection
-): AICollection {
+export function transformToAICollection(coll: Collection): AICollection {
   return {
     id: coll.collection_id,
     name: coll.name,
@@ -121,7 +120,7 @@ export function transformToAICollection(
     contracts: coll.contracts,
     description: coll.description,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   };
 }
 

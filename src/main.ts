@@ -8,7 +8,7 @@ async function bootstrap() {
     new ValidationPipe({
       transform: true,
     }),
-  )
+  );
   const port = process.env.CORE_SERVER_PORT || 8080;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);

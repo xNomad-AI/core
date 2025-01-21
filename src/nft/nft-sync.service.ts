@@ -48,8 +48,9 @@ export class NftSyncService implements OnApplicationBootstrap {
       this.logger.warn('NFTGO_SOLANA_AI_COLLECTIONS is not set');
       return [];
     }
-    const collections = (await this.nftgo.getAICollections('solana', cids))
-      .map(transformToAICollection);
+    const collections = (await this.nftgo.getAICollections('solana', cids)).map(
+      transformToAICollection,
+    );
     this.logger.log(`Fetched ${collections.length} AI collections`);
 
     const bulkOperations = collections.map((coll) => ({
@@ -72,7 +73,9 @@ export class NftSyncService implements OnApplicationBootstrap {
         { collectionId },
         { sort: { time: -1 } },
       );
-      startTime = latestTx?.time ? (latestTx.time.getTime() / 1000 + 1) : undefined;
+      startTime = latestTx?.time
+        ? latestTx.time.getTime() / 1000 + 1
+        : undefined;
     }
     do {
       try {

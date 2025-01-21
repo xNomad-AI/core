@@ -76,7 +76,11 @@ export async function startAgent(
     character.username ??= character.name;
 
     const token = getTokenForProvider(character.modelProvider, character);
-    const dataFile = path.join(process.cwd(), '.db_data/agent', `${character.name}.db`);
+    const dataFile = path.join(
+      process.cwd(),
+      '.db_data/agent',
+      `${character.name}.db`,
+    );
 
     const db = initializeDatabase(dataFile);
 

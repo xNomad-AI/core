@@ -39,7 +39,7 @@ export class Nft {
   };
   collection: {
     collection_id: string;
-  }
+  };
   extra_info: Record<string, unknown>;
   created: {
     minted_to: string;
@@ -223,9 +223,9 @@ export class NftgoService {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apikey,
       },
-      params:{
-        cids
-      }
+      params: {
+        cids,
+      },
     };
     const response = await firstValueFrom(this.httpService.get(url, config));
     return response.data?.collections as Collection[];

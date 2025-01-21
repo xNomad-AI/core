@@ -133,49 +133,59 @@ export class NftService implements OnApplicationBootstrap {
     return await this.nftgo.getCollectionMetrics(collectionId);
   }
 
-  async getNftsByOwner(chain: string, ownerAddress: string, collectionId?: string) {
+  async getNftsByOwner(
+    chain: string,
+    ownerAddress: string,
+    collectionId?: string,
+  ) {
     const filter = {
       chain,
       ownerAddress,
       collectionId,
     };
-    const nftDocs = await this.mongo.nftOwners.aggregate([
-      {
-        $lookup: {
-          from: 'nfts',
-          let: { chain: "$chain", contractAddress: "$contractAddress", tokenId: "$tokenId" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$chain", "$$chain"] },
-                    { $eq: ["$contractAddress", "$$contractAddress"] },
-                    { $eq: ["$tokenId", "$$tokenId"] }
-                  ]
-                }
-              }
-            }
-          ],
-          as: 'nft'
-        }
-      },
-      {
-        $match: {
-          ownerAddress: 'DK6tS6744sJKVqGDQDVejazWvs9gyJqEbpZkengHKvU9'
-        }
-      },
-      {
-        $unwind: {
-          path: '$nft'
-        }
-      },
-      {
-        $project: {
-          nft: 1
+    const nftDocs = await this.mongo.nftOwners
+      .aggregate([
+        {
+          $lookup: {
+            from: 'nfts',
+            let: {
+              chain: '$chain',
+              contractAddress: '$contractAddress',
+              tokenId: '$tokenId',
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$chain', '$$chain'] },
+                      { $eq: ['$contractAddress', '$$contractAddress'] },
+                      { $eq: ['$tokenId', '$$tokenId'] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'nft',
+          },
         },
-      },
-    ]).toArray();
+        {
+          $match: {
+            ownerAddress: 'DK6tS6744sJKVqGDQDVejazWvs9gyJqEbpZkengHKvU9',
+          },
+        },
+        {
+          $unwind: {
+            path: '$nft',
+          },
+        },
+        {
+          $project: {
+            nft: 1,
+          },
+        },
+      ])
+      .toArray();
     // group by collection
     const assets: AssetsByCollection = nftDocs.reduce((acc, nftDoc) => {
       const nft = nftDoc.nft;
