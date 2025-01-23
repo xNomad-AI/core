@@ -15,6 +15,9 @@ import { initializeDatabase } from './database/index.js';
 import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
 import { solanaPlugin } from '@elizaos/plugin-solana';
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
+import { createNodePlugin } from '@elizaos/plugin-node';
+
+let nodePlugin: any | undefined;
 
 function getSecret(character: Character, secret: string) {
   return character.settings?.secrets?.[secret] || process.env[secret];
@@ -31,6 +34,8 @@ export async function createAgent(
     'Creating runtime for character',
     character.name,
   );
+
+  nodePlugin ??= createNodePlugin();
 
   const teeMode = getSecret(character, 'TEE_MODE') || 'OFF';
   const walletSecretSalt = getSecret(character, 'WALLET_SECRET_SALT');
