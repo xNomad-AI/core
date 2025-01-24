@@ -1,5 +1,5 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { sleep } from '../shared/utils.service.js';
+import { sleep, startIntervalTask } from '../shared/utils.service.js';
 import {
   NEW_AI_NFT_EVENT,
   transformToActivity,
@@ -37,8 +37,10 @@ export class NftSyncService implements OnApplicationBootstrap {
   // subscribe AI Nft txs
   async subscribeAINfts(): Promise<void> {
     for (const collection of await this.getAICollections()) {
-      this.syncCollectionTxs(collection.id);
-      this.syncCollectionNfts(collection.id);
+      startIntervalTask('syncCollectionTxs', () =>
+        this.syncCollectionTxs(collection.id), 5000)
+      startIntervalTask('syncCollectionNfts', () =>
+      this.syncCollectionNfts(collection.id), 30000)
     }
   }
 
