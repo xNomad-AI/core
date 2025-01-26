@@ -114,6 +114,10 @@ export class NftSyncService implements OnApplicationBootstrap {
         const result = await this.nftgo.getCollectionNfts(
           'solana',
           collectionId,
+          {
+            limit: 20,
+            cursor,
+          }
         );
         this.logger.log(
           `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}`,
@@ -136,6 +140,7 @@ export class NftSyncService implements OnApplicationBootstrap {
             },
           })),
         );
+        await this.mongo.updateKeyStore(key, result.next_cursor);
         this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
         cursor = result.next_cursor;
         await sleep(100);
