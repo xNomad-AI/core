@@ -38,9 +38,9 @@ export class NftSyncService implements OnApplicationBootstrap {
   async subscribeAINfts(): Promise<void> {
     for (const collection of await this.getAICollections()) {
       startIntervalTask('syncCollectionTxs', () =>
-        this.syncCollectionTxs(collection.id), 5000)
+        this.syncCollectionTxs(collection.id), SYNC_TXS_INTERVAL)
       startIntervalTask('syncCollectionNfts', () =>
-      this.syncCollectionNfts(collection.id), 30000)
+      this.syncCollectionNfts(collection.id), SYNC_NFTS_INTERVAL)
     }
   }
 
@@ -95,13 +95,13 @@ export class NftSyncService implements OnApplicationBootstrap {
         );
         await this.processCollectionTxs(collectionId, result);
         cursor = result.next_cursor;
-        await sleep(SYNC_TXS_INTERVAL);
+        await sleep(100);
       } catch (error) {
         this.logger.error(
           `Error syncing txs for collection: ${collectionId}`,
           error,
         );
-        await sleep(30000);
+        await sleep(60000);
       }
     } while (cursor);
   }
@@ -118,7 +118,15 @@ export class NftSyncService implements OnApplicationBootstrap {
         this.logger.log(
           `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}`,
         );
-        const nfts = result.nfts.map((nft) => transformToAINft(nft));
+        const nfts = [];
+        for (const nft of result.nfts) {
+          const transformedNft = await transformToAINft(nft);
+          if (!transformedNft.aiAgent){
+            this.logger.error(`this collection is not AI-NFT: ${collectionId}`);
+            return
+          }
+          nfts.push(transformedNft);
+        }
         await this.mongo.nfts.bulkWrite(
           nfts.map((nft) => ({
             updateOne: {
@@ -130,13 +138,13 @@ export class NftSyncService implements OnApplicationBootstrap {
         );
         this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
         cursor = result.next_cursor;
-        await sleep(SYNC_NFTS_INTERVAL);
+        await sleep(100);
       } catch (error) {
         this.logger.error(
           `Error syncing nfts for collection: ${collectionId}`,
           error,
         );
-        await sleep(30000);
+        await sleep(60000);
       }
     } while (cursor);
   }
