@@ -9,3 +9,5 @@ redis
 .vscode
 db
 .db_data
+.env
+.env.agent-eliza
