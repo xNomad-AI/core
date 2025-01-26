@@ -96,5 +96,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "resolutions": {
+    "onnxruntime-node": "1.20.1"
   }
 }

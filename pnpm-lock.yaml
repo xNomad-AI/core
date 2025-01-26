@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  onnxruntime-node: 1.20.1
+
 importers:
 
   .:
@@ -895,7 +898,7 @@ packages:
   '@echogarden/transformers-nodejs-lite@2.17.1-lite.3':
     resolution: {integrity: sha512-qD9kvrL1xmce0iiiNEyqq2GW1qoksqvdOpww3Gsgqx/O9tdU/M2R78fji9opY+QU9u8OKH9L+ZzsOQdF5FixZA==}
     peerDependencies:
-      onnxruntime-node: '*'
+      onnxruntime-node: 1.20.1
 
   '@elizaos/adapter-postgres@0.1.7':
     resolution: {integrity: sha512-qPkM3umNa7+URIuqOxfN7zYURrEdTt9/+JRMSeZQOQ+vG6sSiiuv4MzNm75DCfw1yG4bHSBv+omYnWlJhOGSHg==}
@@ -6233,25 +6236,11 @@ packages:
     resolution: {integrity: sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ==}
     engines: {node: '>=18'}
 
-  onnxruntime-common@1.15.1:
-    resolution: {integrity: sha512-Y89eJ8QmaRsPZPWLaX7mfqhj63ny47rSkQe80hIo+lvBQdrdXYR9VO362xvZulk9DFkCnXmGidprvgJ07bKsIQ==}
-
-  onnxruntime-common@1.19.2:
-    resolution: {integrity: sha512-a4R7wYEVFbZBlp0BfhpbFWqe4opCor3KM+5Wm22Az3NGDcQMiU2hfG/0MfnBs+1ZrlSGmlgWeMcXQkDk1UFb8Q==}
-
   onnxruntime-common@1.20.0-dev.20241016-2b8fc5529b:
     resolution: {integrity: sha512-KZK8b6zCYGZFjd4ANze0pqBnqnFTS3GIVeclQpa2qseDpXrCQJfkWBixRcrZShNhm3LpFOZ8qJYFC5/qsJK9WQ==}
 
   onnxruntime-common@1.20.1:
     resolution: {integrity: sha512-YiU0s0IzYYC+gWvqD1HzLc46Du1sXpSiwzKb63PACIJr6LfL27VsXSXQvt68EzD3V0D5Bc0vyJTjmMxp0ylQiw==}
-
-  onnxruntime-node@1.15.1:
-    resolution: {integrity: sha512-wzhVELulmrvNoMZw0/HfV+9iwgHX+kPS82nxodZ37WCXmbeo1jp3thamTsNg8MGhxvv4GmEzRum5mo40oqIsqw==}
-    os: [win32, darwin, linux]
-
-  onnxruntime-node@1.19.2:
-    resolution: {integrity: sha512-9eHMP/HKbbeUcqte1JYzaaRC8JPn7ojWeCeoyShO86TOR97OCyIyAIOGX3V95ErjslVhJRXY8Em/caIUc0hm1Q==}
-    os: [win32, darwin, linux]
 
   onnxruntime-node@1.20.1:
     resolution: {integrity: sha512-di/I4HDXRw+FLgq+TyHmQEDd3cEp9iFFZm0r4uJ1Wd7b/WE1VXtKWo8yemex347c6GNF/3Pv86ZfPhIWxORr0w==}
@@ -10637,7 +10626,7 @@ snapshots:
   '@huggingface/transformers@3.0.2':
     dependencies:
       '@huggingface/jinja': 0.3.2
-      onnxruntime-node: 1.19.2
+      onnxruntime-node: 1.20.1
       onnxruntime-web: 1.21.0-dev.20241024-d9ca84ef96
       sharp: 0.33.5
 
@@ -14514,7 +14503,7 @@ snapshots:
   fastembed@1.14.1:
     dependencies:
       '@anush008/tokenizers': 0.0.0
-      onnxruntime-node: 1.15.1
+      onnxruntime-node: 1.20.1
       progress: 2.0.3
       tar: 6.2.1
 
@@ -16485,22 +16474,9 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  onnxruntime-common@1.15.1: {}
-
-  onnxruntime-common@1.19.2: {}
-
   onnxruntime-common@1.20.0-dev.20241016-2b8fc5529b: {}
 
   onnxruntime-common@1.20.1: {}
-
-  onnxruntime-node@1.15.1:
-    dependencies:
-      onnxruntime-common: 1.15.1
-
-  onnxruntime-node@1.19.2:
-    dependencies:
-      onnxruntime-common: 1.19.2
-      tar: 7.4.3
 
   onnxruntime-node@1.20.1:
     dependencies:
