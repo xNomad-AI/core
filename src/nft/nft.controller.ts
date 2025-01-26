@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
 
@@ -54,5 +54,18 @@ export class NftController {
     @Query('collectionId') collectionId: string,
   ) {
     return await this.nftService.getNftsByOwner(chain, address, collectionId);
+  }
+
+  @Post('/:chain/:nftId/config')
+  async setNftConfig(
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+    @Body() { secrets, clients }: { secrets: Record<string, string>; clients: string[] },
+  ) {
+    await this.nftService.updateNftConfig({
+      nftId,
+      secrets,
+      clients,
+    });
   }
 }

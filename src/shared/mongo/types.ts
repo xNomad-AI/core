@@ -80,6 +80,13 @@ export interface KeyStore {
   value: any;
 }
 
+export interface NftConfig {
+  nftId: string
+  chain: string
+  secrets: Record<string, string>
+  clients: string[];
+}
+
 export interface AddressNonce {
   chain: string;
   address: string;

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { Character, ModelProviderName, stringToUuid } from '@elizaos/core';
+import { Character, Clients, ModelProviderName, stringToUuid } from '@elizaos/core';
 import { ConfigService } from '@nestjs/config';
 import { startAgent } from '../eliza/starter/index.js';
 import { DirectClient } from '@elizaos/client-direct';
@@ -16,7 +16,8 @@ export type ElizaAgentConfig = {
   chain: string;
   nftId: string;
   character: Character;
-  agentSettings?: { [key: string]: string };
+  secrets?: { [key: string]: string };
+  clients: string[];
 };
 
 @Injectable()
@@ -52,8 +53,9 @@ export class ElizaManagerService {
       // Set unique runtime environment variables for each agent
       config.character.settings.secrets = {
         ...envVars,
-        ...config.agentSettings,
+        ...config.secrets,
       };
+      config.character.clients = config.clients as Clients[];
       config.character.modelProvider = this.appConfig.get<string>('AGENT_MODEL_PROVIDER') as ModelProviderName;
       await startAgent(config.character, this.elizaClient, config.nftId);
     } catch (e) {

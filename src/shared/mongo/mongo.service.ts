@@ -10,6 +10,7 @@ import {
   AINftActivity,
   KeyStore,
   AddressNonce,
+  NftConfig,
 } from './types.js';
 import { ConfigService } from '@nestjs/config';
 import { UtilsService } from '../utils.service.js';
@@ -103,6 +104,10 @@ export class MongoService implements OnModuleInit {
 
   get nftActivities() {
     return this.getCollection<AINftActivity>('nftActivities');
+  }
+
+  get nftConfigs() {
+    return this.getCollection<NftConfig>('nftConfigs');
   }
 
   get addressNonces() {

@@ -4,5 +4,6 @@ export class CreateAgentDto {
   chain: string;
   nftId: string;
   character: Character;
-  agentSettings?: { [key: string]: string };
+  secrets?: { [key: string]: string };
+  clients: string[];
 }

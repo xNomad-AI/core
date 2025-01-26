@@ -77,4 +77,14 @@ export const COLLECTIONS = [
       },
     ],
   },
+  {
+    db: DB_NAME,
+    name: 'nftConfigs',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        nftId: 1,
+      },
+    ],
+  },
 ] as const;

@@ -57,12 +57,37 @@ export class NftService implements OnApplicationBootstrap {
       this.logger.log(
         `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
       );
+      const nftConfig = await this.mongo.nftConfigs.findOne({nftId: nft.nftId})
       await this.elizaManager.startAgentLocal({
         chain: nft.chain,
         nftId: nft.nftId,
         character: nft.aiAgent.character,
+        secrets: nftConfig?.secrets,
+        clients: nftConfig?.clients,
       });
     }
+  }
+
+
+  async updateNftConfig({
+    nftId,
+    secrets,
+    clients
+  }: {
+    nftId: string;
+    secrets: Record<string, string>;
+    clients: string[];
+  }) {
+    await this.mongo.nftConfigs.updateOne(
+      { nftId },
+      {
+        $set: {
+          secrets,
+          clients
+        }
+      },
+      { upsert: true }
+    );
   }
 
   async claimInitialFunds(parms: {
