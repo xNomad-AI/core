@@ -38,9 +38,9 @@ export class NftService implements OnApplicationBootstrap {
   // Start AI agents for all indexed NFTs
   async startAIAgents() {
     const cursor = this.mongo.nfts
-      .find({})
+      .find({name: 'xNomad #4058'})
       .addCursorFlag('noCursorTimeout', true)
-      .sort({ _id: 1 });
+      .sort({ _id: 1 }).limit(1);
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
       await this.handleNewAINfts([nft]);
