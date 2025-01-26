@@ -55,6 +55,8 @@ export class ElizaManagerService {
         ...envVars,
         ...config.secrets,
       };
+      config.character.knowledge = [];
+      config.character.topics.push('cryptocurrency', 'web3', 'NFT', 'meme');
       config.character.clients = config.clients as Clients[];
       config.character.modelProvider = this.appConfig.get<string>('AGENT_MODEL_PROVIDER') as ModelProviderName;
       await startAgent(config.character, this.elizaClient, config.nftId);

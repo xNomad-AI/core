@@ -37,8 +37,8 @@ export class NftSyncService implements OnApplicationBootstrap {
   // subscribe AI Nft txs
   async subscribeAINfts(): Promise<void> {
     for (const collection of await this.getAICollections()) {
-      startIntervalTask('syncCollectionTxs', () =>
-        this.syncCollectionTxs(collection.id), SYNC_TXS_INTERVAL)
+      // startIntervalTask('syncCollectionTxs', () =>
+      //   this.syncCollectionTxs(collection.id), SYNC_TXS_INTERVAL)
       startIntervalTask('syncCollectionNfts', () =>
       this.syncCollectionNfts(collection.id), SYNC_NFTS_INTERVAL)
     }
@@ -141,7 +141,7 @@ export class NftSyncService implements OnApplicationBootstrap {
           })),
         );
         await this.mongo.updateKeyStore(key, result.next_cursor);
-        this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
+        // this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
         cursor = result.next_cursor;
         await sleep(100);
       } catch (error) {
