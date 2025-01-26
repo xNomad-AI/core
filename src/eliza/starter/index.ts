@@ -12,8 +12,8 @@ import { initializeDbCache } from './cache/index.js';
 import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
-import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
-import { solanaPlugin } from '@elizaos/plugin-solana';
+import { TEEMode, teePlugin } from '@everimbaq/plugin-tee';
+import { solanaPlugin } from '@everimbaq/plugin-solana';
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
 import { createNodePlugin } from '@elizaos/plugin-node';
 
@@ -54,6 +54,7 @@ export async function createAgent(
     character,
     plugins: [
       bootstrapPlugin,
+      nodePlugin,
       getSecret(character, 'SOLANA_PUBLIC_KEY') ||
       (getSecret(character, 'WALLET_PUBLIC_KEY') &&
         !getSecret(character, 'WALLET_PUBLIC_KEY')?.startsWith('0x'))

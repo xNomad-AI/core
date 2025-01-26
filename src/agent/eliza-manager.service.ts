@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { Character } from '@elizaos/core';
+import { Character, ModelProviderName, stringToUuid } from '@elizaos/core';
 import { ConfigService } from '@nestjs/config';
 import { startAgent } from '../eliza/starter/index.js';
 import { DirectClient } from '@elizaos/client-direct';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { UtilsService } from '../shared/utils.service.js';
-import { DeriveKeyProvider } from '@elizaos/plugin-tee';
+import { DeriveKeyProvider } from '@everimbaq/plugin-tee';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,6 +54,7 @@ export class ElizaManagerService {
         ...envVars,
         ...config.agentSettings,
       };
+      config.character.modelProvider = this.appConfig.get<string>('AGENT_MODEL_PROVIDER') as ModelProviderName;
       await startAgent(config.character, this.elizaClient, config.nftId);
     } catch (e) {
       this.logger.error(
@@ -74,12 +75,13 @@ export class ElizaManagerService {
   async getAgentAccount(
     chain: string,
     nftId: string,
-    agentId: string,
+    agentId?: string,
   ): Promise<{ solana: string; evm: string }> {
     const provider: DeriveKeyProvider = new DeriveKeyProvider(
       this.appConfig.get<string>('TEE_MODE'),
     );
     const secrectSalt = ElizaManagerService.getAgentSecretSalt(chain, nftId);
+    agentId??= stringToUuid(nftId);
     const solanaResult = await provider.deriveEd25519Keypair(
       secrectSalt,
       'solana',
