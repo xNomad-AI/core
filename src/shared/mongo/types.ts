@@ -1,5 +1,5 @@
 import { COLLECTIONS } from './configs.js';
-import { Character } from '@elizaos/core';
+import { Character } from '@everimbaq/core';
 
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
