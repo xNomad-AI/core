@@ -31,26 +31,6 @@ services:
       interval: 5s
       retries: 10
       timeout: 30s
-  core:
-    image: xnomadai/core:0.1.2
-    container_name: core
-    ports:
-      - "8080:8080"
-      - "3000:3000"
-    volumes:
-      - ./.db_data/agent:/app/db_data/agent
-      - .env:/app/.env
-      - .env.agent-eliza:/app/.env.agent-eliza
-    #      - /var/run/tappd.sock:/var/run/tappd.sock
-    restart: always
-    env_file:
-      - .env
-      - .env.agent-eliza
-    depends_on:
-      - mongodb
-    command: >
-      sh -c '
-        node dist/main.js'
 networks:
   core_local:
     driver: bridge

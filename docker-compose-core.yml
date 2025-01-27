@@ -2,13 +2,15 @@ version: '3.8'
 
 services:
   core:
-    image: xnomadai/core:0.1.2
+    image: xnomadai/core:0.1.2-dev
     container_name: core
     ports:
       - "8080:8080"
       - "3000:3000"
+    env_file:
+      - .env
     volumes:
-      - ./.db_data/agent:/app/db_data/agent
+      - agent_data:/app/db_data/agent
       - /var/run/tappd.sock:/var/run/tappd.sock
     restart: always
     depends_on:
@@ -18,3 +20,30 @@ services:
         echo "${CORE_SERVER}" | base64 -d > /app/.env &&
         echo "${CORE_AGENT}" | base64 -d > /app/.env.agent-eliza &&
         node dist/main.js'
+  mongodb:
+    image: mongo:4.4
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    restart: always
+    environment:
+      - MONGO_REPL_SET_NAME=rs0
+    command: >
+      bash -c "
+        mongod --replSet rs0 --bind_ip 0.0.0.0 --bind_ip_all &
+        sleep 5 &&
+        mongo mongodb:27017 --eval 'rs.initiate()' &&
+        wait"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "rs.status()"]
+      start_period: 5s
+      interval: 5s
+      retries: 10
+      timeout: 30s
+volumes:
+  mongodb_data:
+    driver: local
+  agent_data:
+    driver: local
