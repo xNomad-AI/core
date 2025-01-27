@@ -6,8 +6,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --prod --frozen-lockfile && \
-  pnpm add @elizaos/client-twitter@0.1.7-alpha.2
+RUN corepack enable && pnpm install --prod --frozen-lockfile
 
 FROM base AS build
 

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { Character, Clients, ModelProviderName, stringToUuid } from '@elizaos/core';
+import { Character, Clients, ModelProviderName, stringToUuid } from '@everimbaq/core';
 import { ConfigService } from '@nestjs/config';
 import { startAgent } from '../eliza/starter/index.js';
-import { DirectClient } from '@elizaos/client-direct';
+import { DirectClient } from '@everimbaq/client-direct';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { UtilsService } from '../shared/utils.service.js';

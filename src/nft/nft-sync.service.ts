@@ -7,7 +7,7 @@ import {
   transformToAINft,
   transformToOwner,
 } from './nft.types.js';
-import { CollectionTxs, NftgoService } from '../shared/nftgo.service.js';
+import { CollectionTxs, Nft, NftgoService } from '../shared/nftgo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';
@@ -36,12 +36,82 @@ export class NftSyncService implements OnApplicationBootstrap {
 
   // subscribe AI Nft txs
   async subscribeAINfts(): Promise<void> {
-    for (const collection of await this.getAICollections()) {
-      // startIntervalTask('syncCollectionTxs', () =>
-      //   this.syncCollectionTxs(collection.id), SYNC_TXS_INTERVAL)
-      startIntervalTask('syncCollectionNfts', () =>
-      this.syncCollectionNfts(collection.id), SYNC_NFTS_INTERVAL)
-    }
+    // for (const collection of await this.getAICollections()) {
+    //   // startIntervalTask('syncCollectionTxs', () =>
+    //   //   this.syncCollectionTxs(collection.id), SYNC_TXS_INTERVAL)
+    //   startIntervalTask('syncCollectionNfts', () =>
+    //   this.syncCollectionNfts(collection.id), SYNC_NFTS_INTERVAL)
+    // }
+    const nft = `{
+      "blockchain": "solana",
+      "collection_name": "xNomad Genesis",
+      "contract_type": "NonFungible",
+      "contract_address": "7NY8QsaaKcmS6L9NFEGcTRHVUFJKsHzo5uUmWzqspkUa",
+      "name": "xNomad #4058",
+      "description": "xNomad Genesis NFT is the first truly autonomous experimental AI-NFT collection. For the first time, NFT owners can chat with their NFTs, ask for claiming airdrops, tweeting on their behalf, executing automated on-chain transactions, and more.",
+      "image": "https://lh3.googleusercontent.com/6SRFvBujjzstVGgdf4Hw7QWl-fIymAIQShUZf9cSDAfDsCDwqoNC3Wri7jzgD54721OLN1f0aiLWstI6Mo8u_AUZ9fl3nOUlTn4=w0",
+      "owner_addresses": [
+        "32GF8NPokNVP2VGHfwb8cbgFStyf1zQBc9nZwFrzPGuN"
+      ],
+      "traits": [
+        {
+          "type": "category",
+          "value": "image"
+        }
+      ],
+      "rarity": {
+        "score": 0.193,
+        "rank": 845
+      },
+      "collection": {
+        "last_updated": 1737913681,
+        "collection_id": "d767895962f658681f490b3b7f9ff9de",
+        "blockchain": "solana",
+        "name": "xNomad Genesis",
+        "description": "xNomad Genesis NFT is the first truly autonomous experimental AI-NFT collection based on ElizaOS(https://elizaos.ai/). For the first time, NFT owners can chat with their NFTs, ask for claiming airdrops, tweeting on their behalf, executing automated on-chain transactions, and more.",
+        "official_website_url": "https://xnomad.ai/",
+        "logo": "https://lh3.googleusercontent.com/4t1CNsP9H9Ly0fNwFdC5ZYOZmIEktsY62WV30hGfNiGeA4aOWVSUro6bkL7uD7cjniAC4oNoQ4ElDhKqGT1_K9kgYEoexc8oxA",
+        "contracts": [],
+        "contract_type": "NonFungible",
+        "categories": [],
+        "discord_url": "https://www.discord.gg/jeGQr69xx4",
+        "twitter_url": "https://twitter.com/xNomadAI",
+        "has_rarity": false,
+        "is_blue_chip_coll": false,
+        "total_supply": 5000,
+        "is_spam": false,
+        "floor_price": {
+          "value": 1.031208717,
+          "raw_value": 1031208717,
+          "usd": 263.61,
+          "payment_token": {
+            "address": "",
+            "symbol": "SOL",
+            "decimals": 9
+          }
+        }
+      },
+      "created": {
+        "minted_to": "32GF8NPokNVP2VGHfwb8cbgFStyf1zQBc9nZwFrzPGuN",
+        "quantity": 1,
+        "timestamp": 1737705188,
+        "block_number": 316020295,
+        "transaction": "2tG8EyE9wLzqTGYNjwaKz3y3AcQJhLyDHYiDcYbewDGHJ3rcwNVgnpwURR9cWsWX2HvxGbVyihQtoVvMs6R119K"
+      },
+      "extra_info": {
+        "creators": [],
+        "metadata_original_url": "https://static.xnomad.ai/metadata/4058.json",
+        "image_original_url": "https://bafybeicboqex454scrvw7lfw4v2ikhkv7whuwvu6h5wbn7iyf2vk7uwfkm.ipfs.w3s.link/unrevealed.gif"
+      }
+    }`
+    const transformedNft = await transformToAINft(JSON.parse(nft));
+    await this.mongo.nfts.updateOne({
+      id: transformedNft.nftId
+    }, {
+      $set: transformedNft
+    }, {
+      upsert: true
+    })
   }
 
   async getAICollections() {

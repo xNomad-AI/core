@@ -1,4 +1,4 @@
-import { Character } from '@elizaos/core';
+import { Character } from '@everimbaq/core';
 
 export class CreateAgentDto {
   chain: string;

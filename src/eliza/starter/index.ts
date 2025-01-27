@@ -1,4 +1,4 @@
-import { DirectClient } from '@elizaos/client-direct';
+import { DirectClient } from '@everimbaq/client-direct';
 import {
   elizaLogger,
   stringToUuid,
@@ -6,7 +6,7 @@ import {
   AgentRuntime,
   ICacheManager,
   IDatabaseAdapter,
-} from '@elizaos/core';
+} from '@everimbaq/core';
 import path from 'path';
 import { initializeDbCache } from './cache/index.js';
 import { initializeClients } from './clients/index.js';
