@@ -37,10 +37,16 @@ export class NftSyncService implements OnApplicationBootstrap {
   // subscribe AI Nft txs
   async subscribeAINfts(): Promise<void> {
     for (const collection of await this.getAICollections()) {
-      startIntervalTask('syncCollectionTxs', () =>
-        this.syncCollectionTxs(collection.id), SYNC_TXS_INTERVAL)
-      startIntervalTask('syncCollectionNfts', () =>
-      this.syncCollectionNfts(collection.id), SYNC_NFTS_INTERVAL)
+      startIntervalTask(
+        'syncCollectionTxs',
+        () => this.syncCollectionTxs(collection.id),
+        SYNC_TXS_INTERVAL,
+      );
+      startIntervalTask(
+        'syncCollectionNfts',
+        () => this.syncCollectionNfts(collection.id),
+        SYNC_NFTS_INTERVAL,
+      );
     }
   }
 
@@ -117,7 +123,7 @@ export class NftSyncService implements OnApplicationBootstrap {
           {
             limit: 20,
             cursor,
-          }
+          },
         );
         this.logger.log(
           `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}`,
@@ -125,9 +131,9 @@ export class NftSyncService implements OnApplicationBootstrap {
         const nfts = [];
         for (const nft of result.nfts) {
           const transformedNft = await transformToAINft(nft);
-          if (!transformedNft.aiAgent){
+          if (!transformedNft.aiAgent) {
             this.logger.error(`this collection is not AI-NFT: ${collectionId}`);
-            return
+            return;
           }
           nfts.push(transformedNft);
         }

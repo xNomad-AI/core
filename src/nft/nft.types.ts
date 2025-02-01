@@ -29,7 +29,9 @@ export async function transformToAINft(nft: Nft): Promise<AINft> {
   let aiAgent = nft.extra_info?.['ai_agent'];
   if (!aiAgent && nft.extra_info?.['metadata_original_url']) {
     try {
-      const metadata = await fetch(nft.extra_info['metadata_original_url'] as string).then((res) => {
+      const metadata = await fetch(
+        nft.extra_info['metadata_original_url'] as string,
+      ).then((res) => {
         return res.json();
       });
       aiAgent = metadata?.ai_agent;

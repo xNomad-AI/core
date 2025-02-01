@@ -26,7 +26,6 @@ export class NftController {
     return await this.nftService.getCollections(chain);
   }
 
-
   @Get('/:chain/collections/:collectionId')
   async getCollectionById(
     @Param('chain') chain: string,
@@ -65,7 +64,6 @@ export class NftController {
     return await this.nftService.getNftsByOwner(chain, address, collectionId);
   }
 
-
   @Get('/:chain/nfts/:nftId')
   async getNftById(
     @Param('chain') chain: string,
@@ -78,7 +76,7 @@ export class NftController {
   async setNftConfig(
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
-    @Body() { agentSettings }: { agentSettings: Record<string, any>},
+    @Body() { agentSettings }: { agentSettings: Record<string, any> },
   ) {
     await this.nftService.updateNftConfig({
       nftId,

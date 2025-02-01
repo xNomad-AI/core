@@ -38,9 +38,10 @@ export class NftService implements OnApplicationBootstrap {
   // Start AI agents for all indexed NFTs
   async startAIAgents() {
     const cursor = this.mongo.nfts
-      .find({name: 'xNomad #4058'})
+      .find({ name: 'xNomad #4058' })
       .addCursorFlag('noCursorTimeout', true)
-      .sort({ _id: 1 }).limit(1);
+      .sort({ _id: 1 })
+      .limit(1);
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
       await this.handleNewAINfts([nft]);
@@ -57,7 +58,9 @@ export class NftService implements OnApplicationBootstrap {
       this.logger.log(
         `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
       );
-      const nftConfig = await this.mongo.nftConfigs.findOne({nftId: nft.nftId})
+      const nftConfig = await this.mongo.nftConfigs.findOne({
+        nftId: nft.nftId,
+      });
       await this.elizaManager.startAgentLocal({
         chain: nft.chain,
         nftId: nft.nftId,
@@ -66,7 +69,6 @@ export class NftService implements OnApplicationBootstrap {
       });
     }
   }
-
 
   async updateNftConfig({
     nftId,
@@ -79,10 +81,10 @@ export class NftService implements OnApplicationBootstrap {
       { nftId },
       {
         $set: {
-          agentSettings
-        }
+          agentSettings,
+        },
       },
-      { upsert: true }
+      { upsert: true },
     );
   }
 
@@ -155,7 +157,7 @@ export class NftService implements OnApplicationBootstrap {
   }
 
   async getCollectionById(chain: string, id: string) {
-    const collection = await this.mongo.collections.findOne({id, chain});
+    const collection = await this.mongo.collections.findOne({ id, chain });
     const metrics = await this.getCollectionMetrics(chain, id);
     return {
       collection,
@@ -164,8 +166,8 @@ export class NftService implements OnApplicationBootstrap {
   }
 
   async getNftById(chain: string, nftId: string) {
-    const nft = await this.mongo.nfts.findOne({nftId, chain});
-    return nft
+    const nft = await this.mongo.nfts.findOne({ nftId, chain });
+    return nft;
   }
 
   async getNftsByOwner(

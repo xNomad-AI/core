@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { Character, Clients, ModelProviderName, stringToUuid } from '@everimbaq/core';
+import {
+  Character,
+  Clients,
+  ModelProviderName,
+  stringToUuid,
+} from '@everimbaq/core';
 import { ConfigService } from '@nestjs/config';
 import { startAgent } from '../eliza/starter/index.js';
 import { DirectClient } from '@everimbaq/client-direct';
@@ -56,7 +61,9 @@ export class ElizaManagerService {
       config.character = {
         ...config.character,
         ...config.agentSettings,
-        modelProvider: this.appConfig.get<ModelProviderName>('AGENT_MODEL_PROVIDER'),
+        modelProvider: this.appConfig.get<ModelProviderName>(
+          'AGENT_MODEL_PROVIDER',
+        ),
       };
       await startAgent(config.character, this.elizaClient, config.nftId);
     } catch (e) {
@@ -84,7 +91,7 @@ export class ElizaManagerService {
       this.appConfig.get<string>('TEE_MODE'),
     );
     const secrectSalt = ElizaManagerService.getAgentSecretSalt(chain, nftId);
-    agentId??= stringToUuid(nftId);
+    agentId ??= stringToUuid(nftId);
     const solanaResult = await provider.deriveEd25519Keypair(
       secrectSalt,
       'solana',

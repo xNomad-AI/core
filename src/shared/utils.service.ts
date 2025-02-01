@@ -26,14 +26,13 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-
 type TaskFunction = () => Promise<void>;
 
 export function startIntervalTask(
   taskName: string,
   task: TaskFunction,
   interval: number,
-  errorInterval?: number
+  errorInterval?: number,
 ): { stop: () => void } {
   errorInterval ??= interval;
 
@@ -48,7 +47,7 @@ export function startIntervalTask(
         await sleep(interval);
       } catch (error) {
         console.error(
-          `[${taskName}] Task failed at ${new Date().toISOString()}: ${error}`
+          `[${taskName}] Task failed at ${new Date().toISOString()}: ${error}`,
         );
         await sleep(errorInterval);
       }
