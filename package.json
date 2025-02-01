@@ -28,7 +28,7 @@
     "@elizaos/plugin-bootstrap": "0.1.7",
     "@elizaos/plugin-node": "0.1.7",
     "@everimbaq/client-direct": "0.1.7-build.1",
-    "@everimbaq/client-twitter": "0.0.5",
+    "@everimbaq/client-twitter": "0.0.7-beta.3",
     "@everimbaq/core": "0.1.7+build.0",
     "@everimbaq/plugin-solana": "0.0.4",
     "@everimbaq/plugin-tee": "0.0.1",

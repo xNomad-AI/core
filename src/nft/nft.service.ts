@@ -51,7 +51,7 @@ export class NftService implements OnApplicationBootstrap {
   @OnEvent(NEW_AI_NFT_EVENT, { async: true })
   async handleNewAINfts(nfts: AINft[]) {
     for (const nft of nfts) {
-      if (nft?.aiAgent.engine !== 'eliza') {
+      if (nft?.aiAgent?.engine !== 'eliza') {
         return;
       }
       this.logger.log(
@@ -156,6 +156,20 @@ export class NftService implements OnApplicationBootstrap {
 
   async getCollectionMetrics(chain: string, collectionId: string) {
     return await this.nftgo.getCollectionMetrics(collectionId);
+  }
+
+  async getCollectionById(chain: string, id: string) {
+    const collection = await this.mongo.collections.findOne({id, chain});
+    const metrics = await this.getCollectionMetrics(chain, id);
+    return {
+      collection,
+      metrics,
+    };
+  }
+
+  async getNftById(chain: string, nftId: string) {
+    const nft = await this.mongo.nfts.findOne({nftId, chain});
+    return nft
   }
 
   async getNftsByOwner(

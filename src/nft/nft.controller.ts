@@ -26,6 +26,15 @@ export class NftController {
     return await this.nftService.getCollections(chain);
   }
 
+
+  @Get('/:chain/collections/:collectionId')
+  async getCollectionById(
+    @Param('chain') chain: string,
+    @Param('collectionId') collectionId: string,
+  ) {
+    return await this.nftService.getCollectionById(chain, collectionId);
+  }
+
   @Get('/:chain/collection/:id/metrics')
   async getCollectionMetrics(
     @Param('chain') chain: string,
@@ -54,6 +63,15 @@ export class NftController {
     @Query('collectionId') collectionId: string,
   ) {
     return await this.nftService.getNftsByOwner(chain, address, collectionId);
+  }
+
+
+  @Get('/:chain/nfts/:nftId')
+  async getNftById(
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+  ) {
+    return await this.nftService.getNftById(chain, nftId);
   }
 
   @Post('/:chain/:nftId/config')
