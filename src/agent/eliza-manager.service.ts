@@ -16,8 +16,7 @@ export type ElizaAgentConfig = {
   chain: string;
   nftId: string;
   character: Character;
-  secrets?: { [key: string]: string };
-  clients: string[];
+  agentSettings: Record<string, any>;
 };
 
 @Injectable()
@@ -49,16 +48,16 @@ export class ElizaManagerService {
         config.chain,
         config.nftId,
       );
-      envVars['TEE_MODE'] = this.appConfig.get<string>('TEE_MODE');
       // Set unique runtime environment variables for each agent
       config.character.settings.secrets = {
         ...envVars,
-        ...config.secrets,
+        TEE_MODE: this.appConfig.get<string>('TEE_MODE'),
       };
-      config.character.knowledge = [];
-      config.character.topics.push('cryptocurrency', 'web3', 'NFT', 'meme');
-      config.character.clients = config.clients as Clients[];
-      config.character.modelProvider = this.appConfig.get<string>('AGENT_MODEL_PROVIDER') as ModelProviderName;
+      config.character = {
+        ...config.character,
+        ...config.agentSettings,
+        modelProvider: this.appConfig.get<ModelProviderName>('AGENT_MODEL_PROVIDER'),
+      };
       await startAgent(config.character, this.elizaClient, config.nftId);
     } catch (e) {
       this.logger.error(
@@ -73,7 +72,7 @@ export class ElizaManagerService {
   }
 
   static getAgentSecretSalt(chain: string, nftId: string) {
-    return `${chain}:${nftId}`;
+    return `salt-${chain}:${nftId}`;
   }
 
   async getAgentAccount(

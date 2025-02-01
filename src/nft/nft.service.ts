@@ -62,8 +62,7 @@ export class NftService implements OnApplicationBootstrap {
         chain: nft.chain,
         nftId: nft.nftId,
         character: nft.aiAgent.character,
-        secrets: nftConfig?.secrets,
-        clients: nftConfig?.clients,
+        agentSettings: nftConfig.agentSettings,
       });
     }
   }
@@ -71,19 +70,16 @@ export class NftService implements OnApplicationBootstrap {
 
   async updateNftConfig({
     nftId,
-    secrets,
-    clients
+    agentSettings,
   }: {
     nftId: string;
-    secrets: Record<string, string>;
-    clients: string[];
+    agentSettings: Record<string, any>;
   }) {
     await this.mongo.nftConfigs.updateOne(
       { nftId },
       {
         $set: {
-          secrets,
-          clients
+          agentSettings
         }
       },
       { upsert: true }

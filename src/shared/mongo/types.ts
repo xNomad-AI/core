@@ -81,10 +81,9 @@ export interface KeyStore {
 }
 
 export interface NftConfig {
-  nftId: string
-  chain: string
-  secrets: Record<string, string>
-  clients: string[];
+  nftId: string;
+  chain: string;
+  agentSettings: Record<string, any>;
 }
 
 export interface AddressNonce {

@@ -78,12 +78,11 @@ export class NftController {
   async setNftConfig(
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
-    @Body() { secrets, clients }: { secrets: Record<string, string>; clients: string[] },
+    @Body() { agentSettings }: { agentSettings: Record<string, any>},
   ) {
     await this.nftService.updateNftConfig({
       nftId,
-      secrets,
-      clients,
+      agentSettings,
     });
   }
 }
