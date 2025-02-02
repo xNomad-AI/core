@@ -16,6 +16,7 @@ import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { NFT_PERMISSION_DENIED_EXCEPTION } from '../shared/exceptions/nft-permission-denied-exception.js';
 import { OnEvent } from '@nestjs/event-emitter';
 import { AddressService } from '../address/address.service.js';
+import { stringToUuid } from '@everimbaq/core';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -65,7 +66,7 @@ export class NftService implements OnApplicationBootstrap {
         chain: nft.chain,
         nftId: nft.nftId,
         character: nft.aiAgent.character,
-        agentSettings: nftConfig.agentSettings,
+        agentSettings: nftConfig?.agentSettings,
       });
     }
   }
@@ -149,7 +150,22 @@ export class NftService implements OnApplicationBootstrap {
         skip: opts.offset,
       })
       .toArray();
-    return nfts;
+    const nftDetails = await Promise.all(
+      nfts.map(async (nft) => {
+        const owner = await this.mongo.nftOwners.findOne({
+          chain: opts.chain,
+          collectionId: nft.collectionId,
+          contractAddress: nft.contractAddress,
+          tokenId: nft.tokenId,
+        });
+        return {
+          ...nft,
+          agentId: stringToUuid(nft.nftId),
+          owner: owner?.ownerAddress,
+        };
+      }),
+    );
+    return nftDetails;
   }
 
   async getCollectionMetrics(chain: string, collectionId: string) {
@@ -167,7 +183,18 @@ export class NftService implements OnApplicationBootstrap {
 
   async getNftById(chain: string, nftId: string) {
     const nft = await this.mongo.nfts.findOne({ nftId, chain });
-    return nft;
+    const agentId = stringToUuid(nft.nftId);
+    const nftOwner = await this.mongo.nftOwners.findOne({
+      chain,
+      collectionId: nft.collectionId,
+      contractAddress: nft.contractAddress,
+      tokenId: nft.tokenId,
+    });
+    return {
+      ...nft,
+      agentId,
+      owner: nftOwner?.ownerAddress,
+    };
   }
 
   async getNftsByOwner(
@@ -231,7 +258,10 @@ export class NftService implements OnApplicationBootstrap {
           nfts: [],
         };
       }
-      acc[nft.collectionId].nfts.push(nft);
+      acc[nft.collectionId].nfts.push({
+        ...nft,
+        agentId: stringToUuid(nft.nftId),
+      });
       return acc;
     }, {});
     return assets;
