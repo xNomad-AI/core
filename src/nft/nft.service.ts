@@ -154,7 +154,6 @@ export class NftService implements OnApplicationBootstrap {
       nfts.map(async (nft) => {
         const owner = await this.mongo.nftOwners.findOne({
           chain: opts.chain,
-          collectionId: nft.collectionId,
           contractAddress: nft.contractAddress,
           tokenId: nft.tokenId,
         });
@@ -186,7 +185,6 @@ export class NftService implements OnApplicationBootstrap {
     const agentId = stringToUuid(nft.nftId);
     const nftOwner = await this.mongo.nftOwners.findOne({
       chain,
-      collectionId: nft.collectionId,
       contractAddress: nft.contractAddress,
       tokenId: nft.tokenId,
     });

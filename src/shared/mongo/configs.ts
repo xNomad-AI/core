@@ -53,6 +53,7 @@ export const COLLECTIONS = [
         txHash: 1,
         contractAddress: 1,
         tokenId: 1,
+        from: 1,
       },
     ],
   },

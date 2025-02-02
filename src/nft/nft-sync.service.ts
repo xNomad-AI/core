@@ -13,8 +13,8 @@ import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-const SYNC_NFTS_INTERVAL = 1000 * 30;
-const SYNC_TXS_INTERVAL = 1000 * 5;
+const SYNC_NFTS_INTERVAL = 1000 * 60;
+const SYNC_TXS_INTERVAL = 1000 * 10;
 
 @Injectable()
 export class NftSyncService implements OnApplicationBootstrap {
@@ -100,7 +100,7 @@ export class NftSyncService implements OnApplicationBootstrap {
           `Fetched ${result?.transactions.length} txs for collection: ${collectionId}`,
         );
         await this.processCollectionTxs(collectionId, result);
-        cursor = cursor !== result.next_cursor ? result.next_cursor : undefined;
+        cursor = result.next_cursor;
         await sleep(100);
       } catch (error) {
         this.logger.error(
@@ -121,12 +121,12 @@ export class NftSyncService implements OnApplicationBootstrap {
           'solana',
           collectionId,
           {
-            limit: 20,
+            limit: 50,
             cursor,
           },
         );
         this.logger.log(
-          `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}`,
+          `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}, cursor: ${cursor}, name: ${result?.nfts[0]?.name}`,
         );
         const nfts = [];
         for (const nft of result.nfts) {
@@ -146,9 +146,11 @@ export class NftSyncService implements OnApplicationBootstrap {
             },
           })),
         );
-        await this.mongo.updateKeyStore(key, result.next_cursor);
+        cursor = result.next_cursor;
+        if(cursor){
+          await this.mongo.updateKeyStore(key, result.next_cursor);
+        }
         // this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
-        cursor = cursor !== result.next_cursor ? result.next_cursor : undefined;
         await sleep(100);
       } catch (error) {
         this.logger.error(
@@ -178,7 +180,9 @@ export class NftSyncService implements OnApplicationBootstrap {
           { upsert: true, session },
         );
       }
-      await this.mongo.updateKeyStore(key, txs.next_cursor, session);
+      if(txs.next_cursor){
+        await this.mongo.updateKeyStore(key, txs.next_cursor, session);
+      }
     });
     await session.endSession();
   }
