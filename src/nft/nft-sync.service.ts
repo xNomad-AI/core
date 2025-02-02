@@ -100,7 +100,7 @@ export class NftSyncService implements OnApplicationBootstrap {
           `Fetched ${result?.transactions.length} txs for collection: ${collectionId}`,
         );
         await this.processCollectionTxs(collectionId, result);
-        cursor = result.next_cursor;
+        cursor = cursor !== result.next_cursor ? result.next_cursor : undefined;
         await sleep(100);
       } catch (error) {
         this.logger.error(
@@ -148,7 +148,7 @@ export class NftSyncService implements OnApplicationBootstrap {
         );
         await this.mongo.updateKeyStore(key, result.next_cursor);
         // this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
-        cursor = result.next_cursor;
+        cursor = cursor !== result.next_cursor ? result.next_cursor : undefined;
         await sleep(100);
       } catch (error) {
         this.logger.error(
