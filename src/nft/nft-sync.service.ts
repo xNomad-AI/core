@@ -147,7 +147,7 @@ export class NftSyncService implements OnApplicationBootstrap {
           })),
         );
         cursor = result.next_cursor;
-        if(cursor){
+        if (cursor) {
           await this.mongo.updateKeyStore(key, result.next_cursor);
         }
         // this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
@@ -180,7 +180,7 @@ export class NftSyncService implements OnApplicationBootstrap {
           { upsert: true, session },
         );
       }
-      if(txs.next_cursor){
+      if (txs.next_cursor) {
         await this.mongo.updateKeyStore(key, txs.next_cursor, session);
       }
     });

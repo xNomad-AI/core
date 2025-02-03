@@ -50,9 +50,9 @@ export const COLLECTIONS = [
     uniqueIndexes: [
       {
         chain: 1,
-        txHash: 1,
         contractAddress: 1,
         tokenId: 1,
+        txHash: 1,
         from: 1,
       },
     ],
