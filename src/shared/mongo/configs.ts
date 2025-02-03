@@ -73,8 +73,8 @@ export const COLLECTIONS = [
     indexes: [],
     uniqueIndexes: [
       {
-        account: 1,
-        type: 1,
+        address: 1,
+        nonceType: 1,
       },
     ],
   },

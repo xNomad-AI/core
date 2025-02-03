@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
 import { CharacterConfig } from '../shared/mongo/types.js';
+import { AuthGuard } from '../shared/auth/auth.guard.js';
 
 @Controller('/nft')
 export class NftController {
@@ -82,6 +83,7 @@ export class NftController {
     return await this.nftService.getNftById(chain, nftId);
   }
 
+  // @UseGuards(AuthGuard)
   @Post('/:chain/:nftId/config')
   async setNftConfig(
     @Param('chain') chain: string,
@@ -94,6 +96,7 @@ export class NftController {
     });
   }
 
+  // @UseGuards(AuthGuard)
   @Get('/:chain/:nftId/config')
   async getNftConfig(
     @Param('chain') chain: string,

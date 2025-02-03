@@ -49,21 +49,22 @@ export class ElizaManagerService {
 
   async startAgentLocal(config: ElizaAgentConfig) {
     try {
-      const envVars = this.getElizaEnvs();
-      envVars['WALLET_SECRET_SALT'] = ElizaManagerService.getAgentSecretSalt(
-        config.chain,
-        config.nftId,
-      );
       // Set unique runtime environment variables for each agent
-      config.character.settings.secrets = {
-        ...envVars,
-        TEE_MODE: this.appConfig.get<string>('TEE_MODE'),
-      };
       config.character = {
         ...config.character,
         ...config.characterConfig,
         modelProvider: this.appConfig.get<ModelProviderName>(
           'AGENT_MODEL_PROVIDER',
+        ),
+      };
+      const envVars = this.getElizaEnvs();
+      config.character.settings.secrets = {
+        ...envVars,
+        ...config.character.settings.secrets,
+        TEE_MODE: this.appConfig.get<string>('TEE_MODE'),
+        WALLET_SECRET_SALT: ElizaManagerService.getAgentSecretSalt(
+          config.chain,
+          config.nftId,
         ),
       };
       await startAgent(config.character, this.elizaClient, config.nftId);
