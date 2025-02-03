@@ -5,6 +5,7 @@ import { NftgoService } from './nftgo.service.js';
 import { HttpModule } from '@nestjs/axios';
 import { MongoService } from './mongo/mongo.service.js';
 import { BirdeyeService } from './birdeye.service.js';
+import { ElevenlabsService } from './elevenlabs.service.js';
 
 @Global()
 @Module({
@@ -15,6 +16,7 @@ import { BirdeyeService } from './birdeye.service.js';
     NftgoService,
     MongoService,
     BirdeyeService,
+    ElevenlabsService,
   ],
   exports: [
     TransientLoggerService,
@@ -22,6 +24,7 @@ import { BirdeyeService } from './birdeye.service.js';
     NftgoService,
     MongoService,
     BirdeyeService,
+    ElevenlabsService,
   ],
 })
 export class SharedModule {}

@@ -14,11 +14,14 @@ import { ConfigService } from '@nestjs/config';
 import { Wallet, AnchorProvider } from '@coral-xyz/anchor';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import bs58 from 'bs58';
+import { CacheTTL } from '@nestjs/cache-manager';
+import { ElevenlabsService } from '../shared/elevenlabs.service.js';
 
 @Controller('/agent')
 export class AgentController {
   constructor(
     private readonly elizaManager: ElizaManagerService,
+    private readonly elevenlabs: ElevenlabsService,
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
   ) {}
@@ -42,6 +45,12 @@ export class AgentController {
     return {
       account,
     };
+  }
+
+  @Get('/voices')
+  @CacheTTL(3600)
+  async getVoices() {
+    return await this.elevenlabs.getVoices();
   }
 
   @Post('/pump')
