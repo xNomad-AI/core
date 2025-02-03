@@ -5,14 +5,14 @@ import {
   Clients,
   ModelProviderName,
   stringToUuid,
-} from '@everimbaq/core';
+} from '@elizaos/core';
 import { ConfigService } from '@nestjs/config';
 import { startAgent } from '../eliza/starter/index.js';
-import { DirectClient } from '@everimbaq/client-direct';
+import { DirectClient } from '@elizaos/client-direct';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { UtilsService } from '../shared/utils.service.js';
-import { DeriveKeyProvider } from '@everimbaq/plugin-tee';
+import { DeriveKeyProvider } from '@elizaos/plugin-tee';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

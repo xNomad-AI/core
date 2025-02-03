@@ -1,4 +1,4 @@
-import { Character, ModelProviderName, settings } from '@everimbaq/core';
+import { Character, ModelProviderName, settings } from '@elizaos/core';
 
 export function getTokenForProvider(
   provider: ModelProviderName,

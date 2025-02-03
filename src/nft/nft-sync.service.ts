@@ -12,7 +12,7 @@ import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { stringToUuid } from '@everimbaq/core';
+import { stringToUuid } from '@elizaos/core';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 
 const SYNC_NFTS_INTERVAL = 1000 * 60;
@@ -32,9 +32,9 @@ export class NftSyncService implements OnApplicationBootstrap {
   }
 
   onApplicationBootstrap() {
-    this.subscribeAINfts().catch((e) => {
-      this.logger.error(e);
-    });
+    // this.subscribeAINfts().catch((e) => {
+    //   this.logger.error(e);
+    // });
   }
 
   // subscribe AI Nft txs

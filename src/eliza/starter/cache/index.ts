@@ -3,7 +3,7 @@ import {
   Character,
   DbCacheAdapter,
   IDatabaseCacheAdapter,
-} from '@everimbaq/core';
+} from '@elizaos/core';
 
 export function initializeDbCache(
   character: Character,

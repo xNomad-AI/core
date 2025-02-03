@@ -1,4 +1,4 @@
-import { DirectClient } from '@everimbaq/client-direct';
+import { DirectClient } from '@elizaos/client-direct';
 import {
   elizaLogger,
   stringToUuid,
@@ -6,14 +6,14 @@ import {
   AgentRuntime,
   ICacheManager,
   IDatabaseAdapter,
-} from '@everimbaq/core';
+} from '@elizaos/core';
 import path from 'path';
 import { initializeDbCache } from './cache/index.js';
 import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
-import { TEEMode, teePlugin } from '@everimbaq/plugin-tee';
-import { solanaPlugin } from '@everimbaq/plugin-solana';
+import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
+import { solanaPlugin } from '@elizaos/plugin-solana';
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
 import { createNodePlugin } from '@elizaos/plugin-node';
 

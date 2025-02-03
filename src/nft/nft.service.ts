@@ -16,7 +16,7 @@ import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { NFT_PERMISSION_DENIED_EXCEPTION } from '../shared/exceptions/nft-permission-denied-exception.js';
 import { OnEvent } from '@nestjs/event-emitter';
 import { AddressService } from '../address/address.service.js';
-import { stringToUuid } from '@everimbaq/core';
+import { stringToUuid } from '@elizaos/core';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -78,6 +78,9 @@ export class NftService implements OnApplicationBootstrap {
     nftId: string;
     agentSettings: Record<string, any>;
   }) {
+    const nftConfig = await this.mongo.nftConfigs.findOne({
+      nftId,
+    });
     await this.mongo.nftConfigs.updateOne(
       { nftId },
       {

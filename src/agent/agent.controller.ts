@@ -8,8 +8,8 @@ import {
   sendTx,
 } from 'pumpdotfun-sdk';
 import { Commitment, Connection, Keypair, Transaction } from '@solana/web3.js';
-import { DeriveKeyProvider } from '@everimbaq/plugin-tee';
-import { stringToUuid } from '@everimbaq/core';
+import { DeriveKeyProvider } from '@elizaos/plugin-tee';
+import { stringToUuid } from '@elizaos/core';
 import { ConfigService } from '@nestjs/config';
 import { Wallet, AnchorProvider } from '@coral-xyz/anchor';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
