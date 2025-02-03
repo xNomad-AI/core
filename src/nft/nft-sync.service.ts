@@ -12,6 +12,8 @@ import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { stringToUuid } from '@everimbaq/core';
+import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 
 const SYNC_NFTS_INTERVAL = 1000 * 60;
 const SYNC_TXS_INTERVAL = 1000 * 10;
@@ -23,6 +25,7 @@ export class NftSyncService implements OnApplicationBootstrap {
     private readonly nftgo: NftgoService,
     private readonly mongo: MongoService,
     private readonly config: ConfigService,
+    private readonly elizaManager: ElizaManagerService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(NftSyncService.name);
@@ -135,6 +138,8 @@ export class NftSyncService implements OnApplicationBootstrap {
             this.logger.error(`this collection is not AI-NFT: ${collectionId}`);
             return;
           }
+          transformedNft.agentId = stringToUuid(transformedNft.nftId);
+          transformedNft.agentAccount = await this.elizaManager.getAgentAccount('solana', transformedNft.nftId);
           nfts.push(transformedNft);
         }
         await this.mongo.nfts.bulkWrite(

@@ -38,6 +38,12 @@ export interface AINft {
     rank: number;
   };
   aiAgent: AIAgent;
+  agentId: string;
+  agentAccount:
+    {
+      solana: string;
+      evm: string
+    };
   updatedAt: Date;
   createdAt: Date;
 }
