@@ -34,6 +34,15 @@ export class NftController {
     return await this.nftService.getCollectionById(chain, collectionId);
   }
 
+  @Get('/:chain/collections/:collectionId/filter-template')
+  async getFilterTemplate(
+    @Param('chain') chain: string,
+    @Param('collectionId') collectionId: string,
+  ) {
+    return await this.nftService.getFilterTemplate(chain, collectionId);
+  }
+
+
   @Get('/:chain/collection/:id/metrics')
   async getCollectionMetrics(
     @Param('chain') chain: string,

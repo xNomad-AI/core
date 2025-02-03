@@ -146,6 +146,17 @@ export class NftService implements OnApplicationBootstrap {
           sort['rarity.score'] = -1;
       }
     }
+    if (opts.traitsQuery) {
+      const traitFilters = opts.traitsQuery.map((trait) => ({
+        traits: {
+          $elemMatch: {
+            type: trait.traitType,
+            value: trait.traitValue,
+          },
+        },
+      }));
+      filter['$and'] = traitFilters;
+    }
     const nfts = await this.mongo.nfts
       .find(filter, {
         sort,
@@ -181,6 +192,47 @@ export class NftService implements OnApplicationBootstrap {
       collection,
       metrics,
     };
+  }
+
+  async getFilterTemplate(chain: string, collectionId: string){
+    const traits = await this.mongo.nfts.aggregate([
+      {
+        $match: {
+          collectionId,
+          chain,
+        }
+      },
+      { $unwind: "$traits" },
+      {
+        $group: {
+          _id: {
+            traitType: "$traits.type",
+            traitValue: "$traits.value"
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $group: {
+          _id: "$_id.traitType",
+          traitValues: {
+            $push: {
+              value: "$_id.traitValue",
+              count: "$count"
+            }
+          }
+        }
+      },
+      { $sort: { "_id": 1 } },
+      {
+        $project: {
+          traitType: "$_id",
+          traitValues: 1,
+          _id: 0
+        }
+      }
+    ]).toArray();
+    return {traits};
   }
 
   async getNftById(chain: string, nftId: string) {

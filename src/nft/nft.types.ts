@@ -6,7 +6,7 @@ import {
   AINftOwner,
 } from '../shared/mongo/types.js';
 import { Collection, Nft, NftTx } from '../shared/nftgo.service.js';
-import { IsOptional, IsString, IsInt, Max, Min } from 'class-validator';
+import { IsOptional, IsString, IsInt, Max, Min, IsArray, IsObject } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export type NftSearchOptions = {
@@ -16,6 +16,7 @@ export type NftSearchOptions = {
   sortBy?: NftSearchSortBy;
   limit: number;
   offset: number;
+  traitsQuery?: { traitValue: string; traitType: string }[];
 };
 
 export type NftSearchSortBy = 'rarityDesc' | 'numberAsc' | 'numberDesc';
@@ -85,6 +86,20 @@ export class NftSearchQueryDto {
   @Min(1)
   @Max(100)
   limit: number = 100;
+
+// Traits query with a proper transformation to an array of objects
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }: { value: string }) => {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      return []; // Return an empty array if the string is not valid JSON
+    }
+  })
+  @IsArray()
+  @IsObject({ each: true })
+  traitsQuery?: { traitValue: string; traitType: string }[];
 }
 
 export interface AssetsByCollection {
