@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
+import { CharacterConfig } from '../shared/mongo/types.js';
 
 @Controller('/nft')
 export class NftController {
@@ -85,11 +86,27 @@ export class NftController {
   async setNftConfig(
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
-    @Body() { agentSettings }: { agentSettings: Record<string, any> },
+    @Body() { characterConfig }: { characterConfig: CharacterConfig },
   ) {
-    await this.nftService.updateNftConfig({
+    return await this.nftService.updateNftConfig({
       nftId,
-      agentSettings,
+      characterConfig,
     });
+  }
+
+  @Get('/:chain/:nftId/config')
+  async getNftConfig(
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+  ) {
+    return await this.nftService.getNftConfig(nftId);
+  }
+
+  @Delete('/:chain/:nftId/config')
+  async deleteNftConfig(
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+  ) {
+    await this.nftService.deleteNftConfig(nftId);
   }
 }

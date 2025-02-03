@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import { UtilsService } from '../shared/utils.service.js';
 import { DeriveKeyProvider } from '@elizaos/plugin-tee';
+import { CharacterConfig } from '../shared/mongo/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,7 +22,7 @@ export type ElizaAgentConfig = {
   chain: string;
   nftId: string;
   character: Character;
-  agentSettings: Record<string, any>;
+  characterConfig: CharacterConfig;
 };
 
 @Injectable()
@@ -60,7 +61,7 @@ export class ElizaManagerService {
       };
       config.character = {
         ...config.character,
-        ...config.agentSettings,
+        ...config.characterConfig,
         modelProvider: this.appConfig.get<ModelProviderName>(
           'AGENT_MODEL_PROVIDER',
         ),

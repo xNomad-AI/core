@@ -1,5 +1,7 @@
 import { COLLECTIONS } from './configs.js';
-import { Character } from '@elizaos/core';
+import {
+  Character,
+} from '@elizaos/core';
 
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
@@ -86,10 +88,12 @@ export interface KeyStore {
   value: any;
 }
 
-export interface NftConfig {
+export interface CharacterConfig extends Partial<Character>{}
+
+export interface NftConfig{
   nftId: string;
   chain: string;
-  agentSettings: Record<string, any>;
+  characterConfig: CharacterConfig
 }
 
 export interface AddressNonce {

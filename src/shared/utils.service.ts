@@ -62,3 +62,17 @@ export function startIntervalTask(
     },
   };
 }
+
+export function deepMerge(target: any, source: any): any {
+  if (typeof target !== 'object' || typeof source !== 'object' || target === null || source === null) {
+    return source;
+  }
+
+  const result = { ...target };
+
+  for (const key of Object.keys(source)) {
+    result[key] = deepMerge(result[key], source[key]);
+  }
+
+  return result;
+}

@@ -6,7 +6,7 @@ import {
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { NftgoService } from '../shared/nftgo.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { AICollection, AINft } from '../shared/mongo/types.js';
+import { CharacterConfig, AICollection, AINft } from '../shared/mongo/types.js';
 import {
   AssetsByCollection,
   NEW_AI_NFT_EVENT,
@@ -17,6 +17,7 @@ import { NFT_PERMISSION_DENIED_EXCEPTION } from '../shared/exceptions/nft-permis
 import { OnEvent } from '@nestjs/event-emitter';
 import { AddressService } from '../address/address.service.js';
 import { stringToUuid } from '@elizaos/core';
+import { deepMerge } from '../shared/utils.service.js';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -66,30 +67,45 @@ export class NftService implements OnApplicationBootstrap {
         chain: nft.chain,
         nftId: nft.nftId,
         character: nft.aiAgent.character,
-        agentSettings: nftConfig?.agentSettings,
+        characterConfig: nftConfig?.characterConfig,
       });
     }
   }
 
   async updateNftConfig({
     nftId,
-    agentSettings,
+    characterConfig,
   }: {
     nftId: string;
-    agentSettings: Record<string, any>;
+    characterConfig: CharacterConfig;
   }) {
     const nftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
+    characterConfig = deepMerge(nftConfig?.characterConfig, characterConfig);
     await this.mongo.nftConfigs.updateOne(
       { nftId },
       {
         $set: {
-          agentSettings,
+          characterConfig
         },
       },
       { upsert: true },
     );
+    return {
+      characterConfig
+    }
+  }
+
+  async getNftConfig(nftId: string) {
+    const nftConfig = await this.mongo.nftConfigs.findOne({
+      nftId,
+    });
+    return nftConfig;
+  }
+
+  async deleteNftConfig(nftId: string) {
+    await this.mongo.nftConfigs.deleteOne({nftId});
   }
 
   async claimInitialFunds(parms: {
