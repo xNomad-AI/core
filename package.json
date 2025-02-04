@@ -26,7 +26,7 @@
     "@elizaos/client-auto": "0.1.9",
     "@elizaos/client-direct": "0.1.9",
     "@elizaos/client-telegram": "0.1.9",
-    "@elizaos/client-twitter": "0.1.9",
+    "@elizaos/client-twitter": "https://github.com/xNomad-AI/eliza/releases/download/v0.1.9-debug.1/elizaos-client-twitter-0.1.9-debug.1.tgz",
     "@elizaos/core": "0.1.9",
     "@elizaos/plugin-bootstrap": "0.1.9",
     "@elizaos/plugin-node": "0.1.9",

@@ -29,7 +29,7 @@ export async function createAgent(
   cache: ICacheManager,
   token: string,
 ): Promise<AgentRuntime> {
-  elizaLogger.success(
+  elizaLogger.info(
     elizaLogger.successesTitle,
     'Creating runtime for character',
     character.name,
