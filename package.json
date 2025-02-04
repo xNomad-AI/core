@@ -45,7 +45,7 @@
     "@tavily/core": "^0.0.2",
     "@types/dockerode": "^3.3.34",
     "amqplib": "^0.10.5",
-    "better-sqlite3": "^11.7.2",
+    "better-sqlite3": "11.6.0",
     "bs58": "^6.0.0",
     "cache-manager": "^6.4.0",
     "class-transformer": "^0.5.1",

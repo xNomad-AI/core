@@ -24,7 +24,7 @@ services:
         mongo mongodb:27017 --eval 'rs.initiate()' &&
         wait"
     volumes:
-      - ./.db_data/mongo:/data/db
+      - mongo_data:/data/db
     healthcheck:
       test: ["CMD", "mongo", "--eval", "rs.status()"]
       start_period: 5s
@@ -34,3 +34,6 @@ services:
 networks:
   core_local:
     driver: bridge
+volumes:
+  mongo_data:
+    driver: local
