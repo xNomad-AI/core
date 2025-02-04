@@ -63,15 +63,22 @@ export function startIntervalTask(
   };
 }
 
-export function deepMerge(target: any, source: any): any {
-  if (typeof target !== 'object' || typeof source !== 'object' || target === null || source === null) {
-    return source;
+export function deepMerge(origin: any, updated: any): any {
+  if (typeof origin !== 'object' || typeof updated !== 'object' || origin === null || updated === null) {
+    return updated;
   }
 
-  const result = { ...target };
+  const result = { ...origin };
 
-  for (const key of Object.keys(source)) {
-    result[key] = deepMerge(result[key], source[key]);
+  for (const key of Object.keys(updated)) {
+    if (Array.isArray(updated[key])) {
+      // 如果 source[key] 是数组，直接覆盖 target[key]
+      result[key] = updated[key];
+    } else if (typeof updated[key] === 'object' && updated[key] !== null) {
+      result[key] = deepMerge(result[key], updated[key]);
+    } else {
+      result[key] = updated[key];
+    }
   }
 
   return result;
