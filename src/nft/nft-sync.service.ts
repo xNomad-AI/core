@@ -1,19 +1,22 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { sleep } from '../shared/utils.service.js';
+import { sleep, startIntervalTask } from '../shared/utils.service.js';
 import {
   NEW_AI_NFT_EVENT,
   transformToActivity,
+  transformToAICollection,
   transformToAINft,
   transformToOwner,
 } from './nft.types.js';
-import { CollectionTxs, NftgoService } from '../shared/nftgo.service.js';
+import { CollectionTxs, Nft, NftgoService } from '../shared/nftgo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { stringToUuid } from '@elizaos/core';
+import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 
-const SYNC_NFTS_INTERVAL = 1000 * 30;
-const SYNC_TXS_INTERVAL = 1000 * 5;
+const SYNC_NFTS_INTERVAL = 1000 * 60;
+const SYNC_TXS_INTERVAL = 1000 * 10;
 
 @Injectable()
 export class NftSyncService implements OnApplicationBootstrap {
@@ -22,27 +25,53 @@ export class NftSyncService implements OnApplicationBootstrap {
     private readonly nftgo: NftgoService,
     private readonly mongo: MongoService,
     private readonly config: ConfigService,
+    private readonly elizaManager: ElizaManagerService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(NftSyncService.name);
   }
 
   onApplicationBootstrap() {
-    this.subscribeAINfts().catch((e) => {
-      this.logger.error(e);
-    });
+    // this.subscribeAINfts().catch((e) => {
+    //   this.logger.error(e);
+    // });
   }
 
   // subscribe AI Nft txs
   async subscribeAINfts(): Promise<void> {
     for (const collection of await this.getAICollections()) {
-      this.syncCollectionTxs(collection.id);
-      this.syncCollectionNfts(collection.id);
+      startIntervalTask(
+        'syncCollectionTxs',
+        () => this.syncCollectionTxs(collection.id),
+        SYNC_TXS_INTERVAL,
+      );
+      startIntervalTask(
+        'syncCollectionNfts',
+        () => this.syncCollectionNfts(collection.id),
+        SYNC_NFTS_INTERVAL,
+      );
     }
   }
 
   async getAICollections() {
-    const collections = await this.nftgo.getAICollections('solana');
+    const cids = this.config.get<string>('NFTGO_SOLANA_AI_COLLECTIONS');
+    if (!cids) {
+      this.logger.warn('NFTGO_SOLANA_AI_COLLECTIONS is not set');
+      return [];
+    }
+    const collections = (await this.nftgo.getAICollections('solana', cids)).map(
+      transformToAICollection,
+    );
+    this.logger.log(`Fetched ${collections.length} AI collections`);
+
+    const bulkOperations = collections.map((coll) => ({
+      updateOne: {
+        filter: { id: coll.id },
+        update: { $set: coll },
+        upsert: true,
+      },
+    }));
+    await this.mongo.collections.bulkWrite(bulkOperations);
     return collections;
   }
 
@@ -55,7 +84,9 @@ export class NftSyncService implements OnApplicationBootstrap {
         { collectionId },
         { sort: { time: -1 } },
       );
-      startTime = latestTx?.time?.getTime() / 1000 + 1;
+      startTime = latestTx?.time
+        ? latestTx.time.getTime() / 1000 + 1
+        : undefined;
     }
     do {
       try {
@@ -73,13 +104,13 @@ export class NftSyncService implements OnApplicationBootstrap {
         );
         await this.processCollectionTxs(collectionId, result);
         cursor = result.next_cursor;
-        await sleep(SYNC_TXS_INTERVAL);
+        await sleep(100);
       } catch (error) {
         this.logger.error(
           `Error syncing txs for collection: ${collectionId}`,
           error,
         );
-        await sleep(30000);
+        await sleep(60000);
       }
     } while (cursor);
   }
@@ -92,11 +123,25 @@ export class NftSyncService implements OnApplicationBootstrap {
         const result = await this.nftgo.getCollectionNfts(
           'solana',
           collectionId,
+          {
+            limit: 50,
+            cursor,
+          },
         );
         this.logger.log(
-          `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}`,
+          `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}, cursor: ${cursor}, name: ${result?.nfts[0]?.name}`,
         );
-        const nfts = result.nfts.map((nft) => transformToAINft(nft));
+        const nfts = [];
+        for (const nft of result.nfts) {
+          const transformedNft = await transformToAINft(nft);
+          if (!transformedNft.aiAgent) {
+            this.logger.error(`this collection is not AI-NFT: ${collectionId}`);
+            return;
+          }
+          transformedNft.agentId = stringToUuid(transformedNft.nftId);
+          transformedNft.agentAccount = await this.elizaManager.getAgentAccount('solana', transformedNft.nftId);
+          nfts.push(transformedNft);
+        }
         await this.mongo.nfts.bulkWrite(
           nfts.map((nft) => ({
             updateOne: {
@@ -106,15 +151,18 @@ export class NftSyncService implements OnApplicationBootstrap {
             },
           })),
         );
-        this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
         cursor = result.next_cursor;
-        await sleep(SYNC_NFTS_INTERVAL);
+        if (cursor) {
+          await this.mongo.updateKeyStore(key, result.next_cursor);
+        }
+        // this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
+        await sleep(100);
       } catch (error) {
         this.logger.error(
           `Error syncing nfts for collection: ${collectionId}`,
           error,
         );
-        await sleep(30000);
+        await sleep(60000);
       }
     } while (cursor);
   }
@@ -137,7 +185,9 @@ export class NftSyncService implements OnApplicationBootstrap {
           { upsert: true, session },
         );
       }
-      await this.mongo.updateKeyStore(key, txs.next_cursor, session);
+      if (txs.next_cursor) {
+        await this.mongo.updateKeyStore(key, txs.next_cursor, session);
+      }
     });
     await session.endSession();
   }

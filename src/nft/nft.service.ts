@@ -6,7 +6,7 @@ import {
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { NftgoService } from '../shared/nftgo.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { AICollection, AINft } from '../shared/mongo/types.js';
+import { CharacterConfig, AICollection, AINft } from '../shared/mongo/types.js';
 import {
   AssetsByCollection,
   NEW_AI_NFT_EVENT,
@@ -16,6 +16,8 @@ import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { NFT_PERMISSION_DENIED_EXCEPTION } from '../shared/exceptions/nft-permission-denied-exception.js';
 import { OnEvent } from '@nestjs/event-emitter';
 import { AddressService } from '../address/address.service.js';
+import { stringToUuid } from '@elizaos/core';
+import { deepMerge } from '../shared/utils.service.js';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -38,9 +40,10 @@ export class NftService implements OnApplicationBootstrap {
   // Start AI agents for all indexed NFTs
   async startAIAgents() {
     const cursor = this.mongo.nfts
-      .find({})
+      .find({ name: 'xNomad #4058' })
       .addCursorFlag('noCursorTimeout', true)
-      .sort({ _id: 1 });
+      .sort({ _id: 1 })
+      .limit(1);
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
       await this.handleNewAINfts([nft]);
@@ -51,18 +54,58 @@ export class NftService implements OnApplicationBootstrap {
   @OnEvent(NEW_AI_NFT_EVENT, { async: true })
   async handleNewAINfts(nfts: AINft[]) {
     for (const nft of nfts) {
-      if (nft?.aiAgent.engine !== 'eliza') {
+      if (nft?.aiAgent?.engine !== 'eliza') {
         return;
       }
       this.logger.log(
         `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
       );
+      const nftConfig = await this.mongo.nftConfigs.findOne({
+        nftId: nft.nftId,
+      });
       await this.elizaManager.startAgentLocal({
         chain: nft.chain,
         nftId: nft.nftId,
         character: nft.aiAgent.character,
+        characterConfig: nftConfig?.characterConfig,
       });
     }
+  }
+
+  async updateNftConfig({
+    nftId,
+    characterConfig,
+  }: {
+    nftId: string;
+    characterConfig: CharacterConfig;
+  }) {
+    const nftConfig = await this.mongo.nftConfigs.findOne({
+      nftId,
+    });
+    characterConfig = deepMerge(nftConfig?.characterConfig, characterConfig);
+    await this.mongo.nftConfigs.updateOne(
+      { nftId },
+      {
+        $set: {
+          characterConfig
+        },
+      },
+      { upsert: true },
+    );
+    return {
+      characterConfig
+    }
+  }
+
+  async getNftConfig(nftId: string) {
+    const nftConfig = await this.mongo.nftConfigs.findOne({
+      nftId,
+    });
+    return nftConfig;
+  }
+
+  async deleteNftConfig(nftId: string) {
+    await this.mongo.nftConfigs.deleteOne({nftId});
   }
 
   async claimInitialFunds(parms: {
@@ -119,6 +162,17 @@ export class NftService implements OnApplicationBootstrap {
           sort['rarity.score'] = -1;
       }
     }
+    if (opts.traitsQuery) {
+      const traitFilters = opts.traitsQuery.map((trait) => ({
+        traits: {
+          $elemMatch: {
+            type: trait.traitType,
+            value: trait.traitValue,
+          },
+        },
+      }));
+      filter['$and'] = traitFilters;
+    }
     const nfts = await this.mongo.nfts
       .find(filter, {
         sort,
@@ -126,32 +180,165 @@ export class NftService implements OnApplicationBootstrap {
         skip: opts.offset,
       })
       .toArray();
-    return nfts;
+    const nftDetails = await Promise.all(
+      nfts.map(async (nft) => {
+        const owner = await this.mongo.nftOwners.findOne({
+          chain: opts.chain,
+          contractAddress: nft.contractAddress,
+          tokenId: nft.tokenId,
+        });
+        return {
+          ...nft,
+          agentId: stringToUuid(nft.nftId),
+          owner: owner?.ownerAddress,
+        };
+      }),
+    );
+    return nftDetails;
   }
 
   async getCollectionMetrics(chain: string, collectionId: string) {
     return await this.nftgo.getCollectionMetrics(collectionId);
   }
 
-  async getNftsByOwner(chain: string, owner: string, collectionId?: string) {
+  async getCollectionById(chain: string, id: string) {
+    const collection = await this.mongo.collections.findOne({ id, chain });
+    const metrics = await this.getCollectionMetrics(chain, id);
+    return {
+      collection,
+      metrics,
+    };
+  }
+
+  async getFilterTemplate(chain: string, collectionId: string){
+    const traits = await this.mongo.nfts.aggregate([
+      {
+        $match: {
+          collectionId,
+          chain,
+        }
+      },
+      { $unwind: "$traits" },
+      {
+        $group: {
+          _id: {
+            traitType: "$traits.type",
+            traitValue: "$traits.value"
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $group: {
+          _id: "$_id.traitType",
+          traitValues: {
+            $push: {
+              value: "$_id.traitValue",
+              count: "$count"
+            }
+          }
+        }
+      },
+      { $sort: { "_id": 1 } },
+      {
+        $project: {
+          traitType: "$_id",
+          traitValues: 1,
+          _id: 0
+        }
+      }
+    ]).toArray();
+    return {traits};
+  }
+
+  async getNftById(chain: string, nftId: string) {
+    const nft = await this.mongo.nfts.findOne({ nftId, chain });
+    const agentId = stringToUuid(nft.nftId);
+    const agentAccount = await this.elizaManager.getAgentAccount(chain, nftId);
+    const nftOwner = await this.mongo.nftOwners.findOne({
+      chain,
+      contractAddress: nft.contractAddress,
+      tokenId: nft.tokenId,
+    });
+    return {
+      ...nft,
+      agentId,
+      agentAccount,
+      owner: nftOwner?.ownerAddress,
+    };
+  }
+
+  async getNftsByOwner(
+    chain: string,
+    ownerAddress: string,
+    collectionId?: string,
+  ) {
     const filter = {
       chain,
-      owner,
+      ownerAddress,
       collectionId,
     };
-    const nfts = await this.mongo.nfts.find(filter).toArray();
+    const nftDocs = await this.mongo.nftOwners
+      .aggregate([
+        {
+          $lookup: {
+            from: 'nfts',
+            let: {
+              chain: '$chain',
+              contractAddress: '$contractAddress',
+              tokenId: '$tokenId',
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$chain', '$$chain'] },
+                      { $eq: ['$contractAddress', '$$contractAddress'] },
+                      { $eq: ['$tokenId', '$$tokenId'] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'nft',
+          },
+        },
+        {
+          $match: filter,
+        },
+        {
+          $unwind: {
+            path: '$nft',
+          },
+        },
+        {
+          $project: {
+            nft: 1,
+          },
+        },
+      ])
+      .toArray();
     // group by collection
-    const assets: AssetsByCollection = nfts.reduce((acc, nft) => {
-      if (!acc[nft.collectionId]) {
-        acc[nft.collectionId] = {
+    const assets: AssetsByCollection = {};
+
+    for (const nftDoc of nftDocs) {
+      const nft = nftDoc.nft;
+      if (!assets[nft.collectionId]) {
+        assets[nft.collectionId] = {
           collectionId: nft.collectionId,
           collectionName: nft.collectionName,
           nfts: [],
         };
       }
-      acc[nft.collectionId].nft.push(nft);
-      return acc;
-    }, {});
+      const agentAccount = await this.elizaManager.getAgentAccount(chain, nft.nftId);
+      const agentId = stringToUuid(nft.nftId);
+      assets[nft.collectionId].nfts.push({
+        ...nft,
+        agentId,
+        agentAccount,
+      });
+    }
     return assets;
   }
 }

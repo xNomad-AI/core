@@ -10,9 +10,9 @@ export class AddressService {
   async getNonce(chain: string, address: string, nonceType: NonceType) {
     const prompt = nonceType === 'login' ? 'sign in' : 'claim funds';
     const now = new Date();
-    const expiration = new Date(now.getTime() + 60 * 1000);
-    const message = `xNomad-core wants to ${prompt} with your account: ${address}, ${now.toISOString()}`;
-    const nonce: AddressNonce = {
+    const expiration = new Date(now.getTime() + 120 * 1000);
+    const message = `xNomadAI-core wants to ${prompt} with your account: ${address}, ${now.toISOString()}`;
+    const addressNonce: AddressNonce = {
       chain,
       address,
       nonceType,
@@ -22,7 +22,7 @@ export class AddressService {
     };
     await this.mongo.addressNonces.updateOne(
       { chain, address, nonceType },
-      { $set: nonce },
+      { $set: addressNonce },
       { upsert: true },
     );
     return message;
@@ -42,6 +42,6 @@ export class AddressService {
     if (!nonce || nonce.expiration.getTime() < Date.now()) {
       throw new BadRequestException('Nonce expired');
     }
-    return SolanaService.verifySignature(address, nonce.message, signature);
+    return SolanaService.verifySignature(nonce.message, signature, address);
   }
 }

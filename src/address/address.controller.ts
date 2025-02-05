@@ -1,10 +1,14 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
 import { AddressService } from './address.service.js';
 import { NonceType } from '../shared/mongo/types.js';
+import { AuthService } from '../shared/auth/auth.service.js';
 
 @Controller('/address')
 export class AddressController {
-  constructor(private readonly addressService: AddressService) {}
+  constructor(
+    private readonly addressService: AddressService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Get('/nonce')
   async getNonce(
@@ -19,6 +23,26 @@ export class AddressController {
     );
     return {
       message,
+    };
+  }
+
+  @Post('/login')
+  async login(@Body() {
+    chain,
+    address,
+    signature,
+  }: {
+    chain: string,
+    address: string,
+    signature: string
+  }) {
+    const isValid = await this.addressService.verifySignature(chain, address, 'login', signature);
+    if (!isValid) {
+      throw new BadRequestException('Invalid signature');
+    }
+    const {accessToken} = this.authService.getAccessToken({ chain, address });
+    return {
+      accessToken,
     };
   }
 }

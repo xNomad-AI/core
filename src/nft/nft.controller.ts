@@ -1,6 +1,8 @@
-import { Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
+import { CharacterConfig } from '../shared/mongo/types.js';
+import { AuthGuard } from '../shared/auth/auth.guard.js';
 
 @Controller('/nft')
 export class NftController {
@@ -25,6 +27,23 @@ export class NftController {
   async getCollections(@Param('chain') chain: string) {
     return await this.nftService.getCollections(chain);
   }
+
+  @Get('/:chain/collections/:collectionId')
+  async getCollectionById(
+    @Param('chain') chain: string,
+    @Param('collectionId') collectionId: string,
+  ) {
+    return await this.nftService.getCollectionById(chain, collectionId);
+  }
+
+  @Get('/:chain/collections/:collectionId/filter-template')
+  async getFilterTemplate(
+    @Param('chain') chain: string,
+    @Param('collectionId') collectionId: string,
+  ) {
+    return await this.nftService.getFilterTemplate(chain, collectionId);
+  }
+
 
   @Get('/:chain/collection/:id/metrics')
   async getCollectionMetrics(
@@ -54,5 +73,43 @@ export class NftController {
     @Query('collectionId') collectionId: string,
   ) {
     return await this.nftService.getNftsByOwner(chain, address, collectionId);
+  }
+
+  @Get('/:chain/nfts/:nftId')
+  async getNftById(
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+  ) {
+    return await this.nftService.getNftById(chain, nftId);
+  }
+
+  // @UseGuards(AuthGuard)
+  @Post('/:chain/:nftId/config')
+  async setNftConfig(
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+    @Body() { characterConfig }: { characterConfig: CharacterConfig },
+  ) {
+    return await this.nftService.updateNftConfig({
+      nftId,
+      characterConfig,
+    });
+  }
+
+  // @UseGuards(AuthGuard)
+  @Get('/:chain/:nftId/config')
+  async getNftConfig(
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+  ) {
+    return await this.nftService.getNftConfig(nftId);
+  }
+
+  @Delete('/:chain/:nftId/config')
+  async deleteNftConfig(
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+  ) {
+    await this.nftService.deleteNftConfig(nftId);
   }
 }

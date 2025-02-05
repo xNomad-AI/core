@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { Character } from '@elizaos/core';
+import {
+  Character,
+  Clients,
+  ModelProviderName,
+  stringToUuid,
+} from '@elizaos/core';
 import { ConfigService } from '@nestjs/config';
 import { startAgent } from '../eliza/starter/index.js';
 import { DirectClient } from '@elizaos/client-direct';
@@ -8,6 +13,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import { UtilsService } from '../shared/utils.service.js';
 import { DeriveKeyProvider } from '@elizaos/plugin-tee';
+import { CharacterConfig } from '../shared/mongo/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,7 +22,7 @@ export type ElizaAgentConfig = {
   chain: string;
   nftId: string;
   character: Character;
-  agentSettings?: { [key: string]: string };
+  characterConfig: CharacterConfig;
 };
 
 @Injectable()
@@ -29,8 +35,11 @@ export class ElizaManagerService {
   ) {
     logger.setContext(ElizaManagerService.name);
     this.elizaClient = new DirectClient();
-    this.elizaClient.startAgent = async (character: Character) => {
-      return startAgent(character, this.elizaClient);
+    this.elizaClient.startAgent = async (
+      character: Character,
+      nftId?: string,
+    ) => {
+      return startAgent(character, this.elizaClient, nftId);
     };
   }
 
@@ -40,18 +49,25 @@ export class ElizaManagerService {
 
   async startAgentLocal(config: ElizaAgentConfig) {
     try {
-      const envVars = this.getElizaEnvs();
-      envVars['WALLET_SECRET_SALT'] = ElizaManagerService.getAgentSecretSalt(
-        config.chain,
-        config.nftId,
-      );
-      envVars['TEE_MODE'] = this.appConfig.get<string>('TEE_MODE');
       // Set unique runtime environment variables for each agent
+      config.character = {
+        ...config.character,
+        ...config.characterConfig,
+        modelProvider: this.appConfig.get<ModelProviderName>(
+          'AGENT_MODEL_PROVIDER',
+        ),
+      };
+      const envVars = this.getElizaEnvs();
       config.character.settings.secrets = {
         ...envVars,
-        ...config.agentSettings,
+        ...config.character.settings.secrets,
+        TEE_MODE: this.appConfig.get<string>('TEE_MODE'),
+        WALLET_SECRET_SALT: ElizaManagerService.getAgentSecretSalt(
+          config.chain,
+          config.nftId,
+        ),
       };
-      await startAgent(config.character, this.elizaClient);
+      await startAgent(config.character, this.elizaClient, config.nftId);
     } catch (e) {
       this.logger.error(
         `Failed to start agent for NFT ${config.nftId}: ${e.message}`,
@@ -65,18 +81,19 @@ export class ElizaManagerService {
   }
 
   static getAgentSecretSalt(chain: string, nftId: string) {
-    return `${chain}:${nftId}`;
+    return `salt-${chain}:${nftId}`;
   }
 
   async getAgentAccount(
     chain: string,
     nftId: string,
-    agentId: string,
+    agentId?: string,
   ): Promise<{ solana: string; evm: string }> {
     const provider: DeriveKeyProvider = new DeriveKeyProvider(
       this.appConfig.get<string>('TEE_MODE'),
     );
     const secrectSalt = ElizaManagerService.getAgentSecretSalt(chain, nftId);
+    agentId ??= stringToUuid(nftId);
     const solanaResult = await provider.deriveEd25519Keypair(
       secrectSalt,
       'solana',

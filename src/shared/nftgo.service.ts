@@ -4,10 +4,16 @@ import { TransientLoggerService } from './transient-logger.service.js';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-export class AICollection {
-  id: string;
+export class Collection {
+  collection_id: string;
   name: string;
-  created_at: string;
+  blockchain: string;
+  logo: string;
+  hasRarity: boolean;
+  description: string;
+  totalsupply: number;
+  categories?: string[];
+  contracts?: string[];
 }
 
 export class CollectionNfts {
@@ -16,11 +22,9 @@ export class CollectionNfts {
 }
 
 export class Nft {
-  nft_id: string;
-  chain: string;
+  blockchain: string;
   contract_address: string;
   token_id: string;
-  owner_addresses: string[];
   collection_name: string;
   name: string;
   description: string;
@@ -32,6 +36,9 @@ export class Nft {
   rarity: {
     score: number;
     rank: number;
+  };
+  collection: {
+    collection_id: string;
   };
   extra_info: Record<string, unknown>;
   created: {
@@ -208,16 +215,20 @@ export class NftgoService {
     return response.data as CollectionMetrics;
   }
 
-  async getAICollections(chain: string): Promise<AICollection[]> {
-    const url = `${this.endpoint}/${chain}/v1/ai-collections`;
+  // ids: comma separated collection ids
+  async getAICollections(chain: string, cids: string): Promise<Collection[]> {
+    const url = `${this.endpoint}/${chain}/v1/collections/ids`;
     const config = {
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apikey,
       },
+      params: {
+        cids,
+      },
     };
     const response = await firstValueFrom(this.httpService.get(url, config));
-    return response.data as AICollection[];
+    return response.data?.collections as Collection[];
   }
 
   async getCollectionTxs(
@@ -238,8 +249,9 @@ export class NftgoService {
       params: {
         limit: options?.limit,
         cursor: options?.cursor,
-        start_time: options?.startTime,
+        start_time: options?.startTime || undefined,
         collection_id: collectionId,
+        actions: 'all',
         asc: true,
       },
     };

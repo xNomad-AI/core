@@ -1,21 +1,27 @@
 import { COLLECTIONS } from './configs.js';
-import { Character } from '@elizaos/core';
+import {
+  Character,
+} from '@elizaos/core';
 
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
 export interface AICollection {
-  _id?: string;
+  id: string;
   chain: string;
-  collectionId: string;
-  collectionName: string;
+  name: string;
+  logo: string;
+  hasRarity?: boolean;
+  description?: string;
+  categories?: string[];
+  contracts?: string[];
   twitter?: string;
   discord?: string;
   website?: string;
+  updatedAt: Date;
   createdAt: Date;
 }
 
 export interface AINft {
-  _id?: string;
   nftId: string;
   collectionId: string;
   collectionName: string;
@@ -34,6 +40,12 @@ export interface AINft {
     rank: number;
   };
   aiAgent: AIAgent;
+  agentId: string;
+  agentAccount:
+    {
+      solana: string;
+      evm: string
+    };
   updatedAt: Date;
   createdAt: Date;
 }
@@ -57,7 +69,6 @@ export interface AINftActivity {
 }
 
 export interface AINftOwner {
-  _id?: string;
   chain: string;
   ownerAddress: string;
   collectionId: string;
@@ -75,6 +86,14 @@ export interface AIAgent {
 export interface KeyStore {
   key: string;
   value: any;
+}
+
+export interface CharacterConfig extends Partial<Character>{}
+
+export interface NftConfig{
+  nftId: string;
+  chain: string;
+  characterConfig: CharacterConfig
 }
 
 export interface AddressNonce {

@@ -1,11 +1,12 @@
 import {
   AIAgent,
+  AICollection,
   AINft,
   AINftActivity,
   AINftOwner,
 } from '../shared/mongo/types.js';
-import { Nft, NftTx } from '../shared/nftgo.service.js';
-import { IsOptional, IsString, IsInt, Max, Min } from 'class-validator';
+import { Collection, Nft, NftTx } from '../shared/nftgo.service.js';
+import { IsOptional, IsString, IsInt, Max, Min, IsArray, IsObject } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export type NftSearchOptions = {
@@ -15,24 +16,47 @@ export type NftSearchOptions = {
   sortBy?: NftSearchSortBy;
   limit: number;
   offset: number;
+  traitsQuery?: { traitValue: string; traitType: string }[];
 };
 
 export type NftSearchSortBy = 'rarityDesc' | 'numberAsc' | 'numberDesc';
 
-export function transformToAINft(nft: Nft): AINft {
+export async function transformToAINft(nft: Nft): Promise<AINft> {
+  // solana and some non-evm chain's NFT has either token_id or contract_address, not both
+  const tokenId = nft.token_id || nft.contract_address;
+  const contractAddress = nft.contract_address || nft.token_id;
+
+  // Try to get aiAgent from extra_info or fetch metadata if necessary
+  let aiAgent = nft.extra_info?.['ai_agent'];
+  if (!aiAgent && nft.extra_info?.['metadata_original_url']) {
+    try {
+      const metadata = await fetch(
+        nft.extra_info['metadata_original_url'] as string,
+      ).then((res) => {
+        return res.json();
+      });
+      aiAgent = metadata?.ai_agent;
+    } catch (error) {
+      console.error('Error fetching metadata:', error);
+    }
+  }
+
+  // Construct the AINft object
   return {
-    nftId: nft.nft_id,
-    chain: nft.chain,
-    collectionId: nft.collection_name,
+    nftId: `${nft.blockchain}:${contractAddress}:${tokenId}`,
+    chain: nft.blockchain,
+    collectionId: nft.collection.collection_id,
     collectionName: nft.collection_name,
-    contractAddress: nft.contract_address,
+    contractAddress: contractAddress,
     image: nft.image,
     name: nft.name,
-    tokenId: nft.token_id,
+    tokenId: tokenId,
     tokenURI: nft.image,
     rarity: nft.rarity,
     traits: nft.traits,
-    aiAgent: nft.extra_info['ai_agent'] as AIAgent,
+    aiAgent: aiAgent as AIAgent,
+    agentAccount: undefined,
+    agentId: undefined,
     updatedAt: new Date(),
     createdAt: new Date(),
   };
@@ -62,6 +86,20 @@ export class NftSearchQueryDto {
   @Min(1)
   @Max(100)
   limit: number = 100;
+
+// Traits query with a proper transformation to an array of objects
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }: { value: string }) => {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      return []; // Return an empty array if the string is not valid JSON
+    }
+  })
+  @IsArray()
+  @IsObject({ each: true })
+  traitsQuery?: { traitValue: string; traitType: string }[];
 }
 
 export interface AssetsByCollection {
@@ -81,14 +119,14 @@ export function transformToActivity(
     collectionId: collectionId,
     blockNumber: tx.block_number,
     chain: tx.blockchain,
-    contractAddress: tx.nft.contract_address,
+    contractAddress: tx.nft.contract_address || tx.nft.token_id,
+    tokenId: tx.nft.token_id || tx.nft.contract_address,
     contractType: tx.nft.contract_type,
     createdAt: new Date(),
     from: tx.from_address,
     quantity: tx.quantity,
     time: new Date(tx.time * 1000),
     to: tx.to_address,
-    tokenId: tx.nft.contract_address,
     txHash: tx.tx_hash,
     updatedAt: new Date(),
   };
@@ -102,6 +140,20 @@ export function transformToOwner(activity: AINftActivity): AINftOwner {
     tokenId: activity.tokenId,
     createdAt: new Date(),
     ownerAddress: activity.to,
+    updatedAt: new Date(),
+  };
+}
+
+export function transformToAICollection(coll: Collection): AICollection {
+  return {
+    id: coll.collection_id,
+    name: coll.name,
+    chain: coll.blockchain,
+    logo: coll.logo,
+    categories: coll.categories,
+    contracts: coll.contracts,
+    description: coll.description,
+    createdAt: new Date(),
     updatedAt: new Date(),
   };
 }

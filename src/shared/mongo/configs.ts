@@ -5,7 +5,7 @@ export const COLLECTIONS = [
     db: DB_NAME,
     name: 'collections',
     indexes: [],
-    uniqueIndexes: [{ collectionId: 1 }],
+    uniqueIndexes: [{ id: 1 }],
   },
   {
     db: DB_NAME,
@@ -50,9 +50,10 @@ export const COLLECTIONS = [
     uniqueIndexes: [
       {
         chain: 1,
-        txHash: 1,
         contractAddress: 1,
         tokenId: 1,
+        txHash: 1,
+        from: 1,
       },
     ],
   },
@@ -72,8 +73,18 @@ export const COLLECTIONS = [
     indexes: [],
     uniqueIndexes: [
       {
-        account: 1,
-        type: 1,
+        address: 1,
+        nonceType: 1,
+      },
+    ],
+  },
+  {
+    db: DB_NAME,
+    name: 'nftConfigs',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        nftId: 1,
       },
     ],
   },

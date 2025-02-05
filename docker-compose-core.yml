@@ -1,14 +1,25 @@
 version: '3.8'
 
 services:
-  phala:
-    image: phalanetwork/tappd-simulator:latest
-    container_name: phala-tee-simulator
+  core:
+    image: xnomadai/core:0.1.2-dev
+    container_name: core
     ports:
-      - "8090:8090"
+      - "8080:8080"
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - agent_data:/app/db_data/agent
+      - /var/run/tappd.sock:/var/run/tappd.sock
     restart: always
-    networks: 
-    - core_local
+    depends_on:
+      - mongodb
+    command: >
+      sh -c '
+        echo "${CORE_SERVER}" | base64 -d > /app/.env &&
+        echo "${CORE_AGENT}" | base64 -d > /app/.env.agent-eliza &&
+        node dist/main.js'
   mongodb:
     image: mongo:4.4
     container_name: mongodb
@@ -24,13 +35,15 @@ services:
         mongo mongodb:27017 --eval 'rs.initiate()' &&
         wait"
     volumes:
-      - ./.db_data/mongo:/data/db
+      - mongodb_data:/data/db
     healthcheck:
       test: ["CMD", "mongo", "--eval", "rs.status()"]
       start_period: 5s
       interval: 5s
       retries: 10
       timeout: 30s
-networks:
-  core_local:
-    driver: bridge
+volumes:
+  mongodb_data:
+    driver: local
+  agent_data:
+    driver: local
