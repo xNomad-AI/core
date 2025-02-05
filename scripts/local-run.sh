@@ -17,6 +17,7 @@ sed -i '/MONGODB_URL/c\MONGODB_URL='"$MONGODB_URL" scripts/env/.env
 # check the mongodb url
 grep MONGODB_URL scripts/env/.env
 
+docker rm -f core || true
 # start the docker
 docker run --rm --name core \
     -v ./scripts/env/.env:/app/.env \

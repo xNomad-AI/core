@@ -7,7 +7,9 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
 
+RUN apt-get update && apt-get install build-essential -y
 RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
+RUN npm install -g node-gyp && npm rebuild better-sqlite3
 
 FROM base AS build
 
