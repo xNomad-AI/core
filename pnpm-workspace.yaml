@@ -1,2 +1,2 @@
 packages:
-    - "src/eliza/plugins/*"
+    - "src/eliza/packages/*"

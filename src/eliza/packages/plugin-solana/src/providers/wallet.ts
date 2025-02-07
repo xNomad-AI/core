@@ -447,5 +447,36 @@ const walletProvider: Provider = {
     },
 };
 
+export const NotAgentAdminMessage = "Access denied: Only the Agent Owner has permission to perform this action. Please sign in with the correct account.";
+
+export async function isAgentAdmin(runtime: IAgentRuntime, message: Memory) {
+    if (process.env?.DISABLE_ADMIN_CHECK) {
+        elizaLogger.warn("Admin check is disabled");
+        return true
+    }
+    const accessToken = message.content.accessToken;
+    if (!accessToken) {
+        elizaLogger.log("Admin check returned false, no token provided");
+        return false;
+    }
+    try {
+        const response = await fetch(`http://localhost:8080/nft/agent/auth?agentId=${runtime.agentId}`, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+        if (response.status !== 200) {
+            return false;
+        }
+        const data = await response.json() as { isAdmin: boolean };
+        return data?.isAdmin;
+    }catch (error) {
+        elizaLogger.error("Admin check failed", error);
+        return false;
+    }
+
+}
+
 // Module exports
 export { walletProvider };

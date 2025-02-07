@@ -33,7 +33,7 @@ import {
     elizaLogger,
 } from "@elizaos/core";
 
-import { walletProvider } from "../providers/wallet.js";
+import { isAgentAdmin, NotAgentAdminMessage, walletProvider } from '../providers/wallet.js';
 
 async function createAndBuyToken({
                                             deployer,
@@ -188,7 +188,14 @@ export default {
         callback?: HandlerCallback
     ): Promise<boolean> => {
         elizaLogger.log("Starting CREATE_AND_BUY_TOKEN handler...");
-
+        const isAdmin = await isAgentAdmin(runtime, message);
+        if (!isAdmin) {
+            const responseMsg = {
+                text: NotAgentAdminMessage,
+            };
+            callback?.(responseMsg);
+            return true;
+        }
         // Compose state if not provided
         if (!state) {
             state = (await runtime.composeState(message)) as State;

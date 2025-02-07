@@ -1,4 +1,14 @@
-import { BadRequestException, Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Post,
+  Query,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AddressService } from './address.service.js';
 import { NonceType } from '../shared/mongo/types.js';
 import { AuthService } from '../shared/auth/auth.service.js';

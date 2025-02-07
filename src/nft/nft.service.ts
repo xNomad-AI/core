@@ -108,6 +108,19 @@ export class NftService implements OnApplicationBootstrap {
     await this.mongo.nftConfigs.deleteOne({nftId});
   }
 
+  async getAgentOwner(agentId: string) {
+    const nft = await this.mongo.nfts.findOne({ agentId });
+    if (!nft) {
+      return null;
+    }
+    const owner = await this.mongo.nftOwners.findOne({
+      chain: nft.chain,
+      contractAddress: nft.contractAddress,
+      tokenId: nft.tokenId,
+    });
+    return owner;
+  }
+
   async claimInitialFunds(parms: {
     chain: string;
     nftId: string;

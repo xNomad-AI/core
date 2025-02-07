@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Request,
+  Param,
+  Post,
+  Query,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
 import { CharacterConfig } from '../shared/mongo/types.js';
@@ -111,5 +123,22 @@ export class NftController {
     @Param('nftId') nftId: string,
   ) {
     await this.nftService.deleteNftConfig(nftId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/agent/auth')
+  async getAgentAuth(
+    @Query('agentId') agentId: string,
+    @Request() request,
+  ) {
+    const address = request['X-USER-ADDRESS'];
+    const chain = request['X-USER-CHAIN'];
+    if (!chain || !address) {
+      throw new UnauthorizedException('Invalid auth header');
+    }
+    const owner = await this.nftService.getAgentOwner(agentId);
+    return {
+      isAdmin: owner?.ownerAddress === address,
+    };
   }
 }

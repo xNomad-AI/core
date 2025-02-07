@@ -35,7 +35,7 @@
 		"tsup": "8.3.5",
 		"tweetnacl": "^1.0.3",
 		"vitest": "2.1.4",
-		"zod": "^3.24.1"
+		"zod": "3.23.8"
 	},
 	"scripts": {
 		"build": "tsup --format esm --dts",

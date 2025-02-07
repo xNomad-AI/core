@@ -14,7 +14,7 @@ import {
 import { Connection, type PublicKey, VersionedTransaction } from "@solana/web3.js";
 import {BigNumber} from "bignumber.js";
 import { getWalletKey } from "../keypairUtils.js";
-import { walletProvider, WalletProvider } from "../providers/wallet.js";
+import { isAgentAdmin, NotAgentAdminMessage, walletProvider, WalletProvider } from '../providers/wallet.js';
 import { getTokenDecimals } from "./swapUtils.js";
 
 export async function swapToken(
@@ -174,7 +174,7 @@ export const executeSwap: Action = {
     similes: ["SWAP_TOKENS", "TOKEN_SWAP", "TRADE_TOKENS", "EXCHANGE_TOKENS"],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         // Check if the necessary parameters are provided in the message
-        elizaLogger.log("Message:", message);
+        elizaLogger.info("Validating executeSwap message:");
         return true;
     },
     description: "Perform a token swap.",
@@ -185,6 +185,14 @@ export const executeSwap: Action = {
         _options: { [key: string]: unknown },
         callback?: HandlerCallback
     ): Promise<boolean> => {
+        const isAdmin = await isAgentAdmin(runtime, message);
+        if (!isAdmin) {
+            const responseMsg = {
+                text: NotAgentAdminMessage,
+            };
+            callback?.(responseMsg);
+            return true;
+        }
         // composeState
         if (!state) {
             state = (await runtime.composeState(message)) as State;

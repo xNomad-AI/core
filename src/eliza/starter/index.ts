@@ -55,7 +55,8 @@ export async function createAgent(
     character,
     plugins: [
       bootstrapPlugin,
-      nodePlugin,
+      // nodePlugin,
+      solanaPlugin,
       teePlugin,
     ].filter(Boolean),
     providers: [],
@@ -93,9 +94,6 @@ export async function startAgent(
     runtime.clients = await initializeClients(character, runtime);
 
     directClient.registerAgent(runtime);
-
-    // report to console
-    elizaLogger.debug(`Started ${character.name} as ${runtime.agentId}`);
 
     return runtime;
   } catch (error) {

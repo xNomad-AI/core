@@ -11,7 +11,7 @@ import {
     elizaLogger,
 } from "@elizaos/core";
 import {getWalletKey, sign} from "../keypairUtils.js";
-import { walletProvider } from "../providers/wallet.js";
+import { isAgentAdmin, NotAgentAdminMessage, walletProvider } from '../providers/wallet.js';
 
 
 const claimAirdropTemplate = `
@@ -67,7 +67,7 @@ export const airdrop: Action = {
     similes: [],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         // Check if the necessary parameters are provided in the message
-        elizaLogger.log("Message:", message);
+        elizaLogger.log("Validating CLAIM_AIRDROP Message:", message.content);
         return true;
     },
     description: "Perform claim airdrop",
@@ -78,6 +78,14 @@ export const airdrop: Action = {
         _options: { [key: string]: unknown },
         callback?: HandlerCallback
     ): Promise<boolean> => {
+        const isAdmin = await isAgentAdmin(runtime, message);
+        if (!isAdmin) {
+            const responseMsg = {
+                text: NotAgentAdminMessage,
+            };
+            callback?.(responseMsg);
+            return true;
+        }
         // composeState
         if (!state) {
             state = (await runtime.composeState(message)) as State;

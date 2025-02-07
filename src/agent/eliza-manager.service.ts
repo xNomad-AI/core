@@ -78,8 +78,9 @@ export class ElizaManagerService {
   }
 
   getElizaEnvs(): Record<string, string> {
-    const elizaEnvPath = path.resolve(__dirname, '../../.env.agent-eliza');
-    return UtilsService.getEnvFromFile(elizaEnvPath);
+    return Object.fromEntries(
+      Object.entries(process.env).filter(([_, v]) => v !== undefined)
+    ) as Record<string, string>;
   }
 
   static getAgentSecretSalt(chain: string, nftId: string) {

@@ -13,7 +13,7 @@ import {
 } from "@elizaos/core";
 import { Connection, VersionedTransaction } from "@solana/web3.js";
 import { getWalletKey } from "../keypairUtils.js";
-import { walletProvider, WalletProvider } from "../providers/wallet.js";
+import { isAgentAdmin, NotAgentAdminMessage, walletProvider, WalletProvider } from '../providers/wallet.js';
 import {md5sum} from "./swapUtils.js";
 import {swapToken} from "./swap.js";
 
@@ -208,6 +208,14 @@ export const autoExecuteSwap: Action = {
         _options: { [key: string]: unknown },
         callback?: HandlerCallback
     ): Promise<boolean> => {
+        const isAdmin = await isAgentAdmin(runtime, message);
+        if (!isAdmin) {
+            const responseMsg = {
+                text: NotAgentAdminMessage,
+            };
+            callback?.(responseMsg);
+            return true;
+        }
         // composeState
         if (!state) {
             state = (await runtime.composeState(message)) as State;
