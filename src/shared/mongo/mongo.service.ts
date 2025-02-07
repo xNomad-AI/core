@@ -17,7 +17,7 @@ import { UtilsService } from '../utils.service.js';
 
 @Injectable()
 export class MongoService implements OnModuleInit {
-  client: MongoClient;
+  public client: MongoClient;
   constructor(
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
@@ -28,7 +28,9 @@ export class MongoService implements OnModuleInit {
   onModuleInit() {
     const source = `${this.appConfig.get('MONGODB_URL')}`;
     const maskedSource = `${source.slice(0, 10)}*****${source.slice(-15)}`;
-    this.client = new MongoClient(source);
+    this.client = new MongoClient(source, {
+      tlsAllowInvalidCertificates: true,
+    });
     this.logger.log(`Initialized mongo: ${maskedSource}`);
     void this.ensureIndexes();
   }

@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
-    "@elizaos/adapter-sqlite": "0.1.9",
+    "@elizaos/adapter-mongodb": "0.1.9",
     "@elizaos/client-auto": "0.1.9",
     "@elizaos/client-direct": "0.1.9",
     "@elizaos/client-telegram": "0.1.9",

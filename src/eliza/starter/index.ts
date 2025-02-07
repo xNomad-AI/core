@@ -16,6 +16,7 @@ import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
 import { solanaPlugin, createSolanaPlugin } from '@elizaos/plugin-solana';
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
 import { createNodePlugin } from '@elizaos/plugin-node';
+import { MongoClient } from 'mongodb';
 
 let nodePlugin: any | undefined;
 
@@ -55,14 +56,7 @@ export async function createAgent(
     plugins: [
       bootstrapPlugin,
       nodePlugin,
-      getSecret(character, 'SOLANA_PUBLIC_KEY') ||
-      (getSecret(character, 'WALLET_PUBLIC_KEY') &&
-        !getSecret(character, 'WALLET_PUBLIC_KEY')?.startsWith('0x'))
-        ? solanaPlugin
-        : null,
-      ...(teeMode !== TEEMode.OFF && walletSecretSalt
-        ? [teePlugin, solanaPlugin]
-        : []),
+      teePlugin,
     ].filter(Boolean),
     providers: [],
     actions: [],
@@ -77,20 +71,17 @@ export async function createAgent(
 export async function startAgent(
   character: Character,
   directClient: DirectClient,
-  nftId?: string,
+  nftId: string,
+  options?: {
+    mongoClient?: MongoClient;
+  }
 ) {
   try {
     character.id ??= stringToUuid(nftId || character.name);
     character.username ??= character.name;
 
     const token = getTokenForProvider(character.modelProvider, character);
-    const dataFile = path.join(
-      process.cwd(),
-      '.db_data/agent',
-      `${character.name}.db`,
-    );
-
-    const db = initializeDatabase(dataFile);
+    const db = initializeDatabase(options.mongoClient, `agent`);
 
     await db.init();
 

@@ -14,6 +14,7 @@ import path from 'path';
 import { UtilsService } from '../shared/utils.service.js';
 import { DeriveKeyProvider } from '@elizaos/plugin-tee';
 import { CharacterConfig } from '../shared/mongo/types.js';
+import { MongoService } from '../shared/mongo/mongo.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +33,7 @@ export class ElizaManagerService {
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly appConfig: ConfigService,
+    private readonly mongoService: MongoService,
   ) {
     logger.setContext(ElizaManagerService.name);
     this.elizaClient = new DirectClient();
@@ -39,7 +41,7 @@ export class ElizaManagerService {
       character: Character,
       nftId?: string,
     ) => {
-      return startAgent(character, this.elizaClient, nftId);
+      return startAgent(character, this.elizaClient, nftId, {mongoClient: this.mongoService.client});
     };
   }
 
@@ -67,7 +69,7 @@ export class ElizaManagerService {
           config.nftId,
         ),
       };
-      await startAgent(config.character, this.elizaClient, config.nftId);
+      await startAgent(config.character, this.elizaClient, config.nftId, {mongoClient: this.mongoService.client});
     } catch (e) {
       this.logger.error(
         `Failed to start agent for NFT ${config.nftId}: ${e.message}`,
