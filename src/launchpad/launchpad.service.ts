@@ -2,6 +2,7 @@ import * as DID from '@ipld/dag-ucan/did';
 import { create, fetchCollection } from '@metaplex-foundation/mpl-core';
 import { createSignerFromKeypair, publicKey } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   Keypair,
@@ -20,6 +21,7 @@ import bs58 from 'bs58';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 
+@Injectable()
 export class LaunchpadService {
   constructor(
     private readonly config: ConfigService,

@@ -147,6 +147,9 @@ importers:
       '@nestjs/testing':
         specifier: ^10.0.0
         version: 10.4.15(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@10.4.15)(@nestjs/platform-express@11.0.7)
+      '@types/express':
+        specifier: github:types/express
+        version: https://codeload.github.com/types/express/tar.gz/7670cf1cbce96b3159e3ff04a253926b34111220(@types/node@20.17.14)
       '@types/jest':
         specifier: ^29.5.2
         version: 29.5.14
@@ -3743,6 +3746,12 @@ packages:
   '@types/express@5.0.0':
     resolution: {integrity: sha512-DvZriSMehGHL1ZNLzi6MidnsDhUZM/x2pRdDIKdwbUNqqwHxMlRdkxtn6/EPKyqKpHqTl/4nRZsRNLpZxZRpPQ==}
 
+  '@types/express@https://codeload.github.com/types/express/tar.gz/7670cf1cbce96b3159e3ff04a253926b34111220':
+    resolution: {tarball: https://codeload.github.com/types/express/tar.gz/7670cf1cbce96b3159e3ff04a253926b34111220}
+    version: 4.14.0
+    peerDependencies:
+      '@types/node': '*'
+
   '@types/filesystem@0.0.36':
     resolution: {integrity: sha512-vPDXOZuannb9FZdxgHnqSwAG/jvdGM8Wq+6N4D/d80z+D4HWH+bItqsZaVRQykAn6WEVeEkLm2oQigyHtgb0RA==}
 
@@ -3865,6 +3874,12 @@ packages:
 
   '@types/serve-static@1.15.7':
     resolution: {integrity: sha512-W8Ym+h8nhuRwaKPaDw34QUkwsGi6Rc4yYqvKFo5rm2FUEhCFbzVWrxXUxuKK8TASjWsysJY0nsmNCGhCOIsrOw==}
+
+  '@types/serve-static@git+https://git@github.com:types/npm-serve-static.git#c1f96843c8b96a37f6c534cb1dadb48f5329e4e0':
+    resolution: {commit: c1f96843c8b96a37f6c534cb1dadb48f5329e4e0, repo: git@github.com:types/npm-serve-static.git, type: git}
+    version: 1.11.1
+    peerDependencies:
+      '@types/node': '*'
 
   '@types/ssh2@1.15.4':
     resolution: {integrity: sha512-9JTQgVBWSgq6mAen6PVnrAmty1lqgCMvpfN+1Ck5WRUsyMYPa6qd50/vMJ0y1zkGpOEgLzm8m8Dx/Y5vRouLaA==}
@@ -8353,6 +8368,10 @@ packages:
   path-to-regexp@8.2.0:
     resolution: {integrity: sha512-TdrF7fW9Rphjq4RjrW0Kp2AW0Ahwu9sRGTkS6bvDi0SCwZlEZYmcfDbEsTz8RVk0EHIS/Vd1bv3JhG+1xZuAyQ==}
     engines: {node: '>=16'}
+
+  path-to-regexp@https://codeload.github.com/pillarjs/path-to-regexp/tar.gz/ec285ed3500aed455df59e3b8b07f473412918a4:
+    resolution: {tarball: https://codeload.github.com/pillarjs/path-to-regexp/tar.gz/ec285ed3500aed455df59e3b8b07f473412918a4}
+    version: 1.5.3
 
   path-type@4.0.0:
     resolution: {integrity: sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw==}
@@ -17504,6 +17523,12 @@ snapshots:
       '@types/qs': 6.9.18
       '@types/serve-static': 1.15.7
 
+  '@types/express@https://codeload.github.com/types/express/tar.gz/7670cf1cbce96b3159e3ff04a253926b34111220(@types/node@20.17.14)':
+    dependencies:
+      '@types/node': 20.17.14
+      '@types/serve-static': git+https://git@github.com:types/npm-serve-static.git#c1f96843c8b96a37f6c534cb1dadb48f5329e4e0(@types/node@20.17.14)
+      path-to-regexp: https://codeload.github.com/pillarjs/path-to-regexp/tar.gz/ec285ed3500aed455df59e3b8b07f473412918a4
+
   '@types/filesystem@0.0.36':
     dependencies:
       '@types/filewriter': 0.0.33
@@ -17626,6 +17651,10 @@ snapshots:
       '@types/http-errors': 2.0.4
       '@types/node': 20.17.14
       '@types/send': 0.17.4
+
+  '@types/serve-static@git+https://git@github.com:types/npm-serve-static.git#c1f96843c8b96a37f6c534cb1dadb48f5329e4e0(@types/node@20.17.14)':
+    dependencies:
+      '@types/node': 20.17.14
 
   '@types/ssh2@1.15.4':
     dependencies:
@@ -23079,6 +23108,10 @@ snapshots:
   path-to-regexp@3.3.0: {}
 
   path-to-regexp@8.2.0: {}
+
+  path-to-regexp@https://codeload.github.com/pillarjs/path-to-regexp/tar.gz/ec285ed3500aed455df59e3b8b07f473412918a4:
+    dependencies:
+      isarray: 0.0.1
 
   path-type@4.0.0: {}
 
