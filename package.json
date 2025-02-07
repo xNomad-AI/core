@@ -30,7 +30,7 @@
     "@elizaos/core": "file:local_dependency/elizaos-core-0.1.9.tgz",
     "@elizaos/plugin-bootstrap": "0.1.9",
     "@elizaos/plugin-node": "0.1.9",
-    "@elizaos/plugin-solana": "file:local_dependency/elizaos-plugin-solana-0.1.9.tgz",
+    "@elizaos/plugin-solana": "workspace:*",
     "@elizaos/plugin-tee": "0.1.9",
     "@ipld/dag-ucan": "^3.4.5",
     "@metaplex-foundation/mpl-core": "^1.2.0",
