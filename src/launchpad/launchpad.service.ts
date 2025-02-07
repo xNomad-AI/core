@@ -221,9 +221,7 @@ export class LaunchpadService {
   async isXnomadOwner(userAddress: string) {
     const doc = await this.mongo.nftOwners.findOne({
       chain: 'solana',
-      contractAddress: this.config.get<string>(
-        'SOLANA_COMMON_COLLECTION_ADDRESS',
-      ),
+      contractAddress: 'J4Jbdngkq9CUimwBVE4FSAUxfFgAadv37xUjwvo5NLy2',
       ownerAddress: userAddress,
     });
     return doc !== null;
