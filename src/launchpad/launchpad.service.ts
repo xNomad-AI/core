@@ -36,7 +36,7 @@ export class LaunchpadService {
     nft: {
       name: string;
       image: string;
-      description: string[];
+      description: string;
       knowledge: string[];
       personality?: string[];
       greeting?: string;
@@ -65,11 +65,10 @@ export class LaunchpadService {
         discountPercentage,
       }),
     );
-
     // construct metadata
     const metadata = {
       name: nft.name,
-      description: nft.description.join('\n'),
+      description: nft.description,
       image: nft.image,
       attributes: [],
       properties: {
@@ -86,7 +85,7 @@ export class LaunchpadService {
         character: {
           name: nft.name,
           plugins: [],
-          bio: nft.description,
+          bio: [nft.description],
           lore: nft.lore || [],
           knowledge: nft.knowledge || [],
           messageExamples: [],
@@ -116,7 +115,7 @@ export class LaunchpadService {
     });
 
     return {
-      tx: serializedTx,
+      tx: Buffer.from(serializedTx).toString('hex'),
       fee,
       feeAfterDiscount,
       discountPercentage,

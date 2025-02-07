@@ -14,7 +14,7 @@ export class LaunchpadController {
       nft: {
         name: string;
         image: string;
-        description: string[];
+        description: string;
         knowledge: string[];
         personality?: string[];
         greeting?: string;
