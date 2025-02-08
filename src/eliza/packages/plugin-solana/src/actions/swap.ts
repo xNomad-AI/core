@@ -11,18 +11,22 @@ import {
     type Action,
     elizaLogger,
 } from "@elizaos/core";
-import { Connection, type PublicKey, VersionedTransaction } from "@solana/web3.js";
+import { Connection, PublicKey, RpcResponseAndContext, SignatureStatus, VersionedTransaction } from "@solana/web3.js";
 import {BigNumber} from "bignumber.js";
 import { getWalletKey } from "../keypairUtils.js";
 import { isAgentAdmin, NotAgentAdminMessage, walletProvider, WalletProvider } from '../providers/wallet.js';
 import { getTokenDecimals } from "./swapUtils.js";
+import {
+    getOrCreateAssociatedTokenAccount,
+  } from "@solana/spl-token";
 
 export async function swapToken(
     connection: Connection,
     walletPublicKey: PublicKey,
     inputTokenCA: string,
     outputTokenCA: string,
-    amount: number
+    amount: number,
+    runtime: IAgentRuntime
 ): Promise<any> {
     try {
         // Get the decimals for the input token
@@ -47,9 +51,13 @@ export async function swapToken(
             amount: adjustedAmount,
         });
 
-        const quoteResponse = await fetch(
-            `https://quote-api.jup.ag/v6/quote?inputMint=${inputTokenCA}&outputMint=${outputTokenCA}&amount=${adjustedAmount}&dynamicSlippage=true&maxAccounts=64`
-        );
+        // auto slippage
+        let url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputTokenCA}&outputMint=${outputTokenCA}&amount=${adjustedAmount}&dynamicSlippage=true&autoSlippage=true&maxAccounts=64&onlyDirectRoutes=false&asLegacyTransaction=false`;
+        if (settings.JUP_SWAP_FEE_BPS !== undefined && settings.JUP_SWAP_FEE_ACCOUNT !== undefined) {
+            url += `&platformFeeBps=${settings.JUP_SWAP_FEE_BPS}`;
+        }
+
+        const quoteResponse = await fetch(url);
         const quoteData = await quoteResponse.json();
 
         if (!quoteData || quoteData.error) {
@@ -71,6 +79,30 @@ export async function swapToken(
                 priorityLevel: "veryHigh",
             },
         };
+
+        // get or create fee token account after check to prevent invalid token account creation
+        if (settings.JUP_SWAP_FEE_BPS !== undefined && settings.JUP_SWAP_FEE_ACCOUNT !== undefined) {
+            const { keypair } = await getWalletKey(runtime, true);
+            const FEE_ACCOUNT_INPUT_MINT_ACCOUNT = (
+                await getOrCreateAssociatedTokenAccount(
+                connection,
+                keypair,
+                new PublicKey(quoteData.inputMint),
+                new PublicKey(settings.JUP_SWAP_FEE_ACCOUNT),
+                )
+            ).address;
+
+            // const FEE_ACCOUNT_OUTPUT_MINT_ACCOUNT = (
+            //     await getOrCreateAssociatedTokenAccount(
+            //         connection,
+            //         keypair,
+            //         new PublicKey(quoteData.outputMint),
+            //         new PublicKey(settings.JUP_SWAP_FEE_ACCOUNT)
+            //     )
+            // ).address;
+
+            swapRequestBody['feeAccount'] = FEE_ACCOUNT_INPUT_MINT_ACCOUNT.toBase58();
+        }
 
         elizaLogger.log("Requesting swap with body:", swapRequestBody);
 
@@ -315,7 +347,8 @@ export const executeSwap: Action = {
                 walletPublicKey,
                 response.inputTokenCA as string,
                 response.outputTokenCA as string,
-                response.amount as number
+                response.amount as number,
+                runtime,
             );
 
             elizaLogger.log("Deserializing transaction...");
@@ -353,26 +386,19 @@ export const executeSwap: Action = {
 
             elizaLogger.log("Transaction sent:", txid);
 
-            // Confirm transaction using the blockhash
-            // try {
-            //     const confirmation = await connection.confirmTransaction(
-            //       {
-            //           signature: txid,
-            //           blockhash: latestBlockhash.blockhash,
-            //           lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-            //       },
-            //       "confirmed"
-            //     );
-            //
-            //     if (confirmation.value.err) {
-            //         throw new Error(
-            //           `Transaction failed: ${confirmation.value.err}`
-            //         );
-            //     }
-            // }catch (error) {
-            //     elizaLogger.error(`Error confirming transaction: ${error}`);
-            // }
+            let confirmation: RpcResponseAndContext<SignatureStatus | null>;
 
+            // wait for 20s for the transaction to be processed
+            for (let i = 0; i < 20; i++) {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+                confirmation = await connection.getSignatureStatus(txid, {
+                    searchTransactionHistory: false,
+                });
+
+                if (confirmation.value) {
+                    break;
+                }
+            }
 
             elizaLogger.log("Swap completed successfully!");
             elizaLogger.log(`Transaction ID: ${txid}`);
@@ -393,7 +419,30 @@ export const executeSwap: Action = {
             return true;
         }
     },
+    template: swapTemplate,
     examples: [
+        [
+            {
+                user: "{{user1}}",
+                content: {
+                    text: "Swapping 0.5 BTC for USDT...",
+                    action: "TOKEN_SWAP",
+                },
+            },
+            {
+                user: "{{user2}}",
+                content: {
+                    text: "Transaction being processed...",
+                    action: "TOKEN_SWAP",
+                },
+            },
+            {
+                user: "{{user2}}",
+                content: {
+                    text: "BTC swapped successfully! 0.5 BTC for 12000 USDT. Transaction ID: ...",
+                },
+            },
+        ],
         [
             {
                 user: "{{user1}}",

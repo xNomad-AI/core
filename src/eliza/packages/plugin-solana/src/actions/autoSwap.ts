@@ -150,7 +150,8 @@ async function executeAutoSwapTask(runtime: IAgentRuntime, memory: Memory){
         walletPublicKey,
         task.inputTokenCA as string,
         task.outputTokenCA as string,
-        task.amount as number
+        task.amount as number,
+        runtime,
     );
 
     elizaLogger.log("Deserializing transaction...");
