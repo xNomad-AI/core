@@ -32,9 +32,9 @@ export class NftSyncService implements OnApplicationBootstrap {
   }
 
   onApplicationBootstrap() {
-    // this.subscribeAINfts().catch((e) => {
-    //   this.logger.error(e);
-    // });
+    this.subscribeAINfts().catch((e) => {
+      this.logger.error(e);
+    });
   }
 
   // subscribe AI Nft txs
@@ -155,7 +155,7 @@ export class NftSyncService implements OnApplicationBootstrap {
         if (cursor) {
           await this.mongo.updateKeyStore(key, result.next_cursor);
         }
-        // this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
+        this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
         await sleep(100);
       } catch (error) {
         this.logger.error(
