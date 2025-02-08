@@ -5,6 +5,7 @@ set -e
 # pnpm install
 # cd src/eliza/packages/plugin-solana
 
+export DEFAULT_LOG_LEVEL="log"
 pnpm remove @elizaos/agent || true
 pnpm add -D "github:jinbangyi/eliza-agent#master"
 # build self
@@ -32,10 +33,10 @@ export HELIUS_API_KEY='xx'
 # go to https://bds.birdeye.so/#pricing, at least starter plan
 export BIRDEYE_API_KEY='xx'
 
-# fee account
-export JUP_SWAP_FEE_ACCOUNT="$WALLET_PUBLIC_KEY"
-# 0.5%
-export JUP_SWAP_FEE_BPS=50
+# # fee account
+# export JUP_SWAP_FEE_ACCOUNT="$WALLET_PUBLIC_KEY"
+# # 0.5%
+# export JUP_SWAP_FEE_BPS=50
 
 # this will start the agent
 export DISABLE_ADMIN_CHECK=true
