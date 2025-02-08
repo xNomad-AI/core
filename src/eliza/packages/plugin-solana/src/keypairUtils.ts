@@ -2,7 +2,7 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 import { DeriveKeyProvider, TEEMode } from "@elizaos/plugin-tee";
 import bs58 from "bs58";
 import { type IAgentRuntime, elizaLogger } from "@elizaos/core";
-import * as nacl from 'tweetnacl';
+import nacl from 'tweetnacl';
 
 export interface KeypairResult {
     keypair?: Keypair;
