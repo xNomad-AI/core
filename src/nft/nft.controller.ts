@@ -20,21 +20,6 @@ import { AuthGuard } from '../shared/auth/auth.guard.js';
 export class NftController {
   constructor(private readonly nftService: NftService) {}
 
-  @Post('/:chain/:nftId/claim-funds')
-  async claimInitialFunds(
-    @Param('chain') chain: string,
-    @Param('nftId') nftId: string,
-    @Query('ownerAddress') ownerAddress: string,
-    @Query('signature') signature: string,
-  ) {
-    await this.nftService.claimInitialFunds({
-      chain,
-      nftId,
-      ownerAddress,
-      signature,
-    });
-  }
-
   @Get('/:chain/collections')
   async getCollections(@Param('chain') chain: string) {
     return await this.nftService.getCollections(chain);
@@ -55,7 +40,6 @@ export class NftController {
   ) {
     return await this.nftService.getFilterTemplate(chain, collectionId);
   }
-
 
   @Get('/:chain/collection/:id/metrics')
   async getCollectionMetrics(
@@ -95,33 +79,52 @@ export class NftController {
     return await this.nftService.getNftById(chain, nftId);
   }
 
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   @Post('/:chain/:nftId/config')
   async setNftConfig(
+    @Request() request,
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
     @Body() { characterConfig }: { characterConfig: CharacterConfig },
   ) {
+    const address = request['X-USER-ADDRESS'];
+    chain = request['X-USER-CHAIN'];
+    if (!await this.nftService.isNftAdmin(chain, address, nftId)) {
+      throw new UnauthorizedException('You are not the owner of this NFT');
+    }
     return await this.nftService.updateNftConfig({
       nftId,
       characterConfig,
     });
   }
 
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   @Get('/:chain/:nftId/config')
   async getNftConfig(
+    @Request() request,
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
   ) {
+    const address = request['X-USER-ADDRESS'];
+    chain = request['X-USER-CHAIN'];
+    if (!await this.nftService.isNftAdmin(chain, address, nftId)) {
+      throw new UnauthorizedException('You are not the owner of this NFT');
+    }
     return await this.nftService.getNftConfig(nftId);
   }
 
+  @UseGuards(AuthGuard)
   @Delete('/:chain/:nftId/config')
   async deleteNftConfig(
+    @Request() request,
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
   ) {
+    const address = request['X-USER-ADDRESS'];
+    chain = request['X-USER-CHAIN'];
+    if (!await this.nftService.isNftAdmin(chain, address, nftId)) {
+      throw new UnauthorizedException('You are not the owner of this NFT');
+    }
     await this.nftService.deleteNftConfig(nftId);
   }
 

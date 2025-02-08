@@ -121,35 +121,19 @@ export class NftService implements OnApplicationBootstrap {
     return owner;
   }
 
-  async claimInitialFunds(parms: {
-    chain: string;
-    nftId: string;
-    ownerAddress: string;
-    signature: string;
-  }): Promise<void> {
-    const { chain, nftId, ownerAddress, signature } = parms;
-    this.logger.log(
-      `Claiming initial funds for NFT ${nftId}, owner: ${ownerAddress}`,
-    );
-    const isValid = await this.addressService.verifySignature(
-      chain,
-      ownerAddress,
-      'claim',
-      signature,
-    );
-    if (!isValid) {
-      throw new BadRequestException('Invalid signature');
+  async isNftAdmin(chain: string, address: string, nftId: string) {
+    const nft = await this.mongo.nfts.findOne({ nftId });
+    if (!nft) {
+      return false;
     }
     const owner = await this.mongo.nftOwners.findOne({
-      chain,
-      nftId,
+      chain: nft.chain,
+      contractAddress: nft.contractAddress,
+      tokenId: nft.tokenId,
     });
-    if (owner?.ownerAddress !== ownerAddress) {
-      throw NFT_PERMISSION_DENIED_EXCEPTION;
-    }
-
-    // TODO request mint site for initial funds
+    return owner?.ownerAddress === address;
   }
+
 
   async getCollections(chain: string): Promise<AICollection[]> {
     const collections = await this.mongo.collections.find({ chain }).toArray();
