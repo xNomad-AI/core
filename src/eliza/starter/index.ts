@@ -101,6 +101,5 @@ export async function startAgent(
       `Error starting agent for character ${character.name}:`,
       error,
     );
-    throw error;
   }
 }

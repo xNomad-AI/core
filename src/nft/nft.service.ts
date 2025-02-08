@@ -266,6 +266,9 @@ export class NftService implements OnApplicationBootstrap {
 
   async getNftById(chain: string, nftId: string) {
     const nft = await this.mongo.nfts.findOne({ nftId, chain });
+    if (!nft) {
+      return null;
+    }
     const agentId = stringToUuid(nft.nftId);
     const agentAccount = await this.elizaManager.getAgentAccount(chain, nftId);
     const nftOwner = await this.mongo.nftOwners.findOne({
@@ -286,11 +289,13 @@ export class NftService implements OnApplicationBootstrap {
     ownerAddress: string,
     collectionId?: string,
   ) {
-    const filter = {
+    const filter: any = {
       chain,
       ownerAddress,
-      collectionId,
     };
+    if (collectionId) {
+      filter.collectionId = collectionId;
+    }
     const nftDocs = await this.mongo.nftOwners
       .aggregate([
         {

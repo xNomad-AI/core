@@ -155,7 +155,7 @@ export class NftSyncService implements OnApplicationBootstrap {
         if (cursor) {
           await this.mongo.updateKeyStore(key, result.next_cursor);
         }
-        this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
+        // this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
         await sleep(100);
       } catch (error) {
         this.logger.error(
@@ -174,7 +174,13 @@ export class NftSyncService implements OnApplicationBootstrap {
       for (const tx of txs.transactions) {
         const activity = transformToActivity(collectionId, tx);
         const owner = transformToOwner(activity);
-        await this.mongo.nftActivities.insertOne(activity, { session });
+        await this.mongo.nftActivities.updateOne({
+          chain: activity.chain,
+          txHash: activity.txHash,
+          contractAddress: activity.contractAddress,
+          tokenId: activity.tokenId,
+          from: activity.from,
+        }, { $set: activity }, { upsert: true, session });
         await this.mongo.nftOwners.updateOne(
           {
             chain: activity.chain,

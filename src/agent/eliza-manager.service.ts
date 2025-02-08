@@ -11,7 +11,7 @@ import { startAgent } from '../eliza/starter/index.js';
 import { DirectClient } from '@elizaos/client-direct';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { UtilsService } from '../shared/utils.service.js';
+import { sleep, UtilsService } from '../shared/utils.service.js';
 import { DeriveKeyProvider } from '@elizaos/plugin-tee';
 import { CharacterConfig } from '../shared/mongo/types.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
@@ -45,8 +45,14 @@ export class ElizaManagerService {
     };
   }
 
-  startAgentServer() {
-    this.elizaClient.start(this.appConfig.get<number>('AGENT_SERVER_PORT'));
+  async startAgentServer() {
+    try {
+      this.elizaClient.start(this.appConfig.get<number>('AGENT_SERVER_PORT'));
+    }catch (e) {
+      this.logger.error(`Failed to start agent server: ${e.message}`);
+      await sleep(10000);
+      this.startAgentServer();
+    }
   }
 
   async startAgentLocal(config: ElizaAgentConfig) {

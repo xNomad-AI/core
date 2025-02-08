@@ -41,10 +41,6 @@ export const COLLECTIONS = [
         contractAddress: 1,
         tokenId: 1,
       },
-      {
-        collectionId: 1,
-        ownerAddress: 1,
-      },
     ],
   },
   {
