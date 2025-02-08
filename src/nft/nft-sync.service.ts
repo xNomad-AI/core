@@ -154,9 +154,7 @@ export class NftSyncService implements OnApplicationBootstrap {
         if (result.next_cursor) {
           await this.mongo.updateKeyStore(key, result.next_cursor);
         }
-        if (cursor != result.next_cursor) {
-          this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
-        }
+        //   this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
         cursor = result.next_cursor;
         await sleep(100);
       } catch (error) {

@@ -56,7 +56,7 @@ export class ElizaManagerService {
   }
 
   async isAgentRunning(agentId: string) {
-    return this.elizaClient.agents.get(agentId) !== undefined;
+    return !!this.elizaClient.agents.get(agentId);
   }
 
   async startAgentLocal(config: ElizaAgentConfig) {

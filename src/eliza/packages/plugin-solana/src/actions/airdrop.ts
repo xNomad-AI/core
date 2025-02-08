@@ -224,12 +224,11 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
             headers: { 'Content-Type': 'application/json' },
             body,
         });
-        if (response.status !== 200){
+        if (response.status != 200 && response.status != 201){
             elizaLogger.error(`Error during claim airdrop: ${response.status}`);
             return false;
         }
-        const result = await response.json();
-        return !!result;
+        return true;
     }catch (e){
         elizaLogger.error(`Error during claim airdrop ${e}`);
         return false;
