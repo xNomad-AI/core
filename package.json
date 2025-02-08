@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
-    "@elizaos/adapter-mongodb": "0.1.9",
+    "@elizaos/adapter-mongodb": "file:local_dependency/elizaos-adapter-mongodb-0.1.9.tgz",
     "@elizaos/client-auto": "0.1.9",
     "@elizaos/client-direct": "file:local_dependency/elizaos-client-direct-0.1.9-patch.1.tgz",
     "@elizaos/client-telegram": "0.1.9",
