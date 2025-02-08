@@ -86,6 +86,24 @@ export class ElizaManagerService {
     }
   }
 
+
+  async deleteAgentMemory(agentId: string, opts?: {
+    roomId?: string,
+    userId?: string,
+  }) {
+    const filter: any = { agentId };
+    if (opts.roomId) {
+      filter.roomId = opts.roomId;
+    }
+    if (opts.userId) {
+      filter.roomId = opts.userId;
+    }
+    await this.mongoService.client.
+      db('agent').
+      collection('memories').
+      deleteMany(filter);
+  }
+
   getElizaEnvs(): Record<string, string> {
     return Object.fromEntries(
       Object.entries(process.env).filter(([_, v]) => v !== undefined)

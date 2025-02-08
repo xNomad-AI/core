@@ -92,6 +92,8 @@ export class NftService implements OnApplicationBootstrap {
       },
       { upsert: true },
     );
+    const nft = await this.mongo.nfts.findOne({ nftId });
+    this.handleNewAINfts([nft]);
     return {
       characterConfig
     }
@@ -106,6 +108,8 @@ export class NftService implements OnApplicationBootstrap {
 
   async deleteNftConfig(nftId: string) {
     await this.mongo.nftConfigs.deleteOne({nftId});
+    const nft = await this.mongo.nfts.findOne({ nftId });
+    this.handleNewAINfts([nft]);
   }
 
   async getAgentOwner(agentId: string) {

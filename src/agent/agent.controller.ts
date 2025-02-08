@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Post, Query, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Post, Query, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { CreateAgentDto } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
 import { ConfigService } from '@nestjs/config';
@@ -18,6 +18,15 @@ export class AgentController {
   @Post('/')
   async startNFTAgent(@Body() body: CreateAgentDto) {
     await this.elizaManager.startAgentLocal(body);
+  }
+
+  @Delete('/memory')
+  async deleteAgentMemory(
+    @Query('agentId') agentId: string,
+    @Query('roomId') roomId: string,
+    @Query('userId') userId: string,
+  ) {
+    await this.elizaManager.deleteAgentMemory(agentId, {roomId, userId});
   }
 
   @Get('/account')
