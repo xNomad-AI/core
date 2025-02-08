@@ -1,10 +1,24 @@
-import { Body, Controller, Delete, Get, Headers, Post, Query, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  NotFoundException,
+  Post,
+  Query,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { CreateAgentDto } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
 import { ConfigService } from '@nestjs/config';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { CacheTTL } from '@nestjs/cache-manager';
 import { ElevenlabsService } from '../shared/elevenlabs.service.js';
+import { MongoService } from '../shared/mongo/mongo.service.js';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NEW_AI_NFT_EVENT } from '../nft/nft.types.js';
 
 @Controller('/agent')
 export class AgentController {
@@ -13,12 +27,34 @@ export class AgentController {
     private readonly elevenlabs: ElevenlabsService,
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
+    private mongo: MongoService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Post('/')
-  async startNFTAgent(@Body() body: CreateAgentDto) {
-    await this.elizaManager.startAgentLocal(body);
+  async startNFTAgent(@Body() {
+    nftId,
+    chain,
+    restart,
+  }: CreateAgentDto) {
+    const nft = await this.mongo.nfts.findOne({
+      nftId
+    });
+    if (!nft) {
+      throw new NotFoundException('NFT not found');
+    }
+    await this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft], restart);
   }
+
+
+  @Get('/status')
+  async getAgentStatus(@Query('agentId') agentId: string) {
+    this.elizaManager.getElizaEnvs()
+    return {
+      status: 'ok',
+    };
+  }
+
 
   @Delete('/memory')
   async deleteAgentMemory(

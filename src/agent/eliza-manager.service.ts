@@ -55,6 +55,10 @@ export class ElizaManagerService {
     }
   }
 
+  async isAgentRunning(agentId: string) {
+    return this.elizaClient.agents.get(agentId) !== undefined;
+  }
+
   async startAgentLocal(config: ElizaAgentConfig) {
     try {
       // Set unique runtime environment variables for each agent
@@ -85,7 +89,6 @@ export class ElizaManagerService {
       );
     }
   }
-
 
   async deleteAgentMemory(agentId: string, opts?: {
     roomId?: string,

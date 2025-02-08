@@ -3,6 +3,7 @@
 // import { TelegramClientInterface } from '@elizaos/client-telegram';
 import { TwitterClientInterface } from '@elizaos/client-twitter';
 import { Character, IAgentRuntime } from '@elizaos/core';
+import TelegramClientInterface from '@elizaos/client-telegram';
 
 export async function initializeClients(
   character: Character,
@@ -20,10 +21,10 @@ export async function initializeClients(
   //   clients.push(await DiscordClientInterface.start(runtime));
   // }
 
-  // if (clientTypes.includes('telegram')) {
-  //   const telegramClient = await TelegramClientInterface.start(runtime);
-  //   if (telegramClient) clients.push(telegramClient);
-  // }
+  if (clientTypes.includes('telegram')) {
+    const telegramClient = await TelegramClientInterface.start(runtime);
+    if (telegramClient) clients.push(telegramClient);
+  }
 
   if (clientTypes.includes('twitter')) {
     const twitterClients = await TwitterClientInterface.start(runtime);
