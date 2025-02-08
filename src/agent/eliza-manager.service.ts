@@ -66,9 +66,12 @@ export class ElizaManagerService {
         ),
       };
       const envVars = this.getElizaEnvs();
+      if (!config.character.settings){
+        config.character.settings = {};
+      }
       config.character.settings.secrets = {
         ...envVars,
-        ...config.character.settings.secrets,
+        ...config.character.settings?.secrets,
         TEE_MODE: this.appConfig.get<string>('TEE_MODE'),
         WALLET_SECRET_SALT: ElizaManagerService.getAgentSecretSalt(
           config.chain,

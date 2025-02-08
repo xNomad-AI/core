@@ -135,8 +135,8 @@ export class NftSyncService implements OnApplicationBootstrap {
         for (const nft of result.nfts) {
           const transformedNft = await transformToAINft(nft);
           if (!transformedNft.aiAgent) {
-            this.logger.error(`this collection is not AI-NFT: ${collectionId}`);
-            return;
+            this.logger.warn(`this nft is not AI-NFT, nftId: ${transformedNft.nftId}`);
+            continue;
           }
           transformedNft.agentId = stringToUuid(transformedNft.nftId);
           transformedNft.agentAccount = await this.elizaManager.getAgentAccount('solana', transformedNft.nftId);
@@ -155,7 +155,7 @@ export class NftSyncService implements OnApplicationBootstrap {
         if (cursor) {
           await this.mongo.updateKeyStore(key, result.next_cursor);
         }
-        // this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
+        this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
         await sleep(100);
       } catch (error) {
         this.logger.error(
