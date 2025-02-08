@@ -205,8 +205,12 @@ export class NftService implements OnApplicationBootstrap {
   async getCollectionById(chain: string, id: string) {
     const collection = await this.mongo.collections.findOne({ id, chain });
     const metrics = await this.getCollectionMetrics(chain, id);
+    const nftsCount = await this.mongo.nfts.countDocuments({chain, collectionId: id});
     return {
-      collection,
+      collection:{
+        ...collection,
+        nftsCount,
+      },
       metrics,
     };
   }
