@@ -163,7 +163,7 @@ export class NftService implements OnApplicationBootstrap {
           sort['name'] = -1;
           break;
         case 'rarityDesc':
-          sort['rarity.score'] = -1;
+          sort['rarity.rank'] = 1;
       }
     }
     if (opts.traitsQuery) {
