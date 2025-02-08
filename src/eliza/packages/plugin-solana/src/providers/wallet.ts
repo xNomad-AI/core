@@ -450,7 +450,7 @@ const walletProvider: Provider = {
 export const NotAgentAdminMessage = "Access denied: Only the Agent Owner has permission to perform this action. Please sign in with the correct account.";
 
 export async function isAgentAdmin(runtime: IAgentRuntime, message: Memory) {
-    if (process.env?.DISABLE_ADMIN_CHECK) {
+    if (process.env?.DISABLE_ADMIN_CHECK == "true") {
         elizaLogger.warn("Admin check is disabled");
         return true
     }

@@ -21,14 +21,22 @@ export async function initializeClients(
   //   clients.push(await DiscordClientInterface.start(runtime));
   // }
 
-  if (clientTypes.includes('telegram')) {
-    const telegramClient = await TelegramClientInterface.start(runtime);
-    if (telegramClient) clients.push(telegramClient);
+  if (clientTypes.includes('telegram') || character.settings?.secrets?.TELEGRAM_BOT_TOKEN) {
+    try {
+      const telegramClient = await TelegramClientInterface.start(runtime);
+      if (telegramClient) clients.push(telegramClient);
+    }catch (e) {
+      console.error(`Failed to start ${character.name} Telegram client: ${e.message}`);
+    }
   }
 
-  if (clientTypes.includes('twitter')) {
-    const twitterClients = await TwitterClientInterface.start(runtime);
-    clients.push(twitterClients);
+  if (clientTypes.includes('twitter') || (character.settings?.secrets?.TWITTER_PASSWORD && character.settings?.secrets?.TWITTER_2FA_SECRET)) {
+    try {
+      const twitterClients = await TwitterClientInterface.start(runtime);
+      clients.push(twitterClients);
+    }catch (e){
+      console.error(`Failed to start ${character.name} Twitter client: ${e.message}`);
+    }
   }
 
   if (character.plugins?.length > 0) {
