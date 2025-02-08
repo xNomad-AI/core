@@ -1,32 +1,30 @@
 FROM node:23.5.0-bookworm AS base
 
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
-
-RUN apt-get update && apt-get install build-essential -y
-RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
-RUN npm install -g node-gyp && npm rebuild better-sqlite3
-
-FROM base AS build
-
-RUN pnpm install --frozen-lockfile
+RUN npm install -g pnpm@9.15.2
+RUN apt-get update && \
+    apt-get install build-essential -y && \
+    npm install -g node-gyp && \
+    npm rebuild better-sqlite3
 
 COPY . .
 
+# RUN pnpm install --frozen-lockfile
+RUN pnpm install
+# build workspace packages
 RUN pnpm run build
+# remove devDependencies
+RUN pnpm prune --production
 
 FROM node:23.5.0-bookworm AS runner
 
 WORKDIR /app
 
-COPY --from=build /app/dist /app/dist
+COPY --from=base /app/dist /app/dist
 COPY --from=base /app/node_modules /app/node_modules
-COPY --from=base /app/package.json /app/package.json
+COPY --from=base /app/src/eliza/packages /app/src/eliza/packages
 
-RUN wget https://gobinaries.com/tj/node-prune --output-document - | /bin/sh && node-prune
+# RUN wget https://gobinaries.com/tj/node-prune --output-document - | /bin/sh && node-prune
 
 CMD [ "node", "dist/main.js" ]

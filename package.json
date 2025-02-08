@@ -7,7 +7,9 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "nest build",
+    "build": "pnpm run build:workspace && pnpm run nest:build",
+    "build:workspace": "pnpm -r run build",
+    "nest:build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -68,7 +70,7 @@
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
-    "@types/express": "github:types/express",
+    "@types/express": "^5.0.0",
     "@types/jest": "^29.5.2",
     "@types/multer": "^1.4.12",
     "@types/node": "^20.3.1",
@@ -107,5 +109,9 @@
   },
   "resolutions": {
     "onnxruntime-node": "1.20.1"
-  }
+  },
+  "packageManager": "pnpm@9.15.2",
+  "workspaces": [
+    "src/eliza/packages/*"
+  ]
 }
