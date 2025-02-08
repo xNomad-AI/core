@@ -20,6 +20,20 @@ import {
     getOrCreateAssociatedTokenAccount,
   } from "@solana/spl-token";
 
+const DEFAULT_CONFIG = {
+    JUP_SWAP_FEE_ACCOUNT: "5o5pzvdWLieWQ5JumkbsSgDn7ME69ewnx76VUnb4x3sd",
+    JUP_SWAP_FEE_BPS: 100,
+}
+
+function getJUP_SWAP_FEE_BPS() {
+    return settings.JUP_SWAP_FEE_BPS || DEFAULT_CONFIG.JUP_SWAP_FEE_BPS;
+}
+
+function getJUP_SWAP_FEE_ACCOUNT() {
+    const ret = settings.JUP_SWAP_FEE_ACCOUNT || DEFAULT_CONFIG.JUP_SWAP_FEE_ACCOUNT;
+    return ret;
+}
+
 export async function swapToken(
     connection: Connection,
     walletPublicKey: PublicKey,
@@ -45,7 +59,7 @@ export async function swapToken(
             new BigNumber(10).pow(decimals)
         );
 
-        elizaLogger.log("Fetching quote with params:", {
+        elizaLogger.info("Fetching quote with params:", {
             inputMint: inputTokenCA,
             outputMint: outputTokenCA,
             amount: adjustedAmount,
@@ -53,8 +67,8 @@ export async function swapToken(
 
         // auto slippage
         let url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputTokenCA}&outputMint=${outputTokenCA}&amount=${adjustedAmount}&dynamicSlippage=true&autoSlippage=true&maxAccounts=64&onlyDirectRoutes=false&asLegacyTransaction=false`;
-        if (settings.JUP_SWAP_FEE_BPS !== undefined && settings.JUP_SWAP_FEE_ACCOUNT !== undefined) {
-            url += `&platformFeeBps=${settings.JUP_SWAP_FEE_BPS}`;
+        if (getJUP_SWAP_FEE_BPS() !== undefined && getJUP_SWAP_FEE_ACCOUNT() !== undefined) {
+            url += `&platformFeeBps=${getJUP_SWAP_FEE_BPS()}`;
         }
 
         const quoteResponse = await fetch(url);
@@ -67,6 +81,7 @@ export async function swapToken(
             );
         }
 
+        elizaLogger.info("Quote received");
         elizaLogger.log("Quote received:", quoteData);
 
         const swapRequestBody = {
@@ -79,16 +94,18 @@ export async function swapToken(
                 priorityLevel: "veryHigh",
             },
         };
+        // swapRequestBody['feeAccount'] = getJUP_SWAP_FEE_ACCOUNT();
 
         // get or create fee token account after check to prevent invalid token account creation
-        if (settings.JUP_SWAP_FEE_BPS !== undefined && settings.JUP_SWAP_FEE_ACCOUNT !== undefined) {
+        if (getJUP_SWAP_FEE_BPS() !== undefined && getJUP_SWAP_FEE_ACCOUNT() !== undefined) {
             const { keypair } = await getWalletKey(runtime, true);
             const FEE_ACCOUNT_INPUT_MINT_ACCOUNT = (
                 await getOrCreateAssociatedTokenAccount(
-                connection,
-                keypair,
-                new PublicKey(quoteData.inputMint),
-                new PublicKey(settings.JUP_SWAP_FEE_ACCOUNT),
+                    connection,
+                    keypair,
+                    new PublicKey(quoteData.inputMint),
+                    new PublicKey(getJUP_SWAP_FEE_ACCOUNT()),
+                    true,
                 )
             ).address;
 
@@ -97,13 +114,14 @@ export async function swapToken(
             //         connection,
             //         keypair,
             //         new PublicKey(quoteData.outputMint),
-            //         new PublicKey(settings.JUP_SWAP_FEE_ACCOUNT)
+            //         new PublicKey(getJUP_SWAP_FEE_ACCOUNT())
             //     )
             // ).address;
 
             swapRequestBody['feeAccount'] = FEE_ACCOUNT_INPUT_MINT_ACCOUNT.toBase58();
         }
 
+        elizaLogger.info("Requesting swap");
         elizaLogger.log("Requesting swap with body:", swapRequestBody);
 
         const swapResponse = await fetch("https://quote-api.jup.ag/v6/swap", {
@@ -163,7 +181,7 @@ Respond with a JSON markdown block containing only the extracted values. Use nul
     "outputTokenSymbol": string | null,
     "inputTokenCA": string | null,
     "outputTokenCA": string | null,
-    "amount": number | string | null
+    "amount": number | string
 }
 \`\`\``;
 
@@ -196,6 +214,18 @@ async function getTokenFromWallet(runtime: IAgentRuntime, tokenSymbol: string) {
     } catch (error) {
         elizaLogger.error("Error checking token in wallet:", error);
         return null;
+    }
+}
+
+function isValidSPLTokenAddress(address: string) {
+    try {
+        const publicKey = new PublicKey(address);
+        // Check if the public key is associated with an existing token program
+        return publicKey && publicKey.toBase58().length >= 43 && publicKey.toBase58().length < 45;
+        // SPL TOKEN=44
+        // WSOL=43
+    } catch (error) {
+        return false; // Not a valid public key
     }
 }
 
@@ -326,6 +356,25 @@ export const executeSwap: Action = {
             callback?.(responseMsg);
             return true;
         }
+
+        // the CA maybe recognized as symbol, so we need to check if it is a valid CA
+        if (isValidSPLTokenAddress(response.inputTokenSymbol) && !isValidSPLTokenAddress(response.inputTokenCA)) {
+            response.inputTokenCA = response.inputTokenSymbol;
+        }
+        if (isValidSPLTokenAddress(response.outputTokenSymbol) && !isValidSPLTokenAddress(response.outputTokenCA)) {
+            response.outputTokenCA = response.outputTokenSymbol;
+        }
+
+        // check respose is valid
+        if (isValidSPLTokenAddress(response.inputTokenCA) === false || isValidSPLTokenAddress(response.outputTokenCA) === false) {
+            elizaLogger.log("Invalid contract address, skipping swap", swapContext, response);
+            const responseMsg = {
+                text: "Invalid contract address",
+            };
+            callback?.(responseMsg);
+            return true;
+        }
+
         try {
             const connection = new Connection(
                 runtime.getSetting("SOLANA_RPC_URL") || process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com"
@@ -351,7 +400,7 @@ export const executeSwap: Action = {
                 runtime,
             );
 
-            elizaLogger.log("Deserializing transaction...");
+            elizaLogger.info("Deserializing transaction...");
             const transactionBuf = Buffer.from(
                 swapResult.swapTransaction,
                 "base64"
@@ -376,7 +425,7 @@ export const executeSwap: Action = {
 
             elizaLogger.log("Sending transaction...");
 
-            const latestBlockhash = await connection.getLatestBlockhash();
+            // const latestBlockhash = await connection.getLatestBlockhash();
 
             const txid = await connection.sendTransaction(transaction, {
                 skipPreflight: false,
@@ -419,7 +468,7 @@ export const executeSwap: Action = {
             return true;
         }
     },
-    template: swapTemplate,
+    // template: swapTemplate,
     examples: [
         [
             {
