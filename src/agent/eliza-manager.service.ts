@@ -55,6 +55,10 @@ export class ElizaManagerService {
     }
   }
 
+  async isAgentRunning(agentId: string) {
+    return this.elizaClient.agents.get(agentId) !== undefined;
+  }
+
   async startAgentLocal(config: ElizaAgentConfig) {
     try {
       // Set unique runtime environment variables for each agent
@@ -84,6 +88,23 @@ export class ElizaManagerService {
         `Failed to start agent for NFT ${config.nftId}: ${e.message}`,
       );
     }
+  }
+
+  async deleteAgentMemory(agentId: string, opts?: {
+    roomId?: string,
+    userId?: string,
+  }) {
+    const filter: any = { agentId };
+    if (opts.roomId) {
+      filter.roomId = opts.roomId;
+    }
+    if (opts.userId) {
+      filter.roomId = opts.userId;
+    }
+    await this.mongoService.client.
+      db('agent').
+      collection('memories').
+      deleteMany(filter);
   }
 
   getElizaEnvs(): Record<string, string> {

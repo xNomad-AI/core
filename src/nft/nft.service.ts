@@ -13,7 +13,6 @@ import {
   NftSearchOptions,
 } from './nft.types.js';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
-import { NFT_PERMISSION_DENIED_EXCEPTION } from '../shared/exceptions/nft-permission-denied-exception.js';
 import { OnEvent } from '@nestjs/event-emitter';
 import { AddressService } from '../address/address.service.js';
 import { stringToUuid } from '@elizaos/core';
@@ -46,16 +45,20 @@ export class NftService implements OnApplicationBootstrap {
       .limit(1);
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
-      await this.handleNewAINfts([nft]);
+      await this.handleNewAINfts([nft], true);
     }
     await this.elizaManager.startAgentServer();
   }
 
   @OnEvent(NEW_AI_NFT_EVENT, { async: true })
-  async handleNewAINfts(nfts: AINft[]) {
+  async handleNewAINfts(nfts: AINft[], restart?: boolean) {
     for (const nft of nfts) {
       if (nft?.aiAgent?.engine !== 'eliza') {
         return;
+      }
+      if (this.elizaManager.isAgentRunning(nft.agentId) && !restart) {
+        this.logger.log(`Agent for NFT ${nft.nftId} is already running`);
+        return
       }
       this.logger.log(
         `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
@@ -92,6 +95,8 @@ export class NftService implements OnApplicationBootstrap {
       },
       { upsert: true },
     );
+    const nft = await this.mongo.nfts.findOne({ nftId });
+    this.handleNewAINfts([nft], true);
     return {
       characterConfig
     }
@@ -106,6 +111,8 @@ export class NftService implements OnApplicationBootstrap {
 
   async deleteNftConfig(nftId: string) {
     await this.mongo.nftConfigs.deleteOne({nftId});
+    const nft = await this.mongo.nfts.findOne({ nftId });
+    this.handleNewAINfts([nft], true);
   }
 
   async getAgentOwner(agentId: string) {
@@ -156,7 +163,7 @@ export class NftService implements OnApplicationBootstrap {
           sort['name'] = -1;
           break;
         case 'rarityDesc':
-          sort['rarity.score'] = -1;
+          sort['rarity.rank'] = 1;
       }
     }
     if (opts.traitsQuery) {
@@ -201,8 +208,12 @@ export class NftService implements OnApplicationBootstrap {
   async getCollectionById(chain: string, id: string) {
     const collection = await this.mongo.collections.findOne({ id, chain });
     const metrics = await this.getCollectionMetrics(chain, id);
+    const nftsCount = await this.mongo.nfts.countDocuments({chain, collectionId: id});
     return {
-      collection,
+      collection:{
+        ...collection,
+        nftsCount,
+      },
       metrics,
     };
   }
@@ -260,6 +271,7 @@ export class NftService implements OnApplicationBootstrap {
       contractAddress: nft.contractAddress,
       tokenId: nft.tokenId,
     });
+
     return {
       ...nft,
       agentId,

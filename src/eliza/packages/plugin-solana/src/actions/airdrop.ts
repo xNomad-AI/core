@@ -12,6 +12,7 @@ import {
 } from "@elizaos/core";
 import {getWalletKey, sign} from "../keypairUtils.js";
 import { isAgentAdmin, NotAgentAdminMessage, walletProvider } from '../providers/wallet.js';
+import { Keypair } from '@solana/web3.js';
 
 
 const claimAirdropTemplate = `
@@ -30,37 +31,6 @@ The result should be a valid json object with the following fields:
     programName: "Xnomad AI Initial funds"
 }
 `;
-
-interface ClaimAirdropRequest {
-    protocol: string;
-    version: string;
-    blockchain: string;
-    delegator: string;
-    delegatee: string;
-    expiresAt: Date;
-    airdrop: {
-        programName: string;
-        claimMethod: string;
-        claimUrl: string;
-    };
-    signature?: string;
-}
-
-
-async function claimAirdropHttp(runtime: IAgentRuntime, req: ClaimAirdropRequest){
-    elizaLogger.log("running claimAirdrop...", req);
-    const { keypair } = await getWalletKey(runtime, true);
-    req.signature = sign(JSON.stringify(req), keypair);
-
-    const response = await fetch(req.airdrop.claimUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(req)
-    });
-    const result = await response.json();
-    elizaLogger.log("claimAirdrop result:", result);
-    return true
-}
 
 export const airdrop: Action = {
     name: "CLAIM_AIRDROP",
@@ -110,54 +80,57 @@ export const airdrop: Action = {
 
 
         elizaLogger.log("Response:", response);
-        if (response.programName){
+        if (!response.programName){
             const responseMsg = {
-                text: "[Xnomad AI Initial funds] Airdrop claimed successfully. 0.01 SOL will be transferred to your wallet.",
-                action: "CLAIM_AIRDROP",
+                text: "Please tell me the program name of the airdrop",
+                action: "CONTINUE",
             };
             callback?.(responseMsg);
             return true
         }
-        // const{ keypair } =  await getWalletKey(runtime, true);
-        // if (response.delegatee != keypair.publicKey.toBase58()){
-        //     const responseMsg = {
-        //         text: `You are not the delegatee for the airdrop. Delegatee address: ${response.delegatee}`,
-        //     };
-        //     callback?.(responseMsg);
-        //     return false
-        // }
-        //
-        // if (response.airdrop.claimMethod != "http" || !response.airdrop.claimUrl){
-        //     const responseMsg = {
-        //         text: `Only http claim method is supported now. Claim URL: ${response.airdrop.claimUrl}`,
-        //     };
-        //     callback?.(responseMsg);
-        //     return false
-        // }
-        //
-        // try {
-        //     const isSuccess = await claimAirdropHttp(runtime, response);
-        //     if (isSuccess) {
-        //         const responseMsg = {
-        //             text: `Airdrop claimed successfully.`,
-        //         };
-        //         callback?.(responseMsg);
-        //         return true
-        //     }else{
-        //         const responseMsg = {
-        //             text: `claim airdrop failed`,
-        //         };
-        //         callback?.(responseMsg);
-        //         return false
-        //     }
-        // } catch (error) {
-        //     elizaLogger.error(`Error during claim airdrop ${error}`);
-        //     const responseMsg = {
-        //         text: `Error during claim airdrop: ${error}`,
-        //     };
-        //     callback?.(responseMsg);
-        //     return false;
-        // }
+
+        const airdrops = await getAirdrops(runtime, message);
+        const airdrop = airdrops.find((a) => a.name === response.programName);
+        if (!airdrop){
+            const responseMsg = {
+                text: `Airdrop [${response.programName}] not found`,
+            };
+            callback?.(responseMsg);
+            return false
+        }
+        if (airdrop.rules.claimMethod != "http" || !airdrop.rules.claimUrl){
+            const responseMsg = {
+                text: `Only http claim method is supported now. Claim URL: ${response.airdrop.claimUrl}`,
+            };
+            callback?.(responseMsg);
+            return false
+        }
+
+        const{ keypair } =  await getWalletKey(runtime, true);
+        elizaLogger.log(`Claiming airdrop for:, ${keypair.publicKey.toBase58()}`);
+        try {
+            const isSuccess = await claimAirdrop(runtime, keypair, airdrop);
+            if (isSuccess) {
+                const responseMsg = {
+                    text: `Airdrop claimed successfully. Please wait and check your wallet for the airdrop.`,
+                };
+                callback?.(responseMsg);
+                return true
+            }else{
+                const responseMsg = {
+                    text: `claim airdrop failed`,
+                };
+                callback?.(responseMsg);
+                return false
+            }
+        } catch (error) {
+            elizaLogger.error(`Error during claim airdrop ${error}`);
+            const responseMsg = {
+                text: `Error during claim airdrop: ${error}`,
+            };
+            callback?.(responseMsg);
+            return false;
+        }
     },
     examples: [
         [
@@ -191,3 +164,74 @@ export const airdrop: Action = {
         // Add more examples as needed
     ] as ActionExample[][],
 } as Action;
+
+
+interface AirdropRegistry {
+    protocol: string;
+    version: string;
+    name: string;
+    description: string;
+    issuer: {
+        name: string;
+        officialWebsite: string;
+        image: string;
+        twitter: string;
+        telegram: string;
+        discord: string;
+        contract: string;
+        token: string;
+        createdAt: Date;
+        updatedAt: Date;
+    };
+    rules: {
+        target: string;
+        claimMethod: string;
+        claimUrl: string;
+        claimMessage: string;
+        blockchain: string;
+        contract: string;
+        supportDelegate: boolean;
+        startAt: Date;
+        expiresAt: Date;
+        estimateCost: number;
+        createdAt: Date;
+        updatedAt: Date;
+    };
+}
+
+async function getAirdrops(runtime: IAgentRuntime, message: Memory){
+   const airdropServer = runtime.getSetting("AIRDROP_REGISTER_SERVER") || process.env.AIRDROP_REGISTER_SERVER;
+   const url = `${airdropServer}/registry`;
+   const response = await fetch(url);
+   const result = await response.json();
+   return result?.data as AirdropRegistry[];
+}
+
+async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: AirdropRegistry){
+    try {
+        const url = airdrop.rules.claimUrl;
+        const messageToSign = airdrop.rules.claimMessage || String(Date.now());
+        const signature = sign(messageToSign, keypair);
+        const body = JSON.stringify({
+            walletAddress: keypair.publicKey.toBase58(),
+            message: messageToSign,
+            signature: signature,
+            agentAddress: keypair.publicKey.toBase58(),
+        });
+        elizaLogger.log(`Claiming airdrop request:, ${body}`);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body,
+        });
+        if (response.status !== 200){
+            elizaLogger.error(`Error during claim airdrop: ${response.status}`);
+            return false;
+        }
+        const result = await response.json();
+        return !!result;
+    }catch (e){
+        elizaLogger.error(`Error during claim airdrop ${e}`);
+        return false;
+    }
+}
