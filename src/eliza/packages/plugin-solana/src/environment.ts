@@ -4,6 +4,8 @@ import { z } from "zod";
 export const solanaEnvSchema = z
     .object({
         WALLET_SECRET_SALT: z.string().optional(),
+        JUP_SWAP_FEE_ACCOUNT: z.string().optional(),
+        JUP_SWAP_FEE_BPS: z.number().optional(),
     })
     .and(
         z.union([
@@ -61,6 +63,12 @@ export async function validateSolanaConfig(
             BIRDEYE_API_KEY:
                 runtime.getSetting("BIRDEYE_API_KEY") ||
                 process.env.BIRDEYE_API_KEY,
+            JUP_SWAP_FEE_ACCOUNT:
+                runtime.getSetting("JUP_SWAP_FEE_ACCOUNT") ||
+                process.env.JUP_SWAP_FEE_ACCOUNT,
+            JUP_SWAP_FEE_BPS:
+                runtime.getSetting("JUP_SWAP_FEE_BPS") ||
+                process.env.JUP_SWAP_FEE_BPS,
         };
 
         return solanaEnvSchema.parse(config);
