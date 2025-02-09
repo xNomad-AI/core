@@ -3,7 +3,6 @@
 // import { TelegramClientInterface } from '@elizaos/client-telegram';
 import { TwitterClientInterface } from '@elizaos/client-twitter';
 import { Character, IAgentRuntime } from '@elizaos/core';
-import TelegramClientInterface from '@elizaos/client-telegram';
 
 export async function initializeClients(
   character: Character,

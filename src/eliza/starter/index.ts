@@ -7,7 +7,6 @@ import {
   ICacheManager,
   IDatabaseAdapter,
 } from '@elizaos/core';
-import path from 'path';
 import { initializeDbCache } from './cache/index.js';
 import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
@@ -15,10 +14,8 @@ import { initializeDatabase } from './database/index.js';
 import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
 import { solanaPlugin, startAutoSwapTask } from '@elizaos/plugin-solana';
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
-import { createNodePlugin } from '@elizaos/plugin-node';
 import { MongoClient } from 'mongodb';
 
-let nodePlugin: any | undefined;
 
 function getSecret(character: Character, secret: string) {
   return character.settings?.secrets?.[secret] || process.env[secret];
@@ -31,19 +28,16 @@ export async function createAgent(
   token: string,
 ): Promise<AgentRuntime> {
   elizaLogger.info(
-    elizaLogger.successesTitle,
     'Creating runtime for character',
     character.name,
   );
 
-  nodePlugin ??= createNodePlugin();
-
-  const teeMode = getSecret(character, 'TEE_MODE') || 'OFF';
+  const teeMode = getSecret(character, 'TEE_MODE');
   const walletSecretSalt = getSecret(character, 'WALLET_SECRET_SALT');
 
   // Validate TEE configuration
-  if (teeMode !== TEEMode.OFF && !walletSecretSalt) {
-    elizaLogger.error('WALLET_SECRET_SALT required when TEE_MODE is enabled');
+  if (!teeMode || !walletSecretSalt) {
+    elizaLogger.error('TEE_MODE and WALLET_SECRET_SALT required');
     throw new Error('Invalid TEE configuration');
   }
 
@@ -55,7 +49,6 @@ export async function createAgent(
     character,
     plugins: [
       bootstrapPlugin,
-      // nodePlugin,
       solanaPlugin,
       teePlugin,
     ].filter(Boolean),

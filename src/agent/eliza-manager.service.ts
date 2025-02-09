@@ -9,15 +9,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { startAgent } from '../eliza/starter/index.js';
 import { DirectClient } from '@elizaos/client-direct';
-import { fileURLToPath } from 'url';
-import path from 'path';
-import { sleep, UtilsService } from '../shared/utils.service.js';
+import { sleep } from '../shared/utils.service.js';
 import { DeriveKeyProvider } from '@elizaos/plugin-tee';
 import { CharacterConfig } from '../shared/mongo/types.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export type ElizaAgentConfig = {
   chain: string;
