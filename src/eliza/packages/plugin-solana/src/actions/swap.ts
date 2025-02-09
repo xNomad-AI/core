@@ -89,8 +89,15 @@ export async function swapToken(
             userPublicKey: walletPublicKey.toBase58(),
             dynamicComputeUnitLimit: true,
             dynamicSlippage: true,
+            prioritizationFeeLamports: {
+                priorityLevelWithMaxLamports: {
+                    global: false,
+                    maxLamports: 40000000,
+                    priorityLevel: "veryHigh"
+                }
+            },
             priorityLevelWithMaxLamports: {
-                maxLamports: 500000000,
+                maxLamports: 40000000,
                 priorityLevel: "veryHigh",
             },
         };
