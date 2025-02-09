@@ -111,7 +111,7 @@ export class LaunchpadService {
       userAddress,
       name: nft.name,
       uri,
-      feeInSol: fee,
+      feeInSol: feeAfterDiscount,
     });
 
     return {
