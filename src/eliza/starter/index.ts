@@ -13,7 +13,7 @@ import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
 import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
-import { solanaPlugin, createSolanaPlugin } from '@elizaos/plugin-solana';
+import { solanaPlugin, startAutoSwapTask } from '@elizaos/plugin-solana';
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
 import { createNodePlugin } from '@elizaos/plugin-node';
 import { MongoClient } from 'mongodb';
@@ -65,7 +65,7 @@ export async function createAgent(
     managers: [],
     cacheManager: cache,
   });
-  runtime.plugins.push(await createSolanaPlugin(runtime));
+  startAutoSwapTask(runtime);
   return runtime;
 }
 

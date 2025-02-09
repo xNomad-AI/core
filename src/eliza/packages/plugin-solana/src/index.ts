@@ -26,24 +26,12 @@ export const solanaPlugin: Plugin = {
 };
 export default solanaPlugin;
 
-export async function createSolanaPlugin(runtime: IAgentRuntime): Promise<Plugin>{
-    // start a loop that runs every x seconds
-    setInterval(
-        async () => {
-            // await checkAutoSwapTask(runtime)
-        },
-        20000
-    );
-    return {
-        name: "solana",
-        description: "Solana Plugin for Eliza",
-        actions: [
-            executeSwap,
-            pumpfun,
-            autoExecuteSwap,
-            airdrop,
-        ],
-        evaluators: [],
-        providers: [walletProvider],
-    };
+export async function startAutoSwapTask(runtime: IAgentRuntime){
+    (async () => {
+        try {
+            await checkAutoSwapTask(runtime);
+        } catch (err) {
+            elizaLogger.error("checkAutoSwapTask error", err);
+        }
+    })();
 }

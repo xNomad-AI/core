@@ -175,8 +175,7 @@ export default {
     similes: ["CREATE_AND_PURCHASE_TOKEN", "DEPLOY_AND_BUY_TOKEN"],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         elizaLogger.info(`validating CREATE_AND_BUY_TOKEN`);
-        const image = message.content?.attachments?.[0]?.url;
-        return !!image;
+        return true;
     },
     description:
         "Create a new token and buy a specified amount using SOL. Requires deployer private key, token metadata, buy amount in SOL, priority fee, and allowOffCurve flag.",
@@ -188,6 +187,15 @@ export default {
         callback?: HandlerCallback
     ): Promise<boolean> => {
         elizaLogger.log("Starting CREATE_AND_BUY_TOKEN handler...");
+        const image = message.content?.attachments?.[0]?.url;
+        if (!image){
+            const responseMsg = {
+                text: "Please provide an image for the token",
+            };
+            callback?.(responseMsg);
+            return true;
+        }
+
         const isAdmin = await isAgentAdmin(runtime, message);
         if (!isAdmin) {
             const responseMsg = {

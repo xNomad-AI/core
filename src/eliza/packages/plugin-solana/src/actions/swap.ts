@@ -217,7 +217,7 @@ async function getTokenFromWallet(runtime: IAgentRuntime, tokenSymbol: string) {
     }
 }
 
-function isValidSPLTokenAddress(address: string) {
+export function isValidSPLTokenAddress(address: string) {
     try {
         const publicKey = new PublicKey(address);
         // Check if the public key is associated with an existing token program
@@ -409,8 +409,6 @@ export const executeSwap: Action = {
                 VersionedTransaction.deserialize(transactionBuf);
 
             elizaLogger.log("Preparing to sign transaction...");
-
-            elizaLogger.log("Creating keypair...");
             const { keypair } = await getWalletKey(runtime, true);
             elizaLogger.log(`Keypair created:, keypair.publicKey.toBase58()`);
             // Verify the public key matches what we expect
