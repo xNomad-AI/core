@@ -266,7 +266,7 @@ export class NftService implements OnApplicationBootstrap {
       return null;
     }
     const agentId = stringToUuid(nft.nftId);
-    const agentAccount = await this.elizaManager.getAgentAccount(chain, nftId);
+    const agentAccount = nft.agentAccount ?? await this.elizaManager.getAgentAccount(chain, nftId);
     const nftOwner = await this.mongo.nftOwners.findOne({
       chain,
       contractAddress: nft.contractAddress,
@@ -346,8 +346,8 @@ export class NftService implements OnApplicationBootstrap {
           nfts: [],
         };
       }
-      const agentAccount = await this.elizaManager.getAgentAccount(chain, nft.nftId);
-      const agentId = stringToUuid(nft.nftId);
+      const agentAccount = nft.agentAccount ?? await this.elizaManager.getAgentAccount(chain, nft.nftId);
+      const agentId = nft.agentId ?? stringToUuid(nft.nftId);
       assets[nft.collectionId].nfts.push({
         ...nft,
         agentId,
