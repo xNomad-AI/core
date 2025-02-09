@@ -52,7 +52,6 @@
     "@types/dockerode": "^3.3.34",
     "@web3-storage/w3up-client": "^17.1.2",
     "amqplib": "^0.10.5",
-    "better-sqlite3": "11.6.0",
     "bs58": "^6.0.0",
     "cache-manager": "^6.4.0",
     "class-transformer": "^0.5.1",
