@@ -90,7 +90,7 @@ export async function swapToken(
             dynamicComputeUnitLimit: true,
             dynamicSlippage: true,
             priorityLevelWithMaxLamports: {
-                maxLamports: 4000000,
+                maxLamports: 500000000,
                 priorityLevel: "veryHigh",
             },
         };
