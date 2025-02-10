@@ -162,7 +162,7 @@ export class ElizaManagerService {
   async runAutoSwapTask(){
     const memories = await this.mongoService.client.db('agent').collection('memories').find<Memory>({type: AutoSwapTaskTable}).toArray();
     this.logger.log(`Running auto swap task for ${memories.length} tasks`);
-      for await (const memory of memories){
+    for (const memory of memories){
       const {agentId} = memory as Memory;
       const {nftId, chain, aiAgent} = await this.mongoService.nfts.findOne({agentId});
       if (!nftId){

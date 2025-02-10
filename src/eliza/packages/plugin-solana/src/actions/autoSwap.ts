@@ -156,7 +156,21 @@ async function getTokenFromWallet(runtime: IAgentRuntime, tokenSymbol: string) {
 }
 
 export async function executeAutoTokenSwapTask(runtime: IAgentRuntime, memory: Memory){
-    const {content, id} = memory;
+    const { id } = memory;
+    let content: Content;
+    // check content type
+    if (typeof content === 'string'){
+        content = JSON.parse(content);
+    } else {
+        content = memory.content;
+    }
+    // do not remove!
+    if (typeof content === 'string'){
+        content = JSON.parse(content);
+    } else {
+        content = memory.content;
+    }
+
     const task = (content.task) as AutoSwapTask;
     elizaLogger.info("executeAutoTokenSwapTask", content, id);
 
