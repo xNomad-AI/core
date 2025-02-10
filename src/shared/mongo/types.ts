@@ -96,6 +96,16 @@ export interface NftConfig{
   characterConfig: CharacterConfig
 }
 
+export interface NftPrologues {
+  _id?: string;
+  chain: string;
+  nftId: string;
+  tokenId: string;
+  prologue: string;
+  updatedAt: Date;
+  createdAt: Date;
+}
+
 export interface AddressNonce {
   chain: string;
   address: string;

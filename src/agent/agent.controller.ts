@@ -89,4 +89,21 @@ export class AgentController {
     return await this.elevenlabs.getVoices();
   }
 
+  @Get('/prologue')
+  async getNftPrologue(
+    @Query('chain') chain: string,
+    @Query('nftId') nftId: string,
+  ) {
+    const prologue = await this.mongo.nftPrologues.findOne({
+      chain,
+      nftId
+    });
+    if (!prologue) {
+      throw new NotFoundException('Prologue not found');
+    }
+    return {
+      prologue: prologue.prologue,
+    };
+  }
+
 }

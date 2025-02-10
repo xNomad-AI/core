@@ -65,6 +65,17 @@ export const COLLECTIONS = [
   },
   {
     db: DB_NAME,
+    name: 'nftPrologues',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        chain:1,
+        nftId:1
+      },
+    ],
+  },
+  {
+    db: DB_NAME,
     name: 'keyStore',
     indexes: [],
     uniqueIndexes: [
