@@ -19,6 +19,7 @@ import { getTokenDecimals } from "./swapUtils.js";
 import {
     getOrCreateAssociatedTokenAccount,
   } from "@solana/spl-token";
+import { SolanaClient } from "./solana-client.js";
 
 const DEFAULT_CONFIG = {
     JUP_SWAP_FEE_ACCOUNT: "5o5pzvdWLieWQ5JumkbsSgDn7ME69ewnx76VUnb4x3sd",
@@ -115,15 +116,6 @@ export async function swapToken(
                     true,
                 )
             ).address;
-
-            // const FEE_ACCOUNT_OUTPUT_MINT_ACCOUNT = (
-            //     await getOrCreateAssociatedTokenAccount(
-            //         connection,
-            //         keypair,
-            //         new PublicKey(quoteData.outputMint),
-            //         new PublicKey(getJUP_SWAP_FEE_ACCOUNT())
-            //     )
-            // ).address;
 
             swapRequestBody['feeAccount'] = FEE_ACCOUNT_INPUT_MINT_ACCOUNT.toBase58();
         }
@@ -248,241 +240,7 @@ export const executeSwap: Action = {
         return true;
     },
     description: "Perform a token swap.",
-    handler: async (
-        runtime: IAgentRuntime,
-        message: Memory,
-        state: State,
-        _options: { [key: string]: unknown },
-        callback?: HandlerCallback
-    ): Promise<boolean> => {
-        const isAdmin = await isAgentAdmin(runtime, message);
-        if (!isAdmin) {
-            const responseMsg = {
-                text: NotAgentAdminMessage,
-            };
-            callback?.(responseMsg);
-            return true;
-        }
-        // composeState
-        if (!state) {
-            state = (await runtime.composeState(message)) as State;
-        } else {
-            state = await runtime.updateRecentMessageState(state);
-        }
-
-        const walletInfo = await walletProvider.get(runtime, message, state);
-
-        state.walletInfo = walletInfo;
-
-        const swapContext = composeContext({
-            state,
-            template: swapTemplate,
-        });
-
-        const response = await generateObjectDeprecated({
-            runtime,
-            context: swapContext,
-            modelClass: ModelClass.LARGE,
-        });
-
-        elizaLogger.log("Response:", response);
-        // const type = response.inputTokenSymbol?.toUpperCase() === "SOL" ? "buy" : "sell";
-
-        // Add SOL handling logic
-        if (response.inputTokenSymbol?.toUpperCase() === "SOL") {
-            response.inputTokenCA = settings.SOL_ADDRESS;
-        }
-        if (response.outputTokenSymbol?.toUpperCase() === "SOL") {
-            response.outputTokenCA = settings.SOL_ADDRESS;
-        }
-
-        // if both contract addresses are set, lets execute the swap
-        // TODO: try to resolve CA from symbol based on existing symbol in wallet
-        if (!response.inputTokenCA && response.inputTokenSymbol) {
-            elizaLogger.log(
-                `Attempting to resolve CA for input token symbol: ${response.inputTokenSymbol}`
-            );
-            response.inputTokenCA = await getTokenFromWallet(
-                runtime,
-                response.inputTokenSymbol
-            );
-            if (response.inputTokenCA) {
-                elizaLogger.log(
-                    `Resolved inputTokenCA: ${response.inputTokenCA}`
-                );
-            } else {
-                elizaLogger.log(
-                    "No contract addresses provided, skipping swap"
-                );
-                const responseMsg = {
-                    text: "I need the contract addresses to perform the swap",
-                };
-                callback?.(responseMsg);
-                return true;
-            }
-        }
-
-        if (!response.outputTokenCA && response.outputTokenSymbol) {
-            elizaLogger.log(
-                `Attempting to resolve CA for output token symbol: ${response.outputTokenSymbol}`
-            );
-            response.outputTokenCA = await getTokenFromWallet(
-                runtime,
-                response.outputTokenSymbol
-            );
-            if (response.outputTokenCA) {
-                elizaLogger.log(
-                    `Resolved outputTokenCA: ${response.outputTokenCA}`
-                );
-            } else {
-                elizaLogger.log(
-                    "No contract addresses provided, skipping swap"
-                );
-                const responseMsg = {
-                    text: "I need the contract addresses to perform the swap",
-                };
-                callback?.(responseMsg);
-                return true;
-            }
-        }
-
-        if (!response.amount) {
-            elizaLogger.log("No amount provided, skipping swap");
-            const responseMsg = {
-                text: "I need the amount to perform the swap",
-            };
-            callback?.(responseMsg);
-            return true;
-        }
-
-        // TODO: if response amount is half, all, etc, semantically retrieve amount and return as number
-        if (!response.amount) {
-            elizaLogger.log("Amount is not a number, skipping swap");
-            const responseMsg = {
-                text: "The amount must be a number",
-            };
-            callback?.(responseMsg);
-            return true;
-        }
-
-        // the CA maybe recognized as symbol, so we need to check if it is a valid CA
-        if (isValidSPLTokenAddress(response.inputTokenSymbol) && !isValidSPLTokenAddress(response.inputTokenCA)) {
-            response.inputTokenCA = response.inputTokenSymbol;
-        }
-        if (isValidSPLTokenAddress(response.outputTokenSymbol) && !isValidSPLTokenAddress(response.outputTokenCA)) {
-            response.outputTokenCA = response.outputTokenSymbol;
-        }
-
-        // check respose is valid
-        if (isValidSPLTokenAddress(response.inputTokenCA) === false || isValidSPLTokenAddress(response.outputTokenCA) === false) {
-            elizaLogger.log("Invalid contract address, skipping swap", swapContext, response);
-            const responseMsg = {
-                text: "Please provide the token CA to perform the swap",
-            };
-            callback?.(responseMsg);
-            return true;
-        }
-
-        if (Number.isNaN(Number(response.amount))){
-            const responseMsg = {
-                text: 'Please provide a valid input amount to perform the swap',
-                action: 'EXECUTE_SWAP',
-            };
-            callback?.(responseMsg);
-            return true;
-        }
-
-        try {
-            const connection = new Connection(
-                runtime.getSetting("SOLANA_RPC_URL") || process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com"
-            );
-            const { publicKey: walletPublicKey } = await getWalletKey(
-                runtime,
-                false
-            );
-
-            // const provider = new WalletProvider(connection, walletPublicKey);
-
-            elizaLogger.log("Wallet Public Key:", walletPublicKey);
-            elizaLogger.log("inputTokenSymbol:", response.inputTokenCA);
-            elizaLogger.log("outputTokenSymbol:", response.outputTokenCA);
-            elizaLogger.log("amount:", response.amount);
-
-            const swapResult = await swapToken(
-                connection,
-                walletPublicKey,
-                response.inputTokenCA as string,
-                response.outputTokenCA as string,
-                response.amount as number,
-                runtime,
-            );
-
-            elizaLogger.info("Deserializing transaction...");
-            const transactionBuf = Buffer.from(
-                swapResult.swapTransaction,
-                "base64"
-            );
-            const transaction =
-                VersionedTransaction.deserialize(transactionBuf);
-
-            elizaLogger.log("Preparing to sign transaction...");
-            const { keypair } = await getWalletKey(runtime, true);
-            elizaLogger.log(`Keypair created:, keypair.publicKey.toBase58()`);
-            // Verify the public key matches what we expect
-            if (keypair.publicKey.toBase58() !== walletPublicKey.toBase58()) {
-                throw new Error(
-                    "Generated public key doesn't match expected public key"
-                );
-            }
-
-            elizaLogger.log("Signing transaction...");
-            transaction.sign([keypair]);
-
-            elizaLogger.log("Sending transaction...");
-
-            // const latestBlockhash = await connection.getLatestBlockhash();
-
-            const txid = await connection.sendTransaction(transaction, {
-                skipPreflight: false,
-                maxRetries: 3,
-                preflightCommitment: "confirmed",
-            });
-
-            elizaLogger.log("Transaction sent:", txid);
-
-            let confirmation: RpcResponseAndContext<SignatureStatus | null>;
-
-            // wait for 20s for the transaction to be processed
-            for (let i = 0; i < 20; i++) {
-                await new Promise((resolve) => setTimeout(resolve, 1000));
-                confirmation = await connection.getSignatureStatus(txid, {
-                    searchTransactionHistory: false,
-                });
-
-                if (confirmation.value) {
-                    break;
-                }
-            }
-
-            elizaLogger.log("Swap completed successfully!");
-            elizaLogger.log(`Transaction ID: ${txid}`);
-
-            const responseMsg = {
-                text: `Swap completed successfully! Transaction ID: ${txid}`,
-            };
-
-            callback?.(responseMsg);
-
-            return true;
-        } catch (error) {
-            elizaLogger.error(`Error during token swap:, ${error}`);
-            const responseMsg = {
-                text: `Error during token swap:, ${error}`,
-            };
-            callback?.(responseMsg);
-            return true;
-        }
-    },
+    handler: swapHandler,
     // template: swapTemplate,
     examples: [
         [
@@ -542,3 +300,267 @@ export const executeSwap: Action = {
         // Add more examples as needed
     ] as ActionExample[][],
 } as Action;
+
+async function swapHandler(
+    runtime: IAgentRuntime,
+    message: Memory,
+    state: State,
+    _options: { [key: string]: unknown },
+    callback?: HandlerCallback
+): Promise<boolean> {
+    const response = await checkResponse(runtime, message, state, _options, callback);
+    if (!response) {
+        return true;
+    }
+
+    try {
+        const rpcUrl = runtime.getSetting("SOLANA_RPC_URL") || process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
+        const connection = new Connection(rpcUrl);
+        const { publicKey: walletPublicKey, keypair } = await getWalletKey(
+            runtime,
+            false
+        );
+
+        // check balance
+        const client = new SolanaClient(rpcUrl, keypair);
+        const balance = await client.getBalance(response.inputTokenCA);
+        if (balance < response.amount) {
+            elizaLogger.error("Insufficient balance for swap");
+            const responseMsg = {
+                text: "Insufficient balance for swap, required: " + response.amount + " but only have: " + balance,
+            };
+            callback?.(responseMsg);
+            return true;
+        }
+
+        elizaLogger.log("Wallet Public Key:", walletPublicKey);
+        elizaLogger.log("inputTokenSymbol:", response.inputTokenCA);
+        elizaLogger.log("outputTokenSymbol:", response.outputTokenCA);
+        elizaLogger.log("amount:", response.amount);
+
+        const swapResult = await swapToken(
+            connection,
+            walletPublicKey,
+            response.inputTokenCA,
+            response.outputTokenCA,
+            response.amount,
+            runtime,
+        );
+
+        elizaLogger.info("Deserializing transaction...");
+        const transactionBuf = Buffer.from(
+            swapResult.swapTransaction,
+            "base64"
+        );
+        const transaction =
+            VersionedTransaction.deserialize(transactionBuf);
+
+        elizaLogger.log("Preparing to sign transaction...");
+        elizaLogger.log(`Keypair created:, keypair.publicKey.toBase58()`);
+        // Verify the public key matches what we expect
+        if (keypair.publicKey.toBase58() !== walletPublicKey.toBase58()) {
+            throw new Error(
+                "Generated public key doesn't match expected public key"
+            );
+        }
+
+        elizaLogger.log("Signing transaction...");
+        transaction.sign([keypair]);
+
+        elizaLogger.log("Sending transaction...");
+
+        // const latestBlockhash = await connection.getLatestBlockhash();
+
+        const txid = await connection.sendTransaction(transaction, {
+            skipPreflight: false,
+            maxRetries: 3,
+            preflightCommitment: "confirmed",
+        });
+
+        elizaLogger.log("Transaction sent:", txid);
+
+        let confirmation: RpcResponseAndContext<SignatureStatus | null>;
+
+        // wait for 20s for the transaction to be processed
+        for (let i = 0; i < 20; i++) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            confirmation = await connection.getSignatureStatus(txid, {
+                searchTransactionHistory: false,
+            });
+
+            if (confirmation.value) {
+                break;
+            }
+        }
+
+        elizaLogger.log("Swap completed successfully!");
+        elizaLogger.log(`Transaction ID: ${txid}`);
+
+        const responseMsg = {
+            text: `Swap completed successfully! Transaction ID: ${txid}`,
+        };
+
+        callback?.(responseMsg);
+
+        return true;
+    } catch (error) {
+        elizaLogger.error(`Error during token swap:, ${error}`);
+        const responseMsg = {
+            text: `Error during token swap:, ${error}`,
+        };
+        callback?.(responseMsg);
+        return true;
+    }
+}
+
+async function checkResponse(
+    runtime: IAgentRuntime,
+    message: Memory,
+    state: State,
+    _options: { [key: string]: unknown },
+    callback?: HandlerCallback
+): Promise<{
+    inputTokenCA: string;
+    outputTokenCA: string;
+    amount: number;
+} | null> {
+    // check if the swap request is from agent owner or public chat
+    const isAdmin = await isAgentAdmin(runtime, message);
+    if (!isAdmin) {
+        const responseMsg = {
+            text: NotAgentAdminMessage,
+        };
+        callback?.(responseMsg);
+        return null
+    }
+
+    // composeState
+    if (!state) {
+        state = (await runtime.composeState(message)) as State;
+    } else {
+        state = await runtime.updateRecentMessageState(state);
+    }
+
+    const walletInfo = await walletProvider.get(runtime, message, state);
+    state.walletInfo = walletInfo;
+    const swapContext = composeContext({
+        state,
+        template: swapTemplate,
+    });
+
+    // generate formatted response from chat
+    const response = await generateObjectDeprecated({
+        runtime,
+        context: swapContext,
+        modelClass: ModelClass.LARGE,
+    });
+
+    elizaLogger.log("Response:", response);
+
+    // Add SOL handling logic
+    if (response.inputTokenSymbol?.toUpperCase() === "SOL") {
+        response.inputTokenCA = settings.SOL_ADDRESS;
+    }
+    if (response.outputTokenSymbol?.toUpperCase() === "SOL") {
+        response.outputTokenCA = settings.SOL_ADDRESS;
+    }
+
+    // if both contract addresses are set, lets execute the swap
+    // TODO: try to resolve CA from symbol based on existing symbol in wallet
+    if (!response.inputTokenCA && response.inputTokenSymbol) {
+        elizaLogger.log(
+            `Attempting to resolve CA for input token symbol: ${response.inputTokenSymbol}`
+        );
+        response.inputTokenCA = await getTokenFromWallet(
+            runtime,
+            response.inputTokenSymbol
+        );
+        if (response.inputTokenCA) {
+            elizaLogger.log(
+                `Resolved inputTokenCA: ${response.inputTokenCA}`
+            );
+        } else {
+            elizaLogger.log(
+                "No contract addresses provided, skipping swap"
+            );
+            const responseMsg = {
+                text: "I need the contract addresses to perform the swap",
+            };
+            callback?.(responseMsg);
+            return null
+        }
+    }
+
+    if (!response.outputTokenCA && response.outputTokenSymbol) {
+        elizaLogger.log(
+            `Attempting to resolve CA for output token symbol: ${response.outputTokenSymbol}`
+        );
+        response.outputTokenCA = await getTokenFromWallet(
+            runtime,
+            response.outputTokenSymbol
+        );
+        if (response.outputTokenCA) {
+            elizaLogger.log(
+                `Resolved outputTokenCA: ${response.outputTokenCA}`
+            );
+        } else {
+            elizaLogger.log(
+                "No contract addresses provided, skipping swap"
+            );
+            const responseMsg = {
+                text: "I need the contract addresses to perform the swap",
+            };
+            callback?.(responseMsg);
+            return null
+        }
+    }
+
+    if (!response.amount) {
+        elizaLogger.log("No amount provided, skipping swap");
+        const responseMsg = {
+            text: "I need the amount to perform the swap",
+        };
+        callback?.(responseMsg);
+        return null
+    }
+
+    // TODO: if response amount is half, all, etc, semantically retrieve amount and return as number
+    if (!response.amount) {
+        elizaLogger.log("Amount is not a number, skipping swap");
+        const responseMsg = {
+            text: "The amount must be a number",
+        };
+        callback?.(responseMsg);
+        return null
+    }
+
+    // the CA maybe recognized as symbol, so we need to check if it is a valid CA
+    if (isValidSPLTokenAddress(response.inputTokenSymbol) && !isValidSPLTokenAddress(response.inputTokenCA)) {
+        response.inputTokenCA = response.inputTokenSymbol;
+    }
+    if (isValidSPLTokenAddress(response.outputTokenSymbol) && !isValidSPLTokenAddress(response.outputTokenCA)) {
+        response.outputTokenCA = response.outputTokenSymbol;
+    }
+
+    // check respose is valid
+    if (isValidSPLTokenAddress(response.inputTokenCA) === false || isValidSPLTokenAddress(response.outputTokenCA) === false) {
+        elizaLogger.log("Invalid contract address, skipping swap", swapContext, response);
+        const responseMsg = {
+            text: "Please provide the token CA to perform the swap",
+        };
+        callback?.(responseMsg);
+        return null
+    }
+
+    // check if amount is a number
+    if (Number.isNaN(Number(response.amount))){
+        const responseMsg = {
+            text: 'Please provide a valid input amount to perform the swap',
+            action: 'EXECUTE_SWAP',
+        };
+        callback?.(responseMsg);
+        return null;
+    }
+
+    return response;
+}

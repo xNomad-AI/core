@@ -118,16 +118,16 @@ export const airdrop: Action = {
         const{ keypair } =  await getWalletKey(runtime, true);
         elizaLogger.info(`Claiming airdrop for:, ${keypair.publicKey.toBase58()}`);
         try {
-            const isSuccess = await claimAirdrop(runtime, keypair, airdrop);
-            if (isSuccess) {
+            const { status, message } = await claimAirdrop(runtime, keypair, airdrop);
+            if (status) {
                 const responseMsg = {
                     text: `Airdrop claimed successfully. Please wait and check your wallet for the airdrop.`,
                 };
                 callback?.(responseMsg);
                 return true
-            }else{
+            } else{
                 const responseMsg = {
-                    text: `claim airdrop failed`,
+                    text: message ? message : `claim airdrop failed`,
                 };
                 callback?.(responseMsg);
                 return false
@@ -233,11 +233,35 @@ async function getAirdrops(runtime: IAgentRuntime, message: Memory){
    return result?.data as AirdropRegistry[];
 }
 
-async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: AirdropRegistry){
+async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: AirdropRegistry): Promise<{
+    status: boolean,
+    message: string
+}>{
+    const url = airdrop.rules.claimUrl;
+    const messageToSign = airdrop.rules.claimMessage || String(Date.now());
+    const signature = sign(messageToSign, keypair);
+    const defaultFailedRes = { status: false, message: '' };
+
     try {
-        const url = airdrop.rules.claimUrl;
-        const messageToSign = airdrop.rules.claimMessage || String(Date.now());
-        const signature = sign(messageToSign, keypair);
+        // check if already claimed
+        elizaLogger.log(`check Claiming status`);
+        const checkResponse = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ "agentAddress": "agentAddress" }),
+        });
+        const checkJson: {
+            success: boolean,
+            claimable: boolean,
+            claimed: boolean,
+        } = await checkResponse.json()
+
+        if (!checkJson.success) return defaultFailedRes;
+        if (checkJson.success && !checkJson.claimable) {
+            return { status: false, message: 'Already Claimed!' };
+        }
+
+        // send claim request
         const body = JSON.stringify({
             walletAddress: keypair.publicKey.toBase58(),
             message: messageToSign,
@@ -250,13 +274,14 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
             headers: { 'Content-Type': 'application/json' },
             body,
         });
+
         if (response.status != 200 && response.status != 201){
-            elizaLogger.error(`Error during claim airdrop: ${response.status}`);
-            return false;
+            elizaLogger.error(`Error during claim airdrop: ${response.status} ${await response.text()}`);
+            return defaultFailedRes;
         }
-        return true;
+        return { status: true, message: '' };
     }catch (e){
         elizaLogger.error(`Error during claim airdrop ${e}`);
-        return false;
+        return defaultFailedRes;
     }
 }
