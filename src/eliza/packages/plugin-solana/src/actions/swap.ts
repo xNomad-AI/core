@@ -382,6 +382,15 @@ export const executeSwap: Action = {
             return true;
         }
 
+        if (Number.isNaN(Number(response.amount))){
+            const responseMsg = {
+                text: 'Please provide a valid input amount to perform the swap',
+                action: 'EXECUTE_SWAP',
+            };
+            callback?.(responseMsg);
+            return true;
+        }
+
         try {
             const connection = new Connection(
                 runtime.getSetting("SOLANA_RPC_URL") || process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com"
