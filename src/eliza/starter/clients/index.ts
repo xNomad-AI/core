@@ -3,6 +3,7 @@
 // import { TelegramClientInterface } from '@elizaos/client-telegram';
 import { TwitterClientInterface } from '@elizaos/client-twitter';
 import { Character, IAgentRuntime } from '@elizaos/core';
+import TelegramClientInterface from '@elizaos/client-telegram';
 
 export async function initializeClients(
   character: Character,
@@ -20,14 +21,15 @@ export async function initializeClients(
   //   clients.push(await DiscordClientInterface.start(runtime));
   // }
 
-  // if (clientTypes.includes('telegram') || character.settings?.secrets?.TELEGRAM_BOT_TOKEN) {
-  //   try {
-  //     const telegramClient = await TelegramClientInterface.start(runtime);
-  //     if (telegramClient) clients.push(telegramClient);
-  //   }catch (e) {
-  //     console.error(`Failed to start ${character.name} Telegram client: ${e.message}`);
-  //   }
-  // }
+  const isStartTg = process.env?.ENABLE_TELEGRAM_CLIENT === "true";
+  if (isStartTg && (clientTypes.includes('telegram') || character.settings?.secrets?.TELEGRAM_BOT_TOKEN)) {
+    try {
+      const telegramClient = await TelegramClientInterface.start(runtime);
+      if (telegramClient) clients.push(telegramClient);
+    }catch (e) {
+      console.error(`Failed to start ${character.name} Telegram client: ${e.message}`);
+    }
+  }
 
   if (clientTypes.includes('twitter') || (character.settings?.secrets?.TWITTER_PASSWORD && character.settings?.secrets?.TWITTER_2FA_SECRET)) {
     try {

@@ -100,3 +100,13 @@ export async function newTradeAgentRuntime(character: Character, mongoClient: Mo
   const cache = initializeDbCache(character, db);
   return await createAgent(character, db, cache, token);
 }
+
+// Handle uncaught exceptions to prevent the process from crashing
+process.on("uncaughtException", function (err) {
+  console.error("[fatal error] uncaughtException", err);
+});
+
+// Handle unhandled rejections to prevent the process from crashing
+process.on("unhandledRejection", function (err) {
+  console.error("[fatal error] unhandledRejection", err);
+});
