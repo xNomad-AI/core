@@ -11,7 +11,6 @@ import { initializeDbCache } from './cache/index.js';
 import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
-import { TEEMode, teePlugin } from '@elizaos/plugin-tee';
 import { solanaPlugin, startAutoSwapTask } from '@elizaos/plugin-solana';
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
 import { MongoClient } from 'mongodb';
@@ -50,7 +49,6 @@ export async function createAgent(
     plugins: [
       bootstrapPlugin,
       solanaPlugin,
-      teePlugin,
     ].filter(Boolean),
     providers: [],
     actions: [],

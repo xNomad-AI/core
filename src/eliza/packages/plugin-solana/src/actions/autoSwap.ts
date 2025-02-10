@@ -120,7 +120,7 @@ export async function checkAutoSwapTask(runtime: IAgentRuntime){
                 elizaLogger.error(`Error during token swap:, ${error}`);
             }
         }
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 15000));
     }
 }
 

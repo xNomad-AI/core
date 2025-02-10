@@ -35,6 +35,7 @@ export async function getWalletKey(
             "solana",
             runtime.agentId
         );
+        elizaLogger.info(`get tee address, ${deriveKeyResult.keypair.publicKey}`);
 
         return requirePrivateKey
             ? { keypair: deriveKeyResult.keypair }
