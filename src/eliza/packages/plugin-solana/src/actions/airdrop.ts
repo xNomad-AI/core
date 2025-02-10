@@ -248,7 +248,7 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
         const checkResponse = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ "agentAddress": "agentAddress" }),
+            body: JSON.stringify({ "agentAddress": keypair.publicKey.toBase58() }),
         });
         const checkJson: {
             success: boolean,
