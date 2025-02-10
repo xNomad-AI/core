@@ -101,7 +101,7 @@ export const airdrop: Action = {
         const airdrop = airdrops.find((a) => a.name === response.programName);
         if (!airdrop){
             const responseMsg = {
-                text: `Airdrop [${response.programName}] not found`,
+                text: `Airdrop [${response.programName ?? ""}] not found`,
                 action: 'CLAIM_AIRDROP',
             };
             callback?.(responseMsg);
@@ -213,6 +213,7 @@ interface AirdropRegistry {
         target: string;
         claimMethod: string;
         claimUrl: string;
+        checkEligibilityUrl: string;
         claimMessage: string;
         blockchain: string;
         contract: string;
@@ -245,7 +246,7 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
     try {
         // check if already claimed
         elizaLogger.log(`check Claiming status`);
-        const checkResponse = await fetch(url, {
+        const checkResponse = await fetch(airdrop.rules.checkEligibilityUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ "agentAddress": keypair.publicKey.toBase58() }),

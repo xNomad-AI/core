@@ -17,7 +17,7 @@ import { getWalletKey } from "../keypairUtils.js";
 import { isAgentAdmin, NotAgentAdminMessage, walletProvider, WalletProvider } from '../providers/wallet.js';
 import { getTokenDecimals } from "./swapUtils.js";
 import {
-    getOrCreateAssociatedTokenAccount,
+    getOrCreateAssociatedTokenAccount, NATIVE_MINT
   } from "@solana/spl-token";
 import { SolanaClient } from "./solana-client.js";
 
@@ -332,6 +332,19 @@ async function swapHandler(
             };
             callback?.(responseMsg);
             return true;
+        }
+
+        // require 0.001 SOL for gas fee
+        if (response.inputTokenCA !== NATIVE_MINT.toBase58()) {
+            const balance = await client.getBalance(NATIVE_MINT.toBase58());
+            if (balance < 0.001) {
+                elizaLogger.error("Insufficient balance for swap gas fee");
+                const responseMsg = {
+                    text: "Insufficient balance for swap gas fee, required: 0.001 SOL but only have: " + balance,
+                };
+                callback?.(responseMsg);
+                return true;
+            }
         }
 
         elizaLogger.log("Wallet Public Key:", walletPublicKey);
