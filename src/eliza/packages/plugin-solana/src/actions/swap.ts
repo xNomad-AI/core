@@ -240,7 +240,7 @@ export function isValidSPLTokenAddress(address: string) {
 
 export const executeSwap: Action = {
     name: "EXECUTE_SWAP",
-    similes: ["SWAP_TOKENS", "TOKEN_SWAP", "TRADE_TOKENS", "EXCHANGE_TOKENS"],
+    similes: ["SWAP_TOKENS", "TOKEN_SWAP", "TRADE_TOKENS", "EXCHANGE_TOKENS", "BUY_TOKENS", "SELL_TOKENS"],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         // Check if the necessary parameters are provided in the message
         elizaLogger.info("Validating executeSwap message:");
@@ -376,7 +376,7 @@ export const executeSwap: Action = {
         if (isValidSPLTokenAddress(response.inputTokenCA) === false || isValidSPLTokenAddress(response.outputTokenCA) === false) {
             elizaLogger.log("Invalid contract address, skipping swap", swapContext, response);
             const responseMsg = {
-                text: "Invalid contract address",
+                text: "Please provide the token CA to perform the swap",
             };
             callback?.(responseMsg);
             return true;
@@ -479,21 +479,28 @@ export const executeSwap: Action = {
             {
                 user: "{{user1}}",
                 content: {
-                    text: "Swapping 0.5 BTC for USDT...",
+                    text: "buy USDC with 0.0001 SOL",
                     action: "TOKEN_SWAP",
                 },
             },
             {
                 user: "{{user2}}",
                 content: {
-                    text: "Transaction being processed...",
+                    text: "Please provide the CA of USDC",
+                    action: "TOKEN_SWAP",
+                },
+            },
+            {
+                user: "{{user1}}",
+                content: {
+                    text: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
                     action: "TOKEN_SWAP",
                 },
             },
             {
                 user: "{{user2}}",
                 content: {
-                    text: "BTC swapped successfully! 0.5 BTC for 12000 USDT. Transaction ID: ...",
+                    text: "USDC swapped successfuly. Transaction ID: ...",
                 },
             },
         ],

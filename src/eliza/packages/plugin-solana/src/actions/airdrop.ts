@@ -83,17 +83,26 @@ export const airdrop: Action = {
         if (!response.programName){
             const responseMsg = {
                 text: "Please tell me the program name of the airdrop",
-                action: "CONTINUE",
+                action: "CLAIM_AIRDROP",
             };
             callback?.(responseMsg);
             return true
         }
 
         const airdrops = await getAirdrops(runtime, message);
+        if (!airdrops){
+            const responseMsg = {
+                text: `It looks like you don’t have any airdrops available right now.`,
+            };
+            callback?.(responseMsg);
+            return false
+        }
+
         const airdrop = airdrops.find((a) => a.name === response.programName);
         if (!airdrop){
             const responseMsg = {
                 text: `Airdrop [${response.programName}] not found`,
+                action: 'CLAIM_AIRDROP',
             };
             callback?.(responseMsg);
             return false
@@ -107,7 +116,7 @@ export const airdrop: Action = {
         }
 
         const{ keypair } =  await getWalletKey(runtime, true);
-        elizaLogger.log(`Claiming airdrop for:, ${keypair.publicKey.toBase58()}`);
+        elizaLogger.info(`Claiming airdrop for:, ${keypair.publicKey.toBase58()}`);
         try {
             const isSuccess = await claimAirdrop(runtime, keypair, airdrop);
             if (isSuccess) {
@@ -143,14 +152,31 @@ export const airdrop: Action = {
             {
                 user: "{{user2}}",
                 content: {
-                    text: "Please ack, the program name is [Xnomad AI Initial funds]",
+                    text: "[Xnomad AI Initial funds] Airdrop claimed successfully. 0.01 SOL will be transferred to your wallet.",
+                    action: "CLAIM_AIRDROP",
+                },
+            },
+        ],
+        [
+            {
+                user: "{{user1}}",
+                content: {
+                    text: 'claim airdrop',
+                    action: "CLAIM_AIRDROP",
+                },
+            },
+            {
+                user: "{{user2}}",
+                content: {
+                    text: 'please provoide the project name you want to claim airdrop',
                     action: "CLAIM_AIRDROP",
                 },
             },
             {
                 user: "{{user1}}",
                 content: {
-                    text: "yes",
+                    text: 'Xnomad AI Initial funds',
+                    action: "CLAIM_AIRDROP",
                 },
             },
             {
