@@ -23,6 +23,7 @@ export async function getWalletKey(
 
     if (teeMode !== TEEMode.OFF) {
         const walletSecretSalt = runtime.getSetting("WALLET_SECRET_SALT");
+        elizaLogger.info(`failed to get WALLET_SECRET_SALT , ${JSON.stringify(runtime.character.settings.secrets)}`);
         if (!walletSecretSalt) {
             throw new Error(
                 "WALLET_SECRET_SALT required when TEE_MODE is enabled"
