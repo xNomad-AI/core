@@ -261,8 +261,8 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
         } = await checkResponse.data;
 
         if (!checkJson.success) return defaultFailedRes;
-        if (checkJson.success && !checkJson.claimable) {
-            return { status: false, message: 'Already Claimed!' };
+        if (checkJson.success && checkJson.claimed) {
+            return { status: false, message: 'You Have Already Claimed!' };
         }
         elizaLogger.log(`check Claiming status res: ${JSON.stringify(checkJson)}`);
 
