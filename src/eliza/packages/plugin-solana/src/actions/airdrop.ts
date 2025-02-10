@@ -246,11 +246,14 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
     try {
         // check if already claimed
         elizaLogger.log(`check Claiming status ${airdrop.rules.checkEligibilityUrl} ${keypair.publicKey.toBase58()}`);
-        const checkResponse = await axios.post(airdrop.rules.checkEligibilityUrl, {
-            // method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ "agentAddress": keypair.publicKey.toBase58() }),
-        });
+        const checkResponse = await axios.post(
+            airdrop.rules.checkEligibilityUrl, 
+            { "agentAddress": keypair.publicKey.toBase58() },
+            {
+                // method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            }
+        );
         const checkJson: {
             success: boolean,
             claimable: boolean,
@@ -271,11 +274,14 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
             agentAddress: keypair.publicKey.toBase58(),
         });
         elizaLogger.log(`Claiming airdrop request:, ${body}`);
-        const response = await axios.post(url, {
-            // method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const response = await axios.post(
+            url,
             body,
-        });
+            {
+                // method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            }
+        );
 
         if (response.status != 200 && response.status != 201){
             elizaLogger.error(`Error during claim airdrop: ${response.status} ${response.data}`);
