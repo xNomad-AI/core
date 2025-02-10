@@ -13,7 +13,7 @@ import {
 import {getWalletKey, sign} from "../keypairUtils.js";
 import { isAgentAdmin, NotAgentAdminMessage, walletProvider } from '../providers/wallet.js';
 import { Keypair } from '@solana/web3.js';
-
+import axios from 'axios';
 
 const claimAirdropTemplate = `
 {{recentMessages}}
@@ -245,9 +245,9 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
 
     try {
         // check if already claimed
-        elizaLogger.log(`check Claiming status`);
-        const checkResponse = await fetch(airdrop.rules.checkEligibilityUrl, {
-            method: 'POST',
+        elizaLogger.log(`check Claiming status ${airdrop.rules.checkEligibilityUrl} ${keypair.publicKey.toBase58()}`);
+        const checkResponse = await axios.post(airdrop.rules.checkEligibilityUrl, {
+            // method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ "agentAddress": keypair.publicKey.toBase58() }),
         });
@@ -255,12 +255,13 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
             success: boolean,
             claimable: boolean,
             claimed: boolean,
-        } = await checkResponse.json()
+        } = await checkResponse.data;
 
         if (!checkJson.success) return defaultFailedRes;
         if (checkJson.success && !checkJson.claimable) {
             return { status: false, message: 'Already Claimed!' };
         }
+        elizaLogger.log(`check Claiming status res: ${JSON.stringify(checkJson)}`);
 
         // send claim request
         const body = JSON.stringify({
@@ -270,14 +271,14 @@ async function claimAirdrop(runtime: IAgentRuntime, keypair: Keypair, airdrop: A
             agentAddress: keypair.publicKey.toBase58(),
         });
         elizaLogger.log(`Claiming airdrop request:, ${body}`);
-        const response = await fetch(url, {
-            method: 'POST',
+        const response = await axios.post(url, {
+            // method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body,
         });
 
         if (response.status != 200 && response.status != 201){
-            elizaLogger.error(`Error during claim airdrop: ${response.status} ${await response.text()}`);
+            elizaLogger.error(`Error during claim airdrop: ${response.status} ${response.data}`);
             return defaultFailedRes;
         }
         return { status: true, message: '' };
