@@ -162,9 +162,7 @@ Example response:
 
 {{recentMessages}}
 
-Given the recent messages and wallet information below:
-
-{{walletInfo}}
+Given the recent messages above:
 
 Extract the following information about the requested token swap:
 - Input token symbol (the token being sold)
@@ -172,6 +170,8 @@ Extract the following information about the requested token swap:
 - Input token contract address if provided
 - Output token contract address if provided
 - Amount to swap
+
+Ensure you only extract the current swap request from the user, and avoid extracting any historical swap messages.
 
 The Token contract address (aka CA) should be a 44 character string, for example: [EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v], [7Xu2oddJ3DMQ1UdgoC8ewK6Kq73kcXUcYCcnfzxqpump]
 Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined. The result should be a valid JSON object with the following schema:
@@ -602,7 +602,7 @@ async function checkResponse(
     if (!validInputTokenCA){
       elizaLogger.log("Invalid input contract address, skipping swap", swapContext, response);
       const responseMsg = {
-        text: "Please provide the token CA you want to sell",
+        text: "Please provide the inputToken CA you want to sell",
       };
       callback?.(responseMsg);
       return null
@@ -611,7 +611,7 @@ async function checkResponse(
     if (!validOutputTokenCA) {
       elizaLogger.log("Invalid output contract address, skipping swap", swapContext, response);
       const responseMsg = {
-        text: "Please provide the token CA you want to buy",
+        text: "Please provide the outputToken CA you want to buy",
         action: 'EXECUTE_SWAP',
       };
       callback?.(responseMsg);
