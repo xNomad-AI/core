@@ -36,6 +36,7 @@
     "@elizaos/plugin-tee": "file:local_dependency/elizaos-plugin-tee-0.1.9.tgz",
     "@ipld/dag-ucan": "^3.4.5",
     "@metaplex-foundation/mpl-core": "^1.2.0",
+    "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@metaplex-foundation/umi": "^1.0.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.0.0",
     "@nestjs/axios": "^3.1.3",

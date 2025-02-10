@@ -1,3 +1,6 @@
+import { fetchDigitalAsset } from '@metaplex-foundation/mpl-token-metadata';
+import { publicKey } from '@metaplex-foundation/umi';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { Controller, Get, Query } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -156,7 +159,16 @@ export class AgentAccountController {
                   mintAccount.tlvData,
                 ),
               ).symbol;
-            } catch (e) {}
+            } catch (e) {
+              try {
+                const umi = createUmi(this.config.get('SOLANA_RPC_URL'));
+                const asset = await fetchDigitalAsset(
+                  umi,
+                  publicKey(sourceAccount.mint),
+                );
+                symbol = asset.metadata.symbol;
+              } catch (e) {}
+            }
 
             transfers.push({
               type: 'spl-token-transfer',
