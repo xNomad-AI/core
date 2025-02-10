@@ -986,7 +986,7 @@ packages:
     resolution: {integrity: sha512-rsAAyiPfc0HWWNVrROdQfR0BonVCgb1D1EHi7gLCrag8ZZqGd3UI/xjSiAUmU73e0dPcEo/JQzteAoehZ/ouXQ==}
 
   '@elizaos/core@file:local_dependency/elizaos-core-0.1.9.tgz':
-    resolution: {integrity: sha512-t7lxGdBWVVTTN5L9NSyP2oR1sUnKgB/s/rb2q5y5YvS6dkHG+WQI0IqpQDSjcBwOKbjVOSTQcP2oi0Bm7WKp2Q==, tarball: file:local_dependency/elizaos-core-0.1.9.tgz}
+    resolution: {integrity: sha512-/52B9D2B+ZlhLpN70xhR9yPct32qQF+L2OlzI0dEovKUKcd+cQrJ+yB0ozFjRtw6jRNaXoq6lcT+foUA9lUSNw==, tarball: file:local_dependency/elizaos-core-0.1.9.tgz}
     version: 0.1.9
 
   '@elizaos/plugin-bootstrap@0.1.9':
