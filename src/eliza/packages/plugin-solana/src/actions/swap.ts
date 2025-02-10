@@ -20,6 +20,7 @@ import {
     getOrCreateAssociatedTokenAccount, NATIVE_MINT
   } from "@solana/spl-token";
 import { SolanaClient } from "./solana-client.js";
+import { getTokensBySymbol } from '../providers/tokenUtils.js';
 
 const DEFAULT_CONFIG = {
     JUP_SWAP_FEE_ACCOUNT: "5o5pzvdWLieWQ5JumkbsSgDn7ME69ewnx76VUnb4x3sd",
@@ -600,22 +601,31 @@ async function checkResponse(
     validInputTokenCA = isValidSPLTokenAddress(response.inputTokenCA);
     validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
     if (!validInputTokenCA){
-      elizaLogger.log("Invalid input contract address, skipping swap", swapContext, response);
-      const responseMsg = {
-        text: "Please provide the inputToken CA you want to sell",
-      };
-      callback?.(responseMsg);
-      return null
+      const tokens = await getTokensBySymbol(runtime.getSetting("BIRDEYE_API_KEY"), response.inputTokenSymbol);
+      if (tokens?.[0]?.address) {
+        response.inputTokenCA = tokens[0].address;
+      }else{
+          elizaLogger.log("Invalid input contract address, skipping swap", swapContext, response);
+          const responseMsg = {
+              text: "Please provide the inputToken CA you want to sell",
+          };
+          callback?.(responseMsg);
+          return null;
+      }
     }
 
     if (!validOutputTokenCA) {
-      elizaLogger.log("Invalid output contract address, skipping swap", swapContext, response);
-      const responseMsg = {
-        text: "Please provide the outputToken CA you want to buy",
-        action: 'EXECUTE_SWAP',
-      };
-      callback?.(responseMsg);
-      return null
+        const tokens = await getTokensBySymbol(runtime.getSetting("BIRDEYE_API_KEY"), response.outputTokenSymbol);
+        if (tokens?.[0]?.address) {
+            response.outputTokenCA = tokens[0].address;
+        }else{
+            elizaLogger.log("Invalid output contract address, skipping swap", swapContext, response);
+            const responseMsg = {
+                text: "Please provide the outputToken CA you want to buy",
+            };
+            callback?.(responseMsg);
+            return null;
+        }
     }
 
     elizaLogger.info(`checking if user confirm to execute swap`);

@@ -16,6 +16,7 @@ import { getWalletKey } from "../keypairUtils.js";
 import { isAgentAdmin, NotAgentAdminMessage, walletProvider, WalletProvider } from '../providers/wallet.js';
 import {md5sum} from "./swapUtils.js";
 import { isValidSPLTokenAddress, swapToken } from './swap.js';
+import { getTokensBySymbol } from '../providers/tokenUtils.js';
 
 
 export const AutoSwapTaskTable = 'AUTO_TOKEN_SWAP_TASK';
@@ -467,22 +468,31 @@ async function checkResponse(
     validInputTokenCA = isValidSPLTokenAddress(response.inputTokenCA);
     validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
     if (!validInputTokenCA){
-        elizaLogger.log("Invalid input contract address, skipping swap", swapContext, response);
-        const responseMsg = {
-            text: "Please provide the token CA you want to sell",
-        };
-        callback?.(responseMsg);
-        return null
+        const tokens = await getTokensBySymbol(runtime.getSetting("BIRDEYE_API_KEY"), response.inputTokenSymbol);
+        if (tokens?.[0]?.address) {
+            response.inputTokenCA = tokens[0].address;
+        }else{
+            elizaLogger.log("Invalid input contract address, skipping swap");
+            const responseMsg = {
+                text: "Please provide the inputToken CA you want to sell",
+            };
+            callback?.(responseMsg);
+            return null;
+        }
     }
 
     if (!validOutputTokenCA) {
-        elizaLogger.log("Invalid output contract address, skipping swap", swapContext, response);
-        const responseMsg = {
-            text: "Please provide the token CA you want to buy",
-            action: 'EXECUTE_SWAP',
-        };
-        callback?.(responseMsg);
-        return null
+        const tokens = await getTokensBySymbol(runtime.getSetting("BIRDEYE_API_KEY"), response.outputTokenSymbol);
+        if (tokens?.[0]?.address) {
+            response.outputTokenCA = tokens[0].address;
+        }else{
+            elizaLogger.log("Invalid output contract address, skipping swap");
+            const responseMsg = {
+                text: "Please provide the outputToken CA you want to buy",
+            };
+            callback?.(responseMsg);
+            return null;
+        }
     }
 
     if (!response.price && !response.delay) {
