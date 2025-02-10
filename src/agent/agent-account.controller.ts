@@ -2,11 +2,14 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  ExtensionType,
   getAccount,
+  getExtensionData,
   getMint,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+import { unpack } from '@solana/spl-token-metadata';
 import {
   ComputeBudgetProgram,
   Connection,
@@ -84,6 +87,7 @@ export class AgentAccountController {
       destination: string; // destination address
       amount: string; // amount of transfer
       tokenMint?: string; // mint address of the token if type is spl-token-transfer
+      symbol: string; // symbol of the token
       decimals: number; // decimals of the token
       signature: string; // signature of the transaction
       slot: number; // slot of the transaction
@@ -119,6 +123,7 @@ export class AgentAccountController {
               destination: info.destination,
               amount: info.lamports.toString(),
               decimals: 9,
+              symbol: 'SOL',
               signature: tx.transaction.signatures[0],
               slot: tx.slot,
               time: tx.blockTime!,
@@ -142,6 +147,17 @@ export class AgentAccountController {
               'processed',
               programId,
             );
+
+            let symbol = '';
+            try {
+              symbol = unpack(
+                getExtensionData(
+                  ExtensionType.TokenMetadata,
+                  mintAccount.tlvData,
+                ),
+              ).symbol;
+            } catch (e) {}
+
             transfers.push({
               type: 'spl-token-transfer',
               source: sourceAccount.owner.toBase58(),
@@ -149,6 +165,7 @@ export class AgentAccountController {
               amount: info.amount as string,
               tokenMint: sourceAccount.mint.toBase58(),
               decimals: mintAccount.decimals,
+              symbol,
               signature: tx.transaction.signatures[0],
               slot: tx.slot,
               time: tx.blockTime!,
