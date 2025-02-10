@@ -13,12 +13,18 @@ export const COLLECTIONS = [
     indexes: [
       {
         collectionId: 1,
-        'rarity.score': -1,
+        'rarity.rank': -1,
       },
       {
         collectionId: 1,
         name: 1,
       },
+      {
+        agentId: 1
+      },
+      {
+        "agentAccount.solana": 1
+      }
     ],
     uniqueIndexes: [
       {
