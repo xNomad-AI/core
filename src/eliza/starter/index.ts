@@ -12,7 +12,6 @@ import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
 import { solanaPlugin, startAutoSwapTask } from '@elizaos/plugin-solana';
-import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
 import { MongoClient } from 'mongodb';
 
 
@@ -47,7 +46,6 @@ export async function createAgent(
     evaluators: [],
     character,
     plugins: [
-      bootstrapPlugin,
       solanaPlugin,
     ].filter(Boolean),
     providers: [],
