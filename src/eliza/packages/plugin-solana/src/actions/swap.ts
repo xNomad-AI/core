@@ -316,10 +316,11 @@ async function swapHandler(
     try {
         const rpcUrl = runtime.getSetting("SOLANA_RPC_URL") || process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
         const connection = new Connection(rpcUrl);
-        const { publicKey: walletPublicKey, keypair } = await getWalletKey(
+        const { keypair } = await getWalletKey(
             runtime,
             true
         );
+        const walletPublicKey = keypair.publicKey;
 
         // check balance
         const client = new SolanaClient(rpcUrl, keypair);
