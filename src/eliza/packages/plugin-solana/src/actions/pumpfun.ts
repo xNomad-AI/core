@@ -171,10 +171,10 @@ Amount of SOL to buy is not required, if not provided, it will be 0.
 `;
 
 export default {
-    name: "CREATE_AND_BUY_TOKEN",
-    similes: ["CREATE_AND_PURCHASE_TOKEN", "DEPLOY_AND_BUY_TOKEN"],
+    name: "CREATE_TOKEN",
+    similes: ["CREATE_PUMPFUN_TOKEN"],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
-        elizaLogger.info(`validating CREATE_AND_BUY_TOKEN`);
+        elizaLogger.info(`validating CREATE_TOKEN`);
         return true;
     },
     description:
@@ -186,7 +186,7 @@ export default {
         _options: { [key: string]: unknown },
         callback?: HandlerCallback
     ): Promise<boolean> => {
-        elizaLogger.log("Starting CREATE_AND_BUY_TOKEN handler...");
+        elizaLogger.log("Starting CREATE_TOKEN handler...");
         const image = message.content?.attachments?.[0]?.url;
         if (!image){
             const responseMsg = {
@@ -366,7 +366,7 @@ export default {
                 user: "{{user2}}",
                 content: {
                     text: "Token GLITCHIZA (GLITCHIZA) created successfully on pump.fun!\nContract Address: 3kD5DN4bbA3nykb1abjS66VF7cYZkKdirX8bZ6ShJjBB\nCreator: 9jW8FPr6BSSsemWPV22UUCzSqkVdTp6HTyPqeqyuBbCa\nView at: https://pump.fun/EugPwuZ8oUMWsYHeBGERWvELfLGFmA1taDtmY8uMeX6r",
-                    action: "CREATE_AND_BUY_TOKEN",
+                    action: "CREATE_TOKEN",
                     content: {
                         tokenInfo: {
                             symbol: "GLITCHIZA",

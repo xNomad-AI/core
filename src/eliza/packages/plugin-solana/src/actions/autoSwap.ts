@@ -201,8 +201,8 @@ export async function executeAutoTokenSwapTask(runtime: IAgentRuntime, memory: M
     elizaLogger.info(`AUTO_TOKEN_SWAP_TASK Finished successfully ${id}, txId: ${txId}`);
 }
 
-export const autoExecuteSwap: Action = {
-    name: "AUTO_EXECUTE_SWAP",
+export const autoTask: Action = {
+    name: "AUTO_TASK",
     similes: ["AUTO_BUY_TOKEN", "AUTO_SELL_TOKEN", "AUTO_SWAP_TOKENS", "AUTO_TOKEN_SWAP", "AUTO_TRADE_TOKENS", "AUTO_EXCHANGE_TOKENS"],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         // Check if the necessary parameters are provided in the message

@@ -9,6 +9,8 @@ import { NftModule } from './nft/nft.module.js';
 import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitter } from 'events';
+EventEmitter.defaultMaxListeners = 10;
 
 @Module({
   imports: [
