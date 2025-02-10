@@ -56,6 +56,10 @@ export async function createAgent(
     managers: [],
     cacheManager: cache,
   });
+
+  if (!runtime.getSetting('WALLET_SECRET_SALT')){
+    throw new Error('WALLET_SECRET_SALT not found on agent start');
+  }
   startAutoSwapTask(runtime);
   return runtime;
 }

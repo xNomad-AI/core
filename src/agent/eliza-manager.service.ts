@@ -65,18 +65,23 @@ export class ElizaManagerService {
         ),
       };
       const envVars = this.getElizaEnvs();
+      const salt = ElizaManagerService.getAgentSecretSalt(
+          config.chain,
+          config.nftId,
+        );
+      const teeMode = this.appConfig.get<string>('TEE_MODE');
       if (!config.character.settings){
         config.character.settings = {};
       }
       config.character.settings.secrets = {
         ...envVars,
         ...config.character.settings?.secrets,
-        TEE_MODE: this.appConfig.get<string>('TEE_MODE'),
-        WALLET_SECRET_SALT: ElizaManagerService.getAgentSecretSalt(
-          config.chain,
-          config.nftId,
-        ),
       };
+      config.character.settings.secrets['TEE_MODE'] = teeMode;
+      config.character.settings.secrets['WALLET_SECRET_SALT'] = salt;
+      config.character.settings['TEE_MODE'] = teeMode;
+      config.character.settings['WALLET_SECRET_SALT'] = salt;
+
       await startAgent(config.character, this.elizaClient, config.nftId, {mongoClient: this.mongoService.client});
     } catch (e) {
       this.logger.error(
