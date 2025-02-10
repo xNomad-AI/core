@@ -233,6 +233,8 @@ export function isValidSPLTokenAddress(address: string) {
 
 export const executeSwap: Action = {
     name: "EXECUTE_SWAP",
+    // every return has using callback generate the message, so we do not need the suppressInitialMessage
+    suppressInitialMessage: false,
     similes: ["SWAP_TOKENS", "TOKEN_SWAP", "TRADE_TOKENS", "EXCHANGE_TOKENS", "BUY_TOKENS", "SELL_TOKENS"],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         // Check if the necessary parameters are provided in the message
@@ -529,51 +531,40 @@ async function checkResponse(
         }
     }
 
-    if (!response.amount) {
-        elizaLogger.log("No amount provided, skipping swap");
-        const responseMsg = {
-            text: "I need the amount to perform the swap",
-        };
-        callback?.(responseMsg);
-        return null
-    }
-
-    // TODO: if response amount is half, all, etc, semantically retrieve amount and return as number
-    if (!response.amount) {
-        elizaLogger.log("Amount is not a number, skipping swap");
-        const responseMsg = {
-            text: "The amount must be a number",
-        };
-        callback?.(responseMsg);
-        return null
-    }
-
-    // the CA maybe recognized as symbol, so we need to check if it is a valid CA
-    if (isValidSPLTokenAddress(response.inputTokenSymbol) && !isValidSPLTokenAddress(response.inputTokenCA)) {
-        response.inputTokenCA = response.inputTokenSymbol;
-    }
-    if (isValidSPLTokenAddress(response.outputTokenSymbol) && !isValidSPLTokenAddress(response.outputTokenCA)) {
-        response.outputTokenCA = response.outputTokenSymbol;
-    }
-
-    // check respose is valid
-    if (isValidSPLTokenAddress(response.inputTokenCA) === false || isValidSPLTokenAddress(response.outputTokenCA) === false) {
-        elizaLogger.log("Invalid contract address, skipping swap", swapContext, response);
-        const responseMsg = {
-            text: "Please provide the token CA to perform the swap",
-        };
-        callback?.(responseMsg);
-        return null
-    }
-
     // check if amount is a number
-    if (Number.isNaN(Number(response.amount))){
+    if (!response.amount || Number.isNaN(Number(response.amount))){
         const responseMsg = {
             text: 'Please provide a valid input amount to perform the swap',
             action: 'EXECUTE_SWAP',
         };
         callback?.(responseMsg);
         return null;
+    }
+
+    let validInputTokenCA = isValidSPLTokenAddress(response.inputTokenCA);
+    let validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
+    const validInputTokenSymbol = isValidSPLTokenAddress(response.inputTokenSymbol);
+    const validOutputTokenSymbol = isValidSPLTokenAddress(response.outputTokenSymbol);
+
+    // the CA maybe recognized as symbol, so we need to check if it is a valid CA
+    if (validInputTokenSymbol && !validInputTokenCA) {
+        response.inputTokenCA = response.inputTokenSymbol;
+    }
+    if (validOutputTokenSymbol && !validOutputTokenCA) {
+        response.outputTokenCA = response.outputTokenSymbol;
+    }
+
+    validInputTokenCA = isValidSPLTokenAddress(response.inputTokenCA);
+    validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
+    // check respose is valid
+    if (validInputTokenCA === false || validOutputTokenCA === false) {
+        elizaLogger.log("Invalid contract address, skipping swap", swapContext, response);
+        const responseMsg = {
+            text: "Please provide the token CA to perform the swap",
+            action: 'EXECUTE_SWAP',
+        };
+        callback?.(responseMsg);
+        return null
     }
 
     return response;
