@@ -2,17 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import {
   Character,
-  Clients,
+  Memory,
   ModelProviderName,
   stringToUuid,
 } from '@elizaos/core';
 import { ConfigService } from '@nestjs/config';
-import { startAgent } from '../eliza/starter/index.js';
+import { newTradeAgentRuntime, startAgent } from '../eliza/starter/index.js';
 import { DirectClient } from '@elizaos/client-direct';
 import { sleep } from '../shared/utils.service.js';
 import { DeriveKeyProvider } from '@elizaos/plugin-tee';
 import { CharacterConfig } from '../shared/mongo/types.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
+import {
+  AutoSwapTaskTable,
+  executeAutoTokenSwapTask,
+} from '@elizaos/plugin-solana';
+import { Timeout } from '@nestjs/schedule';
 
 export type ElizaAgentConfig = {
   chain: string;
@@ -56,33 +61,8 @@ export class ElizaManagerService {
 
   async startAgentLocal(config: ElizaAgentConfig) {
     try {
-      // Set unique runtime environment variables for each agent
-      config.character = {
-        ...config.character,
-        ...config.characterConfig,
-        modelProvider: this.appConfig.get<ModelProviderName>(
-          'AGENT_MODEL_PROVIDER',
-        ),
-      };
-      const envVars = this.getElizaEnvs();
-      const salt = ElizaManagerService.getAgentSecretSalt(
-          config.chain,
-          config.nftId,
-        );
-      const teeMode = this.appConfig.get<string>('TEE_MODE');
-      if (!config.character.settings){
-        config.character.settings = {};
-      }
-      config.character.settings.secrets = {
-        ...envVars,
-        ...config.character.settings?.secrets,
-      };
-      config.character.settings.secrets['TEE_MODE'] = teeMode;
-      config.character.settings.secrets['WALLET_SECRET_SALT'] = salt;
-      config.character.settings['TEE_MODE'] = teeMode;
-      config.character.settings['WALLET_SECRET_SALT'] = salt;
-
-      await startAgent(config.character, this.elizaClient, config.nftId, {mongoClient: this.mongoService.client});
+      const character = await this.initAgentCharacter(config);
+      await startAgent(character, this.elizaClient, config.nftId, {mongoClient: this.mongoService.client});
     } catch (e) {
       this.logger.error(
         `Failed to start agent for NFT ${config.nftId}: ${e.message}`,
@@ -120,10 +100,10 @@ export class ElizaManagerService {
   }) {
     const filter: any = { agentId };
     if (opts.roomId) {
-      filter.roomId = opts.roomId;
+      filter.roomId = stringToUuid(opts.roomId);
     }
     if (opts.userId) {
-      filter.roomId = opts.userId;
+      filter.roomId = stringToUuid(opts.userId);
     }
     await this.mongoService.client.
       db('agent').
@@ -165,5 +145,71 @@ export class ElizaManagerService {
       solana: solanaResult.keypair.publicKey.toBase58(),
       evm: evmResult.keypair.address,
     };
+  }
+
+  @Timeout(20000)
+  async startAutoSwapTask(){
+    while (true){
+      try {
+        await this.runAutoSwapTask();
+      }catch (error) {
+        this.logger.error(`Error during auto swap task:, ${error}`);
+      }
+      await sleep(10000);
+    }
+  }
+
+  async runAutoSwapTask(){
+    const memories = await this.mongoService.client.db('agent').collection(AutoSwapTaskTable).find<Memory>({}).toArray();
+    this.logger.log(`Running auto swap task for ${memories.length} tasks`);
+      for await (const memory of memories){
+      const {agentId} = memory as Memory;
+      const {nftId, chain, aiAgent} = await this.mongoService.nfts.findOne({agentId});
+      if (!nftId){
+        continue
+      }
+      const { characterConfig } = await this.mongoService.nftConfigs.findOne({nftId: nftId});
+      const character = await this.initAgentCharacter({
+        nftId,
+        chain,
+        characterConfig,
+        character: aiAgent.character,
+      });
+      try {
+        const runtime = await newTradeAgentRuntime(character, this.mongoService.client);
+        await executeAutoTokenSwapTask(runtime, memory);
+      }catch (error) {
+        this.logger.error(`Error during token swap:, ${error}`);
+      }
+    }
+  }
+
+  async initAgentCharacter(config : ElizaAgentConfig) {
+    let {chain, nftId, character, characterConfig} = config;
+    character = {
+      ...character,
+      ...characterConfig,
+      modelProvider: this.appConfig.get<ModelProviderName>(
+        'AGENT_MODEL_PROVIDER',
+      ),
+    };
+    const envVars = this.getElizaEnvs();
+    const salt = ElizaManagerService.getAgentSecretSalt(
+      chain,
+      nftId,
+    );
+    const teeMode = this.appConfig.get<string>('TEE_MODE');
+    if (!character.settings){
+      character.settings = {};
+    }
+    character.settings.secrets = {
+      ...envVars,
+      ...character.settings?.secrets,
+    };
+    character.settings.secrets['TEE_MODE'] = teeMode;
+    character.settings.secrets['WALLET_SECRET_SALT'] = salt;
+    character.settings['TEE_MODE'] = teeMode;
+    character.settings['WALLET_SECRET_SALT'] = salt;
+    return character;
   }
 }

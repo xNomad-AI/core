@@ -8,12 +8,14 @@ import { LaunchpadModule } from './launchpad/launchpad.module.js';
 import { NftModule } from './nft/nft.module.js';
 import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     CacheModule.register({
       isGlobal: true,
       ttl: 120,

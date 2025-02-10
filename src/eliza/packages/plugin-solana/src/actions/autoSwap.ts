@@ -18,7 +18,8 @@ import {md5sum} from "./swapUtils.js";
 import {swapToken} from "./swap.js";
 
 
-interface AutoSwapTask {
+export const AutoSwapTaskTable = 'AUTO_TOKEN_SWAP_TASK';
+export interface AutoSwapTask {
     inputTokenSymbol: string | null;
     outputTokenSymbol: string | null;
     inputTokenCA: string | null;
@@ -105,26 +106,7 @@ async function getTokenFromWallet(runtime: IAgentRuntime, tokenSymbol: string) {
     }
 }
 
-export async function checkAutoSwapTask(runtime: IAgentRuntime){
-    while (true){
-        elizaLogger.info("start checkAutoSwapTask...");
-        const memories = await runtime.databaseAdapter.getMemories({
-            agentId: runtime.agentId,
-            roomId: stringToUuid('AUTO_TOKEN_SWAP_TASK'),
-            tableName: 'AUTO_TOKEN_SWAP_TASK',
-        })
-        for (const memory of memories){
-            try {
-                await executeAutoTokenSwapTask(runtime, memory);
-            }catch (error) {
-                elizaLogger.error(`Error during token swap:, ${error}`);
-            }
-        }
-        await new Promise((resolve) => setTimeout(resolve, 15000));
-    }
-}
-
-async function executeAutoTokenSwapTask(runtime: IAgentRuntime, memory: Memory){
+export async function executeAutoTokenSwapTask(runtime: IAgentRuntime, memory: Memory){
     const {content, id} = memory;
     const task = content.task as AutoSwapTask;
     elizaLogger.info("executeAutoTokenSwapTask", task, id);

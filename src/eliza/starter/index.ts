@@ -11,7 +11,7 @@ import { initializeDbCache } from './cache/index.js';
 import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
-import { solanaPlugin, startAutoSwapTask } from '@elizaos/plugin-solana';
+import { solanaPlugin } from '@elizaos/plugin-solana';
 import { MongoClient } from 'mongodb';
 
 
@@ -58,7 +58,6 @@ export async function createAgent(
   if (!runtime.getSetting('WALLET_SECRET_SALT')){
     throw new Error('WALLET_SECRET_SALT not found on agent start');
   }
-  startAutoSwapTask(runtime);
   return runtime;
 }
 
@@ -75,9 +74,7 @@ export async function startAgent(
     character.username ??= character.name;
 
     const token = getTokenForProvider(character.modelProvider, character);
-    const db = initializeDatabase(options.mongoClient, `agent`);
-
-    await db.init();
+    const db = await initializeDatabase(options.mongoClient, `agent`);
 
     const cache = initializeDbCache(character, db);
     const runtime = await createAgent(character, db, cache, token);
@@ -95,4 +92,11 @@ export async function startAgent(
       error,
     );
   }
+}
+
+export async function newTradeAgentRuntime(character: Character, mongoClient: MongoClient) {
+  const token = getTokenForProvider(character.modelProvider, character);
+  const db = await initializeDatabase(mongoClient, `agent`);
+  const cache = initializeDbCache(character, db);
+  return await createAgent(character, db, cache, token);
 }
