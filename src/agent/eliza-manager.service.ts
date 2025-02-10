@@ -90,6 +90,30 @@ export class ElizaManagerService {
     }
   }
 
+  async getAgentStatus(agentId){
+    const runtime = this.elizaClient.agents.get(agentId);
+    if (!runtime){
+      return {
+        status: 'stopped'
+      };
+    }else{
+      return {
+        status: 'running',
+      }
+    }
+  }
+
+  async checkTee(){
+    const agents: Map<string, any> = this.elizaClient.agents;
+    agents.forEach((runtime, agentId) => {
+      const salt = runtime.getSetting('WALLET_SECRET_SALT');
+      const teeMode = runtime.getSetting('TEE_MODE');
+      if (!salt || !teeMode){
+        this.logger.error(`Agent ${agentId} is missing salt or teeMode`);
+      }
+    });
+  }
+
   async deleteAgentMemory(agentId: string, opts?: {
     roomId?: string,
     userId?: string,

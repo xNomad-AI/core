@@ -49,10 +49,12 @@ export class AgentController {
 
   @Get('/status')
   async getAgentStatus(@Query('agentId') agentId: string) {
-    this.elizaManager.getElizaEnvs()
-    return {
-      status: 'ok',
-    };
+    return this.elizaManager.getAgentStatus(agentId)
+  }
+
+  @Get('/checkTee')
+  async checkTee() {
+    return await this.elizaManager.checkTee()
   }
 
 
