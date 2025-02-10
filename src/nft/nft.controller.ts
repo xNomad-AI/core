@@ -15,6 +15,7 @@ import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
 import { CharacterConfig } from '../shared/mongo/types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
+import { CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('/nft')
 export class NftController {
@@ -41,6 +42,7 @@ export class NftController {
     return await this.nftService.getFilterTemplate(chain, collectionId);
   }
 
+  @CacheTTL(10)
   @Get('/:chain/collection/:id/metrics')
   async getCollectionMetrics(
     @Param('chain') chain: string,
@@ -49,6 +51,7 @@ export class NftController {
     return await this.nftService.getCollectionMetrics(chain, collectionId);
   }
 
+  @CacheTTL(10)
   @Get('/:chain/collection/:id/nfts')
   async getNfts(
     @Param('chain') chain: string,
@@ -62,6 +65,7 @@ export class NftController {
     });
   }
 
+  @CacheTTL(5)
   @Get('/:chain/address/:address/nfts')
   async getNftsByOwner(
     @Param('chain') chain: string,
@@ -71,6 +75,7 @@ export class NftController {
     return await this.nftService.getNftsByOwner(chain, address, collectionId);
   }
 
+  @CacheTTL(15)
   @Get('/:chain/nfts/:nftId')
   async getNftById(
     @Param('chain') chain: string,
