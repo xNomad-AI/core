@@ -185,6 +185,49 @@ Respond with a JSON markdown block containing only the extracted values. Use nul
 }
 \`\`\``;
 
+const userConfirmTemplate = `
+{{recentMessages}}
+
+Determine whether the user has explicitly confirmed the swap.  
+Respond with a json 
+{
+    "userAcked": boolean
+}
+userAcked value: \`true\` if the user has confirmed, otherwise \`false\`.  
+
+**Confirmation Criteria:**  
+- The user must clearly express intent using words such as **"yes"** or **"confirm"**.  
+- Responses like **"okay" (ok), "sure"**, or similar should also be considered confirmation.  
+- Any ambiguous, uncertain, or unrelated responses should result in \`false\`.  
+- If the user does not respond at all after the confirmation request, return \`false\`.  
+
+**Examples:**  
+
+ **Should return \`true\`**  
+- User1: "swap 0.0001 SOL for USDC"  
+- User2: "Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v. \n Please confirm the swap by replying with 'yes' or 'confirm'.;
+- User1: "yes"  
+
+- User1: "i want to buy 0.1 SOL ELIZA"  
+- User2: "Please provide the CA of ELIZA"
+- User1: "5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM"
+- User2: "Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM. \n Please confirm the swap by replying with 'yes' or 'confirm'."  
+- User1: "okay"  
+
+ **Should return \`false\`**  
+- User1: "swap 0.0001 SOL for USDC"  
+- User2: "Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v. \n Please confirm the swap by replying with 'yes' or 'confirm'."  
+- User1: "hmm..."  
+
+- User1: "buy 0.1 SOL ELIZA"  
+- User2: "Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM. \n Please confirm the swap by replying with 'yes' or 'confirm'."  
+- User1: (no response)  
+
+{
+    "userAcked": boolean
+}
+Return the json with userAcked field value \`true\` or \`false\` based on the **immediate** response following the confirmation request.`;
+
 // if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
 
 // get all the tokens in the wallet using the wallet provider
@@ -556,11 +599,53 @@ async function checkResponse(
 
     validInputTokenCA = isValidSPLTokenAddress(response.inputTokenCA);
     validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
-    // check respose is valid
-    if (validInputTokenCA === false || validOutputTokenCA === false) {
-        elizaLogger.log("Invalid contract address, skipping swap", swapContext, response);
+    if (!validInputTokenCA){
+      elizaLogger.log("Invalid input contract address, skipping swap", swapContext, response);
+      const responseMsg = {
+        text: "Please provide the token CA you want to sell",
+      };
+      callback?.(responseMsg);
+      return null
+    }
+
+    if (!validOutputTokenCA) {
+      elizaLogger.log("Invalid output contract address, skipping swap", swapContext, response);
+      const responseMsg = {
+        text: "Please provide the token CA you want to buy",
+        action: 'EXECUTE_SWAP',
+      };
+      callback?.(responseMsg);
+      return null
+    }
+
+    elizaLogger.info(`checking if user confirm to execute swap`);
+
+    const confirmContext = composeContext({
+        state,
+        template: userConfirmTemplate,
+    });
+
+    const confirmResponse = await generateObjectDeprecated({
+        runtime,
+        context: confirmContext,
+        modelClass: ModelClass.LARGE,
+    });
+    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+
+    if (confirmResponse.userAcked != "true" && confirmResponse.userAcked != true) {
+        const swapInfo = formatSwapInfo({
+            inputTokenSymbol: response.inputTokenSymbol,
+            inputTokenCA: response.inputTokenCA,
+            outputTokenSymbol: response.outputTokenSymbol,
+            outputTokenCA: response.outputTokenCA,
+            amount: response.amount,
+        });
         const responseMsg = {
-            text: "Please provide the token CA to perform the swap",
+            text: `
+                ${swapInfo}
+                ----------------------------
+✅ Please confirm the swap by replying with 'yes' or 'ok'.
+                `,
             action: 'EXECUTE_SWAP',
         };
         callback?.(responseMsg);
@@ -568,4 +653,22 @@ async function checkResponse(
     }
 
     return response;
+}
+
+function formatSwapInfo(params: {
+    inputTokenSymbol: string;
+    inputTokenCA: string;
+    outputTokenSymbol: string;
+    outputTokenCA: string;
+    amount: number;
+}): string {
+    return `
+💱 Swap Request
+----------------------------
+🔹 From: ${params.amount} ${params.inputTokenSymbol}  
+   📌 CA: ${params.inputTokenCA}
+
+🔸 To: ${params.outputTokenSymbol}  
+   📌 CA: ${params.outputTokenCA}
+  `;
 }
