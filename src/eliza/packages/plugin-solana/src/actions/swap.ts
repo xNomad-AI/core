@@ -318,7 +318,7 @@ async function swapHandler(
         const connection = new Connection(rpcUrl);
         const { publicKey: walletPublicKey, keypair } = await getWalletKey(
             runtime,
-            false
+            true
         );
 
         // check balance
