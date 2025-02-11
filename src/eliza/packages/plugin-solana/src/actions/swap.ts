@@ -190,6 +190,7 @@ const userConfirmTemplate = `
 {{recentMessages}}
 
 Determine whether the user has explicitly confirmed the swap.  
+Consider only the last three messages from the conversation history above.
 Respond with a json 
 {
     "userAcked": boolean
