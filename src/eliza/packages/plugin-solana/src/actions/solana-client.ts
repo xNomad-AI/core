@@ -39,7 +39,7 @@ export class SolanaClient {
     return this.getSPLBalance(token);
   }
 
-  private async getTokenProgramId(mintTokenAddress: string) {
+  async getTokenProgramId(mintTokenAddress: string) {
     const address = new PublicKey(mintTokenAddress);
 
     const accountInfo = await this.connection.getParsedAccountInfo(address);

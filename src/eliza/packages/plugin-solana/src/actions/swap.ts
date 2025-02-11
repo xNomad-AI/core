@@ -17,7 +17,8 @@ import { getWalletKey } from "../keypairUtils.js";
 import { isAgentAdmin, NotAgentAdminMessage, walletProvider, WalletProvider } from '../providers/wallet.js';
 import { getTokenDecimals } from "./swapUtils.js";
 import {
-    getOrCreateAssociatedTokenAccount, NATIVE_MINT
+    getOrCreateAssociatedTokenAccount, NATIVE_MINT,
+    TOKEN_2022_PROGRAM_ID
   } from "@solana/spl-token";
 import { SolanaClient } from "./solana-client.js";
 import { getTokensBySymbol } from '../providers/tokenUtils.js';
@@ -42,7 +43,8 @@ export async function swapToken(
     inputTokenCA: string,
     outputTokenCA: string,
     amount: number,
-    runtime: IAgentRuntime
+    runtime: IAgentRuntime,
+    programId: PublicKey,
 ): Promise<any> {
     try {
         // Get the decimals for the input token
@@ -94,19 +96,22 @@ export async function swapToken(
             prioritizationFeeLamports: {
                 priorityLevelWithMaxLamports: {
                     global: false,
-                    maxLamports: 40000000,
+                    // 0.01 SOL
+                    maxLamports: 10000000,
                     priorityLevel: "veryHigh"
                 }
             },
             priorityLevelWithMaxLamports: {
-                maxLamports: 40000000,
+                // 0.01 SOL
+                maxLamports: 10000000,
                 priorityLevel: "veryHigh",
             },
         };
-        // swapRequestBody['feeAccount'] = getJUP_SWAP_FEE_ACCOUNT();
 
         // get or create fee token account after check to prevent invalid token account creation
-        if (getJUP_SWAP_FEE_BPS() !== undefined && getJUP_SWAP_FEE_ACCOUNT() !== undefined) {
+        // https://station.jup.ag/docs/swap-api/add-fees-to-swap#important-notes
+        if (getJUP_SWAP_FEE_BPS() !== undefined && getJUP_SWAP_FEE_ACCOUNT() !== undefined && !programId.equals(TOKEN_2022_PROGRAM_ID)) {
+            elizaLogger.log("get or creating fee account:", getJUP_SWAP_FEE_ACCOUNT(), programId.toBase58());
             const { keypair } = await getWalletKey(runtime, true);
             const FEE_ACCOUNT_INPUT_MINT_ACCOUNT = (
                 await getOrCreateAssociatedTokenAccount(
@@ -115,6 +120,9 @@ export async function swapToken(
                     new PublicKey(quoteData.inputMint),
                     new PublicKey(getJUP_SWAP_FEE_ACCOUNT()),
                     true,
+                    undefined,
+                    undefined,
+                    programId,
                 )
             ).address;
 
@@ -369,31 +377,6 @@ async function swapHandler(
         );
         const walletPublicKey = keypair.publicKey;
 
-        // check balance
-        const client = new SolanaClient(rpcUrl, keypair);
-        const balance = await client.getBalance(response.inputTokenCA);
-        if (balance < response.amount) {
-            elizaLogger.error("Insufficient balance for swap");
-            const responseMsg = {
-                text: "Insufficient balance for swap, required: " + response.amount + " but only have: " + balance,
-            };
-            callback?.(responseMsg);
-            return true;
-        }
-
-        // require 0.001 SOL for gas fee
-        if (response.inputTokenCA !== NATIVE_MINT.toBase58()) {
-            const balance = await client.getBalance(NATIVE_MINT.toBase58());
-            if (balance < 0.001) {
-                elizaLogger.error("Insufficient balance for swap gas fee");
-                const responseMsg = {
-                    text: "Insufficient balance for swap gas fee, required: 0.001 SOL but only have: " + balance,
-                };
-                callback?.(responseMsg);
-                return true;
-            }
-        }
-
         elizaLogger.log("Wallet Public Key:", walletPublicKey);
         elizaLogger.log("inputTokenSymbol:", response.inputTokenCA);
         elizaLogger.log("outputTokenSymbol:", response.outputTokenCA);
@@ -406,6 +389,7 @@ async function swapHandler(
             response.outputTokenCA,
             response.amount,
             runtime,
+            response.programId,
         );
 
         elizaLogger.info("Deserializing transaction...");
@@ -432,12 +416,18 @@ async function swapHandler(
 
         // const latestBlockhash = await connection.getLatestBlockhash();
 
-        const txid = await connection.sendTransaction(transaction, {
-            skipPreflight: false,
-            maxRetries: 3,
-            preflightCommitment: "confirmed",
-        });
-
+        let txid: string;
+        try {
+            txid = await connection.sendTransaction(transaction, {
+                skipPreflight: false,
+                maxRetries: 3,
+                preflightCommitment: "confirmed",
+            });    
+        } catch (error) {
+            elizaLogger.warn("Error sending transaction:", error);
+            throw error;
+        }
+        
         elizaLogger.log("Transaction sent:", txid);
 
         let confirmation: RpcResponseAndContext<SignatureStatus | null>;
@@ -484,6 +474,7 @@ async function checkResponse(
     inputTokenCA: string;
     outputTokenCA: string;
     amount: number;
+    programId: PublicKey;
 } | null> {
     // check if the swap request is from agent owner or public chat
     const isAdmin = await isAgentAdmin(runtime, message);
@@ -629,6 +620,55 @@ async function checkResponse(
         }
     }
 
+    // check the input token is a valid SPL token address
+    const client = await getSolanaClient(runtime);
+    let programId: PublicKey;
+    try {
+        programId = await client.getTokenProgramId(response.inputTokenCA);
+        await client.getTokenProgramId(response.outputTokenCA);
+    } catch (error) {
+        elizaLogger.error("Invalid input token contract address");
+        const responseMsg = {
+            text: "Input Contract Address Is Not A Valid Token Address",
+        };
+        callback?.(responseMsg);
+        return null;
+    }
+
+    // check balance
+    const balance = await client.getBalance(response.inputTokenCA);
+    if (balance < response.amount) {
+        elizaLogger.error(`${response.inputTokenCA} Insufficient balance for swap`);
+        const responseMsg = {
+            text: "Insufficient balance for swap, required: " + response.amount + " but only have: " + balance,
+        };
+        callback?.(responseMsg);
+        return null;
+    }
+
+    const WSOL_AMOUNT = await client.getBalance(NATIVE_MINT.toBase58());
+    const GAS_BANANCE = 0.001;
+    // require 0.001 SOL for gas fee
+    if (response.inputTokenCA !== NATIVE_MINT.toBase58()) {
+        const balance = await client.getBalance(NATIVE_MINT.toBase58());
+        if (balance < GAS_BANANCE) {
+            elizaLogger.error("Insufficient balance for swap gas fee");
+            const responseMsg = {
+                text: `Insufficient balance for swap gas fee, required: ${GAS_BANANCE} SOL but only have: ` + balance,
+            };
+            callback?.(responseMsg);
+            return null;
+        }
+    } else if (WSOL_AMOUNT - response.amount < GAS_BANANCE) {
+        const requiredAmount = GAS_BANANCE + Number(response.amount);
+        elizaLogger.error("Insufficient balance for swap gas fee");
+        const responseMsg = {
+            text: `Insufficient balance for swap gas fee, required: ${requiredAmount} SOL but only have: ` + WSOL_AMOUNT,
+        };
+        callback?.(responseMsg);
+        return null;
+    }
+
     elizaLogger.info(`checking if user confirm to execute swap`);
 
     const confirmContext = composeContext({
@@ -662,7 +702,7 @@ async function checkResponse(
         return null
     }
 
-    return response;
+    return { ...response, programId };
 }
 
 function formatSwapInfo(params: {
@@ -682,4 +722,13 @@ function formatSwapInfo(params: {
    📌 CA: ${params.outputTokenCA}
 ----------------------------
   `;
+}
+
+async function getSolanaClient(runtime: IAgentRuntime) {
+    const rpcUrl = runtime.getSetting("SOLANA_RPC_URL") || process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
+    const { keypair } = await getWalletKey(
+        runtime,
+        true
+    );
+    return new SolanaClient(rpcUrl, keypair);
 }
