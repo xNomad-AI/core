@@ -17,6 +17,7 @@ import { isAgentAdmin, NotAgentAdminMessage, walletProvider, WalletProvider } fr
 import {md5sum} from "./swapUtils.js";
 import { isValidSPLTokenAddress, swapToken } from './swap.js';
 import { getTokensBySymbol } from '../providers/tokenUtils.js';
+import { SolanaClient } from "./solana-client.js";
 
 
 export const AutoSwapTaskTable = 'AUTO_TOKEN_SWAP_TASK';
@@ -545,9 +546,11 @@ async function checkResponse(
 
 async function executeSwapTokenTx(runtime: IAgentRuntime, keypair: Keypair, inputTokenCA: string, outputTokenCA: string, amount: number){
     elizaLogger.info(`swapToken ${keypair.publicKey.toBase58()} : ${inputTokenCA} for ${outputTokenCA} amount: ${amount}`);
-    const connection = new Connection(
-      runtime.getSetting("SOLANA_RPC_URL") || process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com"
-    );
+    const rpcUrl = runtime.getSetting("SOLANA_RPC_URL") || process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
+    const connection = new Connection(rpcUrl);
+
+    const solanaClient = new SolanaClient(rpcUrl, keypair);
+    const programId = await solanaClient.getTokenProgramId(inputTokenCA);
     const swapResult = await swapToken(
       connection,
       keypair.publicKey,
@@ -555,6 +558,7 @@ async function executeSwapTokenTx(runtime: IAgentRuntime, keypair: Keypair, inpu
       outputTokenCA as string,
       amount as number,
       runtime,
+      programId,
     );
 
     elizaLogger.info("Deserializing transaction...");
