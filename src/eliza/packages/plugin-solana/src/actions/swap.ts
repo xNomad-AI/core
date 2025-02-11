@@ -287,7 +287,7 @@ export function isValidSPLTokenAddress(address: string) {
 export const executeSwap: Action = {
     name: "EXECUTE_SWAP",
     // every return has using callback generate the message, so we do not need the suppressInitialMessage
-    suppressInitialMessage: false,
+    suppressInitialMessage: true,
     similes: ["SWAP_TOKENS", "TOKEN_SWAP", "TRADE_TOKENS", "EXCHANGE_TOKENS", "BUY_TOKENS", "SELL_TOKENS"],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         // Check if the necessary parameters are provided in the message

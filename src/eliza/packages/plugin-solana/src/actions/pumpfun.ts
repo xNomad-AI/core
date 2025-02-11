@@ -173,8 +173,8 @@ Amount of SOL to buy is not required, if not provided, it will be 0.
 export default {
     name: "CREATE_TOKEN",
     similes: ["CREATE_PUMPFUN_TOKEN"],
+    suppressInitialMessage: true,
     validate: async (runtime: IAgentRuntime, message: Memory) => {
-        elizaLogger.info(`validating CREATE_TOKEN`);
         return true;
     },
     description:

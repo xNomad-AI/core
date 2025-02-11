@@ -35,9 +35,8 @@ The result should be a valid json object with the following fields:
 export const airdrop: Action = {
     name: "CLAIM_AIRDROP",
     similes: [],
+    suppressInitialMessage: true,
     validate: async (runtime: IAgentRuntime, message: Memory) => {
-        // Check if the necessary parameters are provided in the message
-        elizaLogger.log("Validating CLAIM_AIRDROP Message:", message.content);
         return true;
     },
     description: "Perform claim airdrop",
