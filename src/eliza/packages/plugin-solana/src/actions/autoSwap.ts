@@ -382,7 +382,7 @@ async function checkResponse(
         modelClass: ModelClass.LARGE,
     });
 
-    elizaLogger.log("Response:", response);
+    elizaLogger.info(`Message: ${message?.content?.text}, Response:`, response);
 
     // Add SOL handling logic
     if (response.inputTokenSymbol?.toUpperCase() === "SOL") {
@@ -531,7 +531,6 @@ async function checkResponse(
         const responseMsg = {
             text: `
                 ${swapInfo}
-                ----------------------------
 ✅ Please confirm the swap by replying with 'yes' or 'ok'.
                 `,
             action: 'EXECUTE_SWAP',
@@ -617,5 +616,6 @@ function formatTaskInfo(params: AutoSwapTask): string {
    📌 CA: ${params.outputTokenCA}
    
    Condition: ${trigger}
+----------------------------
   `;
 }
