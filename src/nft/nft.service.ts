@@ -13,7 +13,7 @@ import {
   NftSearchOptions,
 } from './nft.types.js';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
-import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { AddressService } from '../address/address.service.js';
 import { stringToUuid } from '@elizaos/core';
 import { deepMerge } from '../shared/utils.service.js';
@@ -26,6 +26,8 @@ export class NftService implements OnApplicationBootstrap {
     private readonly mongo: MongoService,
     private readonly elizaManager: ElizaManagerService,
     private readonly addressService: AddressService,
+    private readonly eventEmitter: EventEmitter2,
+
   ) {
     this.logger.setContext(NftService.name);
   }
@@ -38,14 +40,14 @@ export class NftService implements OnApplicationBootstrap {
 
   // Start AI agents for all indexed NFTs
   async startAIAgents() {
+    const configedNfts = await this.mongo.nftConfigs.find().toArray();
+    const configedNftIds = configedNfts.map(nft => nft.nftId);
     const cursor = this.mongo.nfts
-      .find({name: 'xNomad #4058'})
+      .find({chain: 'solana', nftId: { $in: configedNftIds }})
       .addCursorFlag('noCursorTimeout', true)
-      .sort({ _id: 1 })
-      .limit(1);
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
-      await this.handleNewAINfts([nft], true);
+      await this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft]);
     }
     await this.elizaManager.startAgentServer();
   }
