@@ -83,47 +83,43 @@ Respond with a JSON markdown block containing only the extracted values. Use nul
 const userConfirmAutoTaskTemplate = `
 {{recentMessages}}
 
-Determine whether the user has explicitly confirmed to create an autotask.  
-Consider only the last three messages from the conversation history above.
-Respond with a json 
+Determine the user's confirmation status for creating an autotask.  
+Consider only the last one or two messages from the conversation history above.  
+Respond with a JSON:  
+\`\`\`json
 {
-    "userAcked": boolean
+    "userAcked": "confirmed" | "rejected" | "pending"
 }
-userAcked value: \`true\` if the user has confirmed, otherwise \`false\`.  
+\`\`\`  
 
 **Confirmation Criteria:**  
-- The user must clearly express intent using words such as **"yes"** or **"confirm"**.  
-- Responses like **"okay" (ok), "sure"**, or similar should also be considered confirmation.  
-- Any ambiguous, uncertain, or unrelated responses should result in \`false\`.  
-- If the user does not respond at all after the confirmation request, return \`false\`.  
+- \`"confirmed"\` → The user has explicitly confirmed using words like **"yes"**, **"confirm"**, **"okay"**, **"sure"**, or similar.  
+- \`"rejected"\` → The user responded with anything other than a confirmation after User2 send confirmation message.
+- \`"pending"\` → The user has provided a complete autotask request, but User2 has not yet sent the confirmation prompt.  
 
 **Examples:**  
 
- **Should return \`true\`**  
-- User1: "create autotask swap 0.0001 SOL for USDC when price under 0.99"  
-- User2: "Auto Task:: Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v when price under 0.99. \n Please confirm the swap by replying with 'yes' or 'confirm'.;
+ **Should return \`"confirmed"\`**  
+- User2: "Auto Task:: Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v when price under 0.99.  
+  Please confirm the swap by replying with 'yes' or 'confirm'."  
 - User1: "yes"  
 
-- User1: "i want to buy 0.1 SOL ELIZA when price under 0.016543"  
-- User2: "Please provide the CA of ELIZA"
-- User1: "5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM"
-- User2: "Auto Task:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM when price under 0.016543. \n Please confirm the swap by replying with 'yes' or 'confirm'."  
+- User2: "Auto Task:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM when price under 0.016543.  
+  Please confirm the swap by replying with 'yes' or 'confirm'."  
 - User1: "okay"  
 
- **Should return \`false\`**  
-- User1: "swap 0.0001 SOL for USDC when price under 0.99"  
-- User2: "Auto Task: Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v when price under 0.99. \n Please confirm the swap by replying with 'yes' or 'confirm'."  
+ **Should return \`"rejected"\`**  
+- User2: "Auto Task: Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v when price under 0.99.  
+  Please confirm the swap by replying with 'yes' or 'confirm'."  
 - User1: "hmm..."  
 
-- User1: "buy 0.1 SOL ELIZA when price under 0.016543"  
-- User2: "Auto Task:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM.when price under 0.016543 \n Please confirm the swap by replying with 'yes' or 'confirm'."  
-- User1: (no response)  
+- User2: "Auto Task:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM when price under 0.016543.  
+  Please confirm the swap by replying with 'yes' or 'confirm'."  
+- User1: "no"  
 
-{
-    "userAcked": boolean | null
-}
-Return the json with userAcked field value \`true\` or \`false\` based on the **immediate** response following the confirmation request.`;
-
+ **Should return \`"pending"\`**  
+- User1: "create autotask swap 0.0001 SOL for USDC when price under 0.99"  
+`;
 
 // if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
 
@@ -527,7 +523,15 @@ async function checkResponse(
     });
     elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
 
-    if (confirmResponse.userAcked != "true" && confirmResponse.userAcked != true) {
+    if (confirmResponse.userAcked == "rejected"){
+        const responseMsg = {
+            text: "ok. I will not set the autotask.",
+        };
+        callback?.(responseMsg);
+        return null;
+    }
+
+    if (confirmResponse.userAcked == "pending") {
         const swapInfo = formatTaskInfo(response);
         const responseMsg = {
             text: `

@@ -197,47 +197,43 @@ Respond with a JSON markdown block containing only the extracted values. Use nul
 const userConfirmTemplate = `
 {{recentMessages}}
 
-Determine whether the user has explicitly confirmed the swap.  
-Consider only the last three messages from the conversation history above.
-Respond with a json 
+Determine the user's response status regarding the swap confirmation.  
+Consider only the last one or two messages messages from the conversation history above.  
+Respond with a JSON:  
+\`\`\`json
 {
-    "userAcked": boolean
+    "userAcked": "confirmed" | "rejected" | "pending"
 }
-userAcked value: \`true\` if the user has confirmed, otherwise \`false\`.  
+\`\`\`  
 
-**Confirmation Criteria:**  
-- The user must clearly express intent using words such as **"yes"** or **"confirm"**.  
-- Responses like **"okay" (ok), "sure"**, or similar should also be considered confirmation.  
-- Any ambiguous, uncertain, or unrelated responses should result in \`false\`.  
-- If the user does not respond at all after the confirmation request, return \`false\`.  
+**Decision Criteria:**  
+"confirmed" → The user has explicitly confirmed the swap using words like “yes”, “confirm”, “okay”, “sure”, etc.
+"rejected" → The user has responded with anything other than a confirmation.
+"pending" → The user has provided a complete swap request, but User2 has not yet sent the confirmation prompt.
 
 **Examples:**  
 
- **Should return \`true\`**  
-- User1: "swap 0.0001 SOL for USDC"  
-- User2: "Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v. \n Please confirm the swap by replying with 'yes' or 'confirm'.;
+✅ **Should return \`"confirmed"\`**  
+- User2: "Swap 0.0001 SOL for USDC. Please confirm by replying with 'yes' or 'confirm'."  
 - User1: "yes"  
 
-- User1: "i want to buy 0.1 SOL ELIZA"  
-- User2: "Please provide the CA of ELIZA"
-- User1: "5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM"
-- User2: "Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM. \n Please confirm the swap by replying with 'yes' or 'confirm'."  
+- User2: "Swap 0.1 SOL for ELIZA. Please confirm."  
 - User1: "okay"  
 
- **Should return \`false\`**  
-- User1: "swap 0.0001 SOL for USDC"  
-- User2: "Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v. \n Please confirm the swap by replying with 'yes' or 'confirm'."  
-- User1: "hmm..."  
+❌ **Should return \`"rejected"\`**  
+- User2: "Swap 0.0001 SOL for USDC. Please confirm by replying with 'yes' or 'confirm'"  
+- User1: "no"  
 
 - User1: "buy 0.1 SOL ELIZA"  
-- User2: "Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM. \n Please confirm the swap by replying with 'yes' or 'confirm'."  
-- User1: (no response)  
+- User2: "Swap 0.1 SOL for ELIZA. Please confirm by replying with 'yes' or 'confirm'."  
+- User1: "cancel"  
 
-{
-    "userAcked": boolean
-}
-Return the json with userAcked field value \`true\` or \`false\` based on the **immediate** response following the confirmation request.`;
+❓ **Should return \`"pending"\`**  
+- User1: "swap 0.0001 SOL for USDC"  
 
+- User1: "buy 0.1 SOL ELIZA"  
+
+Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
 // if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
 
 // get all the tokens in the wallet using the wallet provider
@@ -291,7 +287,6 @@ export const executeSwap: Action = {
     similes: ["SWAP_TOKENS", "TOKEN_SWAP", "TRADE_TOKENS", "EXCHANGE_TOKENS", "BUY_TOKENS", "SELL_TOKENS"],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         // Check if the necessary parameters are provided in the message
-        elizaLogger.info("Validating executeSwap message:");
         return true;
     },
     description: "Perform a token swap.",
@@ -627,7 +622,7 @@ async function checkResponse(
         programId = await client.getTokenProgramId(response.inputTokenCA);
         await client.getTokenProgramId(response.outputTokenCA);
     } catch (error) {
-        elizaLogger.error("Invalid input token contract address");
+        elizaLogger.error(`Invalid input token contract address ${response.inputTokenCA}, ${error}`);
         const responseMsg = {
             text: "Input Contract Address Is Not A Valid Token Address",
         };
@@ -683,7 +678,15 @@ async function checkResponse(
     });
     elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
 
-    if (confirmResponse.userAcked != "true" && confirmResponse.userAcked != true) {
+    if (confirmResponse.userAcked == "rejected"){
+        const responseMsg = {
+            text: "ok. I will not execute this transaction.",
+        };
+        callback?.(responseMsg);
+        return null;
+    }
+
+    if (confirmResponse.userAcked == "pending") {
         const swapInfo = formatSwapInfo({
             inputTokenSymbol: response.inputTokenSymbol,
             inputTokenCA: response.inputTokenCA,
