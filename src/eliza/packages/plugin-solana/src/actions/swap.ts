@@ -109,9 +109,15 @@ export async function swapToken(
             },
         };
 
+        const client = await getSolanaClient(runtime);
+        const outProgramId = await client.getTokenProgramId(quoteData.outputMint);
         // get or create fee token account after check to prevent invalid token account creation
         // https://station.jup.ag/docs/swap-api/add-fees-to-swap#important-notes
-        if (getJUP_SWAP_FEE_BPS() !== undefined && getJUP_SWAP_FEE_ACCOUNT() !== undefined && !programId.equals(TOKEN_2022_PROGRAM_ID)) {
+        if (getJUP_SWAP_FEE_BPS() !== undefined && 
+            getJUP_SWAP_FEE_ACCOUNT() !== undefined && 
+            !programId.equals(TOKEN_2022_PROGRAM_ID) &&
+            outProgramId.equals(TOKEN_2022_PROGRAM_ID)
+        ) {
             elizaLogger.log("get or creating fee account:", getJUP_SWAP_FEE_ACCOUNT(), programId.toBase58());
             const { keypair } = await getWalletKey(runtime, true);
             const FEE_ACCOUNT_INPUT_MINT_ACCOUNT = (
@@ -512,32 +518,6 @@ async function checkResponse(
     }
     if (response.outputTokenSymbol?.toUpperCase() === "SOL") {
         response.outputTokenCA = getRuntimeKey(runtime, "SOL_ADDRESS");
-    }
-
-    // if both contract addresses are set, lets execute the swap
-    // TODO: try to resolve CA from symbol based on existing symbol in wallet
-    if (!response.inputTokenCA && response.inputTokenSymbol) {
-        elizaLogger.log(
-            `Attempting to resolve CA for input token symbol: ${response.inputTokenSymbol}`
-        );
-        response.inputTokenCA = await getTokenFromWallet(
-            runtime,
-            response.inputTokenSymbol
-        );
-        if (response.inputTokenCA) {
-            elizaLogger.log(
-                `Resolved inputTokenCA: ${response.inputTokenCA}`
-            );
-        } else {
-            elizaLogger.log(
-                "No contract addresses provided, skipping swap"
-            );
-            const responseMsg = {
-                text: `Please make sure you have the token ${response.inputTokenSymbol} in wallet`,
-            };
-            callback?.(responseMsg);
-            return null
-        }
     }
 
     // check if amount is a number
