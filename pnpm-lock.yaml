@@ -987,7 +987,7 @@ packages:
     version: 0.1.9
 
   '@elizaos/client-twitter@file:local_dependency/elizaos-client-twitter-0.1.9.tgz':
-    resolution: {integrity: sha512-UrzCvQ9+nZp7pE5fDP28k7f3Mbe354fzwQ+hpnrhlysOrushXN6aWzI0e1HsVA8figFbFLNG6BgEBsVNzDBFKA==, tarball: file:local_dependency/elizaos-client-twitter-0.1.9.tgz}
+    resolution: {integrity: sha512-mOdql/OL4PpmrGXYT3YZeUXzW7x8P+JgGajcCOI7bmAWLnHHEmdyZeribZh42pZLTAMcTO/6tJKcSK5sbN6a5Q==, tarball: file:local_dependency/elizaos-client-twitter-0.1.9.tgz}
     version: 0.1.9
     peerDependencies:
       whatwg-url: 7.1.0
