@@ -109,9 +109,15 @@ export async function swapToken(
             },
         };
 
+        const client = await getSolanaClient(runtime);
+        const outProgramId = await client.getTokenProgramId(quoteData.outputMint);
         // get or create fee token account after check to prevent invalid token account creation
         // https://station.jup.ag/docs/swap-api/add-fees-to-swap#important-notes
-        if (getJUP_SWAP_FEE_BPS() !== undefined && getJUP_SWAP_FEE_ACCOUNT() !== undefined && !programId.equals(TOKEN_2022_PROGRAM_ID)) {
+        if (getJUP_SWAP_FEE_BPS() !== undefined && 
+            getJUP_SWAP_FEE_ACCOUNT() !== undefined && 
+            !programId.equals(TOKEN_2022_PROGRAM_ID) &&
+            outProgramId.equals(TOKEN_2022_PROGRAM_ID)
+        ) {
             elizaLogger.log("get or creating fee account:", getJUP_SWAP_FEE_ACCOUNT(), programId.toBase58());
             const { keypair } = await getWalletKey(runtime, true);
             const FEE_ACCOUNT_INPUT_MINT_ACCOUNT = (
