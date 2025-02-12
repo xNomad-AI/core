@@ -30,8 +30,8 @@ export interface AutoSwapTask {
     delay: string | null;
     startAt: Date | null;
     expireAt: Date;
-    priceConditon: 'under' | 'over';
-    priceTarget: number | string | null;
+    priceCondition: 'under' | 'over' | 'null' | null;
+    priceTarget: number | 'null' | null;
 }
 
 const autoSwapTemplate = `Respond with a JSON markdown block containing only the extracted values. Use \`null\` for any values that cannot be determined.
@@ -45,7 +45,7 @@ Example response:
     "outputTokenCA": "5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM",
     "amount": 0.1,
     "delay": "300s",
-    "priceConditon": "under",
+    "priceCondition": "under",
     "priceTarget": 0.016543
 }
 
@@ -62,20 +62,22 @@ Input token contract address (if provided)
 Output token contract address (if provided)
 Amount to swap (number or string)
 Delay (if provided, e.g., “after 5 minutes” → "300s")
-Price trigger condition ("under" or "over")
-Price target (if provided)
+Price trigger condition ("under" or "over" or null)
+Price target (if provided, should be number or null)
 
 Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined. The result should be a valid JSON object with the following schema:
 \`\`\`json
 {
-    "inputTokenSymbol": string | null,
-    "outputTokenSymbol": string | null,
-    "inputTokenCA": string | null,
-    "outputTokenCA": string | null,
-    "amount": number | string | null,
-    "delay": string | null,
-    "priceConditon": "under" | "over" | null,
-    "priceTarget": number | null
+    inputTokenSymbol: string | null;
+    outputTokenSymbol: string | null;
+    inputTokenCA: string | null;
+    outputTokenCA: string | null;
+    amount: number | string | null;
+    delay: string | null;
+    startAt: Date | null;
+    expireAt: Date;
+    priceCondition: 'under' | 'over' | null;
+    priceTarget: number  | null;
 }
 \`\`\``;
 
@@ -100,20 +102,20 @@ Respond with a JSON:
 **Examples:**  
 
  **Should return \`"confirmed"\`**  
-- User2: "Auto Task:: Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v when price under 0.99.  
+- User2: "AutoTask:: Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v when price under 0.99.  
   Please confirm the swap by replying with 'yes' or 'confirm'."  
 - User1: "yes"  
 
-- User2: "Auto Task:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM when price under 0.016543.  
+- User2: "AutoTask:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM when price under 0.016543.  
   Please confirm the swap by replying with 'yes' or 'confirm'."  
 - User1: "okay"  
 
  **Should return \`"rejected"\`**  
-- User2: "Auto Task: Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v when price under 0.99.  
+- User2: "AutoTask: Swap 0.00001 SOL for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v when price under 0.99.  
   Please confirm the swap by replying with 'yes' or 'confirm'."  
 - User1: "hmm..."  
 
-- User2: "Auto Task:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM when price under 0.016543.  
+- User2: "AutoTask:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM when price under 0.016543.  
   Please confirm the swap by replying with 'yes' or 'confirm'."  
 - User1: "no"  
 
@@ -170,7 +172,7 @@ export async function executeAutoTokenSwapTask(runtime: IAgentRuntime, memory: M
     }
 
     const task = (content.task) as AutoSwapTask;
-    elizaLogger.info("executeAutoTokenSwapTask", content, id);
+    elizaLogger.log("executeAutoTokenSwapTask", content, id);
 
     if (task.startAt && task.startAt > new Date()) {
         elizaLogger.info("Task is not ready to start yet");
@@ -182,10 +184,10 @@ export async function executeAutoTokenSwapTask(runtime: IAgentRuntime, memory: M
         await runtime.databaseAdapter.removeMemory(id, 'AUTO_TOKEN_SWAP_TASK');
     }
 
-    if (task.priceTarget){
-        const tokenCA = task.priceConditon === 'under'? task.outputTokenCA : task.inputTokenCA;
+    if (task.priceTarget && task.priceCondition && task.priceCondition !== 'null' && task.priceTarget !== 'null') {
+        const tokenCA = task.priceCondition === 'under'? task.outputTokenCA : task.inputTokenCA;
         const tokenPrice = await getSwapTokenPrice(runtime, tokenCA);
-        const tokenPriceMatched = task.priceConditon === 'under' ? (tokenPrice && tokenPrice < Number(task.priceTarget)) : (tokenPrice && tokenPrice > Number(task.priceTarget));
+        const tokenPriceMatched = task.priceCondition === 'under' ? (tokenPrice && tokenPrice < Number(task.priceTarget)) : (tokenPrice && tokenPrice > Number(task.priceTarget));
         if (!tokenPriceMatched) {
             elizaLogger.info(`Token price not matched ${id}, price: ${tokenPrice}, expected: ${task.priceTarget}`);
             return;
@@ -200,7 +202,7 @@ export async function executeAutoTokenSwapTask(runtime: IAgentRuntime, memory: M
 
 export const autoTask: Action = {
     name: "AUTO_TASK",
-    similes: ["AUTO_BUY_TOKEN", "AUTO_SELL_TOKEN", "AUTO_SWAP_TOKENS", "AUTO_TOKEN_SWAP", "AUTO_TRADE_TOKENS", "AUTO_EXCHANGE_TOKENS"],
+    similes: ["AUTO_BUY_TOKEN_TASK", "AUTO_SELL_TOKEN_TASK", "AUTO_SWAP_TOKEN_TASK"],
     suppressInitialMessage: true,
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         // Check if the necessary parameters are provided in the message
@@ -231,9 +233,9 @@ export const autoTask: Action = {
                 userId: message.userId,
             }
             await runtime.databaseAdapter.createMemory(memory, AutoSwapTaskTable, true);
-            elizaLogger.info(`AUTO_TOKEN_SWAP Task Created, ${JSON.stringify(task)}`);
+            elizaLogger.info(`AUTO_Task Created, ${JSON.stringify(task)}`);
             const responseMsg = {
-                text: `Auto Task Created Successfully`,
+                text: `AutoTask Created Successfully`,
             };
             callback?.(responseMsg);
             return true;
@@ -264,7 +266,6 @@ export const autoTask: Action = {
                 user: "{{user1}}",
                 content: {
                     text: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-                    action: "AUTO_TOKEN_SWAP",
                 },
             },
             {
@@ -282,7 +283,7 @@ export const autoTask: Action = {
             {
                 user: "{{user2}}",
                 content: {
-                    text: "AUTO_TOKEN_SWAP Task Created",
+                    text: "AutoTask Created",
                 },
             }
         ],
@@ -295,9 +296,15 @@ export const autoTask: Action = {
                     outputTokenSymbol: "USDC",
                     outputTokenCA: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
                     amount: 0.1,
-                    priceConditon: "under",
+                    priceCondition: "under",
                     priceTarget: 0.99,
                 },
+            },
+            {
+                user: "{{user2}}",
+                content: {
+                    text: "Please confirm the autotask by replying with 'yes' or 'confirm'.",
+                }
             },
             {
                 user: "{{user1}}",
@@ -308,7 +315,7 @@ export const autoTask: Action = {
             {
                 user: "{{user2}}",
                 content: {
-                    text: "AUTO Task Created",
+                    text: "AutoTask Created",
                 },
             },
         ],
@@ -343,11 +350,7 @@ async function checkResponse(
   state: State,
   _options: { [key: string]: unknown },
   callback?: HandlerCallback
-): Promise<{
-    inputTokenCA: string;
-    outputTokenCA: string;
-    amount: number;
-} | null> {
+): Promise<AutoSwapTask | null> {
     // check if the swap request is from agent owner or public chat
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
@@ -494,14 +497,19 @@ async function checkResponse(
 
     if (!response.price && !response.delay) {
         const responseMsg = {
-            text: "Please tell me at what price you want to swap, or provide a time delay, for example after 5 minutes",
+            text: "If you’d like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'under 0.00169' ",
         };
         callback?.(responseMsg);
         return null;
     }
 
     if (response.delay){
-        response.startAt = new Date(Date.now() + parseInt(response.delay));
+        const getSecondsValue = (value: string): number | null => {
+            const match = value.match(/^(\d+)s$/);
+            return match ? parseInt(match[1], 10) : null;
+        };
+        const seconds = getSecondsValue(response.delay);
+        response.startAt = new Date(Date.now() + seconds);
     }else{
         response.startAt = new Date();
     }
@@ -588,7 +596,7 @@ async function executeSwapTokenTx(runtime: IAgentRuntime, keypair: Keypair, inpu
     let confirmation: RpcResponseAndContext<SignatureStatus | null>;
 
     // wait for 20s for the transaction to be processed
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 12; i++) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         confirmation = await connection.getSignatureStatus(txid, {
             searchTransactionHistory: false,
@@ -606,8 +614,8 @@ async function executeSwapTokenTx(runtime: IAgentRuntime, keypair: Keypair, inpu
 
 function formatTaskInfo(params: AutoSwapTask): string {
     let trigger = ""
-    if (params.priceConditon) {
-        trigger = `when price is ${params.priceConditon} ${params.priceTarget}`;
+    if (params.priceCondition && params.priceTarget && params.priceCondition !== 'null' && params.priceTarget !== 'null') {
+        trigger = `when price is ${params.priceCondition} ${params.priceTarget}`;
     }
     if (params.startAt) {
         trigger += `\nstart at: ${JSON.stringify(params.startAt)}`;

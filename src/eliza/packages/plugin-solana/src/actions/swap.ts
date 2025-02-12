@@ -428,7 +428,7 @@ async function swapHandler(
         let confirmation: RpcResponseAndContext<SignatureStatus | null>;
 
         // wait for 20s for the transaction to be processed
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 12; i++) {
             await new Promise((resolve) => setTimeout(resolve, 1000));
             confirmation = await connection.getSignatureStatus(txid, {
                 searchTransactionHistory: false,
