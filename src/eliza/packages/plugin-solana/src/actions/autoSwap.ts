@@ -446,7 +446,7 @@ async function checkResponse(
         }
     }
 
-    if (!response.price && !response.delay) {
+    if (!response.priceTarget && !response.delay) {
         const responseMsg = {
             text: "If you’d like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'under 0.00169' ",
         };
