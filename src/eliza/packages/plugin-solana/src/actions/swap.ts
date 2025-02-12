@@ -514,32 +514,6 @@ async function checkResponse(
         response.outputTokenCA = getRuntimeKey(runtime, "SOL_ADDRESS");
     }
 
-    // if both contract addresses are set, lets execute the swap
-    // TODO: try to resolve CA from symbol based on existing symbol in wallet
-    if (!response.inputTokenCA && response.inputTokenSymbol) {
-        elizaLogger.log(
-            `Attempting to resolve CA for input token symbol: ${response.inputTokenSymbol}`
-        );
-        response.inputTokenCA = await getTokenFromWallet(
-            runtime,
-            response.inputTokenSymbol
-        );
-        if (response.inputTokenCA) {
-            elizaLogger.log(
-                `Resolved inputTokenCA: ${response.inputTokenCA}`
-            );
-        } else {
-            elizaLogger.log(
-                "No contract addresses provided, skipping swap"
-            );
-            const responseMsg = {
-                text: `Please make sure you have the token ${response.inputTokenSymbol} in wallet`,
-            };
-            callback?.(responseMsg);
-            return null
-        }
-    }
-
     // check if amount is a number
     if (!response.amount || Number.isNaN(Number(response.amount))){
         const responseMsg = {
