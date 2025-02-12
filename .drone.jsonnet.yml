@@ -1,0 +1,13 @@
+pipelines:
+  - env: dev
+    params: 
+      publishOnce: false
+    services:
+      - name: ""
+      - name: "wallet"
+        extraArgs: ['COMMAND=dist/main-wallet-service.js']
+        dockerfile: wallet.Dockerfile
+
+  - env: prod
+    services:
+      - name: ""
