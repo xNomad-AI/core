@@ -1,23 +1,24 @@
-import { Injectable } from '@nestjs/common';
-import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { DirectClient } from '@elizaos/client-direct';
 import {
   Character,
   Memory,
   ModelProviderName,
   stringToUuid,
 } from '@elizaos/core';
-import { ConfigService } from '@nestjs/config';
-import { newTradeAgentRuntime, startAgent } from '../eliza/starter/index.js';
-import { DirectClient } from '@elizaos/client-direct';
-import { sleep } from '../shared/utils.service.js';
-import { DeriveKeyProvider } from '@elizaos/plugin-tee';
-import { CharacterConfig } from '../shared/mongo/types.js';
-import { MongoService } from '../shared/mongo/mongo.service.js';
 import {
   AutoSwapTaskTable,
   executeAutoTokenSwapTask,
 } from '@elizaos/plugin-solana';
+import { TEEMode } from '@elizaos/plugin-tee';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Timeout } from '@nestjs/schedule';
+import { newTradeAgentRuntime, startAgent } from '../eliza/starter/index.js';
+import { MongoService } from '../shared/mongo/mongo.service.js';
+import { CharacterConfig } from '../shared/mongo/types.js';
+import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { sleep } from '../shared/utils.service.js';
+import { WalletProxyService } from '../wallet/wallet-proxy.service.js';
 
 export type ElizaAgentConfig = {
   chain: string;
@@ -34,6 +35,7 @@ export class ElizaManagerService {
     private readonly logger: TransientLoggerService,
     private readonly appConfig: ConfigService,
     private readonly mongoService: MongoService,
+    private readonly walletProxyService: WalletProxyService,
   ) {
     logger.setContext(ElizaManagerService.name);
     this.elizaClient = new DirectClient();
@@ -41,14 +43,16 @@ export class ElizaManagerService {
       character: Character,
       nftId?: string,
     ) => {
-      return startAgent(character, this.elizaClient, nftId, {mongoClient: this.mongoService.client});
+      return startAgent(character, this.elizaClient, nftId, {
+        mongoClient: this.mongoService.client,
+      });
     };
   }
 
   async startAgentServer() {
     try {
       this.elizaClient.start(this.appConfig.get<number>('AGENT_SERVER_PORT'));
-    }catch (e) {
+    } catch (e) {
       this.logger.error(`Failed to start agent server: ${e.message}`);
       await sleep(10000);
       this.startAgentServer();
@@ -62,7 +66,9 @@ export class ElizaManagerService {
   async startAgentLocal(config: ElizaAgentConfig) {
     try {
       const character = await this.initAgentCharacter(config);
-      await startAgent(character, this.elizaClient, config.nftId, {mongoClient: this.mongoService.client});
+      await startAgent(character, this.elizaClient, config.nftId, {
+        mongoClient: this.mongoService.client,
+      });
     } catch (e) {
       this.logger.error(
         `Failed to start agent for NFT ${config.nftId}: ${e.message}`,
@@ -70,34 +76,37 @@ export class ElizaManagerService {
     }
   }
 
-  async getAgentStatus(agentId){
+  async getAgentStatus(agentId) {
     const runtime = this.elizaClient.agents.get(agentId);
-    if (!runtime){
+    if (!runtime) {
       return {
-        status: 'stopped'
+        status: 'stopped',
       };
-    }else{
+    } else {
       return {
         status: 'running',
-      }
+      };
     }
   }
 
-  async checkTee(){
+  async checkTee() {
     const agents: Map<string, any> = this.elizaClient.agents;
     agents.forEach((runtime, agentId) => {
       const salt = runtime.getSetting('WALLET_SECRET_SALT');
       const teeMode = runtime.getSetting('TEE_MODE');
-      if (!salt || !teeMode){
+      if (!salt || !teeMode) {
         this.logger.error(`Agent ${agentId} is missing salt or teeMode`);
       }
     });
   }
 
-  async deleteAgentMemory(agentId: string, opts?: {
-    roomId?: string,
-    userId?: string,
-  }) {
+  async deleteAgentMemory(
+    agentId: string,
+    opts?: {
+      roomId?: string;
+      userId?: string;
+    },
+  ) {
     const filter: any = { agentId };
     if (opts.roomId) {
       filter.roomId = stringToUuid(opts.roomId);
@@ -105,15 +114,15 @@ export class ElizaManagerService {
     if (opts.userId) {
       filter.roomId = stringToUuid(opts.userId);
     }
-    await this.mongoService.client.
-      db('agent').
-      collection('memories').
-      deleteMany(filter);
+    await this.mongoService.client
+      .db('agent')
+      .collection('memories')
+      .deleteMany(filter);
   }
 
   getElizaEnvs(): Record<string, string> {
     return Object.fromEntries(
-      Object.entries(process.env).filter(([_, v]) => v !== undefined)
+      Object.entries(process.env).filter(([_, v]) => v !== undefined),
     ) as Record<string, string>;
   }
 
@@ -126,49 +135,53 @@ export class ElizaManagerService {
     nftId: string,
     agentId?: string,
   ): Promise<{ solana: string; evm: string }> {
-    const provider: DeriveKeyProvider = new DeriveKeyProvider(
-      this.appConfig.get<string>('TEE_MODE'),
-    );
     const secrectSalt = ElizaManagerService.getAgentSecretSalt(chain, nftId);
     agentId ??= stringToUuid(nftId);
-    const solanaResult = await provider.deriveEd25519Keypair(
-      secrectSalt,
-      'solana',
-      agentId,
-    );
-    const evmResult = await provider.deriveEcdsaKeypair(
-      secrectSalt,
-      'evm',
-      agentId,
-    );
+
+    const { publicKey, evmAddress } =
+      await this.walletProxyService.getWalletKey(
+        secrectSalt,
+        agentId,
+        this.appConfig.get<string>('TEE_MODE') as TEEMode,
+        false,
+      );
+
     return {
-      solana: solanaResult.keypair.publicKey.toBase58(),
-      evm: evmResult.keypair.address,
+      solana: publicKey.toBase58(),
+      evm: evmAddress,
     };
   }
 
   @Timeout(5000)
-  async startAutoSwapTask(){
-    while (true){
+  async startAutoSwapTask() {
+    while (true) {
       try {
         await this.runAutoSwapTask();
-      }catch (error) {
+      } catch (error) {
         this.logger.error(`Error during auto swap task:, ${error}`);
       }
       await sleep(10000);
     }
   }
 
-  async runAutoSwapTask(){
-    const memories = await this.mongoService.client.db('agent').collection('memories').find<Memory>({type: AutoSwapTaskTable}).toArray();
+  async runAutoSwapTask() {
+    const memories = await this.mongoService.client
+      .db('agent')
+      .collection('memories')
+      .find<Memory>({ type: AutoSwapTaskTable })
+      .toArray();
     this.logger.log(`Running auto swap task for ${memories.length} tasks`);
-    for (const memory of memories){
-      const {agentId} = memory as Memory;
-      const {nftId, chain, aiAgent} = await this.mongoService.nfts.findOne({agentId});
-      if (!nftId){
-        continue
+    for (const memory of memories) {
+      const { agentId } = memory as Memory;
+      const { nftId, chain, aiAgent } = await this.mongoService.nfts.findOne({
+        agentId,
+      });
+      if (!nftId) {
+        continue;
       }
-      const nftConfig = await this.mongoService.nftConfigs.findOne({nftId: nftId});
+      const nftConfig = await this.mongoService.nftConfigs.findOne({
+        nftId: nftId,
+      });
       const character = await this.initAgentCharacter({
         nftId,
         chain,
@@ -176,16 +189,19 @@ export class ElizaManagerService {
         character: aiAgent.character,
       });
       try {
-        const runtime = await newTradeAgentRuntime(character, this.mongoService.client);
+        const runtime = await newTradeAgentRuntime(
+          character,
+          this.mongoService.client,
+        );
         await executeAutoTokenSwapTask(runtime, memory);
-      }catch (error) {
+      } catch (error) {
         this.logger.error(`Error during token swap:, ${error}`);
       }
     }
   }
 
-  async initAgentCharacter(config : ElizaAgentConfig) {
-    let {chain, nftId, character, characterConfig} = config;
+  async initAgentCharacter(config: ElizaAgentConfig) {
+    let { chain, nftId, character, characterConfig } = config;
     character = {
       ...character,
       ...characterConfig,
@@ -194,12 +210,9 @@ export class ElizaManagerService {
       ),
     };
     const envVars = this.getElizaEnvs();
-    const salt = ElizaManagerService.getAgentSecretSalt(
-      chain,
-      nftId,
-    );
+    const salt = ElizaManagerService.getAgentSecretSalt(chain, nftId);
     const teeMode = this.appConfig.get<string>('TEE_MODE');
-    if (!character.settings){
+    if (!character.settings) {
       character.settings = {};
     }
     character.settings.secrets = {

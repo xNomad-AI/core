@@ -25,6 +25,24 @@ export class WalletService {
     };
   }
 
+  async getEvmWallet({
+    walletSecretSalt,
+    agentId,
+    teeMode,
+  }: {
+    walletSecretSalt: string;
+    agentId: string;
+    teeMode: TEEMode;
+  }) {
+    const deriveKeyProvider = new DeriveKeyProvider(teeMode);
+    const deriveKeyResult = await deriveKeyProvider.deriveEcdsaKeypair(
+      walletSecretSalt,
+      'evm',
+      agentId,
+    );
+    return { address: deriveKeyResult.keypair.address };
+  }
+
   async signSolanaTransaction({
     walletSecretSalt,
     agentId,

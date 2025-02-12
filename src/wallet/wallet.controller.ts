@@ -24,14 +24,23 @@ export class WalletController {
       requirePrivateKey: boolean;
     },
   ) {
-    const { secretKey, publicKey } = await this.walletService.getWallet({
-      walletSecretSalt,
-      agentId,
-      teeMode,
-    });
+    const [{ secretKey, publicKey }, { address: evmAddress }] =
+      await Promise.all([
+        this.walletService.getWallet({
+          walletSecretSalt,
+          agentId,
+          teeMode,
+        }),
+        this.walletService.getEvmWallet({
+          walletSecretSalt,
+          agentId,
+          teeMode,
+        }),
+      ]);
     return {
       ...(requirePrivateKey ? { secretKey: bs58.encode(secretKey) } : {}),
       publicKey: publicKey.toBase58(),
+      evmAddress,
     };
   }
 

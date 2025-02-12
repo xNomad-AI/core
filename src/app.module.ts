@@ -10,7 +10,6 @@ import { LaunchpadModule } from './launchpad/launchpad.module.js';
 import { NftModule } from './nft/nft.module.js';
 import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
-import { WalletModule } from './wallet/wallet.module.js';
 EventEmitter.defaultMaxListeners = 10;
 
 @Module({
@@ -30,7 +29,6 @@ EventEmitter.defaultMaxListeners = 10;
     SharedModule,
     NftModule,
     LaunchpadModule,
-    WalletModule,
   ],
   controllers: [],
   providers: [],
