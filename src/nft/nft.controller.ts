@@ -16,6 +16,7 @@ import { NftSearchQueryDto } from './nft.types.js';
 import { CharacterConfig } from '../shared/mongo/types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { CacheTTL } from '@nestjs/cache-manager';
+import { testTwitterConfig } from '../shared/twitter.service.js';
 
 @Controller('/nft')
 export class NftController {
@@ -82,6 +83,29 @@ export class NftController {
     @Param('nftId') nftId: string,
   ) {
     return await this.nftService.getNftById(chain, nftId);
+  }
+
+  @Post('/:chain/:nftId/config/twitter')
+  async updateTwitterConfig(@Request() request,
+                          @Param('chain') chain: string,
+                          @Param('nftId') nftId: string,
+                          @Body() { testContent, characterConfig }: { testContent: string, characterConfig: CharacterConfig },
+  ) {
+    const address = request['X-USER-ADDRESS'];
+    chain = request['X-USER-CHAIN'];
+    // if (!await this.nftService.isNftAdmin(chain, address, nftId)) {
+    //   throw new UnauthorizedException('You are not the owner of this NFT');
+    // }
+    const username = characterConfig.settings.secrets.TWITTER_USERNAME;
+    const password = characterConfig.settings.secrets.TWITTER_PASSWORD;
+    const email = characterConfig.settings.secrets.TWITTER_EMAIL;
+    const twitter2faSecret = characterConfig.settings.secrets.TWITTER_2FA_SECRET;
+    const result = await testTwitterConfig(username, password, email, twitter2faSecret, testContent);
+    if (!result.isLogin || !result.isPosted) {
+      return result;
+    }
+    await this.nftService.updateNftConfig({nftId, characterConfig});
+    return result;
   }
 
   @UseGuards(AuthGuard)

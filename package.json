@@ -54,6 +54,7 @@
     "@tavily/core": "^0.0.2",
     "@types/dockerode": "^3.3.34",
     "@web3-storage/w3up-client": "^17.1.2",
+    "agent-twitter-client": "^0.0.18",
     "amqplib": "^0.10.5",
     "bs58": "^6.0.0",
     "cache-manager": "^6.4.0",
