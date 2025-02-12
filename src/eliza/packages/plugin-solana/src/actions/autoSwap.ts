@@ -79,7 +79,38 @@ Respond with a JSON markdown block containing only the extracted values. Use nul
     priceCondition: 'under' | 'over' | null;
     priceTarget: number  | null;
 }
-\`\`\``;
+\`\`\`
+
+Examples: 
+1. Create an automatic task to buy ai16z with 0.0001 SOL when the token price is under $1.
+The response should be 
+{
+  "priceTarget": "1"
+  "priceCondition": "under",
+  "expireAt": null,
+  "startAt": null,
+  "delay": null,
+  "amount": "0.01",
+  "outputTokenCA": null,
+  "inputTokenCA": null,
+  "outputTokenSymbol": "ai16z",
+  "inputTokenSymbol": "SOL",
+} 
+2. auto sell 1000 ai16z to SOL when the token price is above $1.
+The response should be 
+{
+  "priceTarget": "1"
+  "priceCondition": "over",
+  "expireAt": null,
+  "startAt": null,
+  "delay": null,
+  "amount": 1000,
+  "outputTokenCA": null,
+  "inputTokenCA": null,
+  "outputTokenSymbol": "SOL",
+  "inputTokenSymbol": "ai16z",
+} 
+`;
 
 const userConfirmAutoTaskTemplate = `
 {{recentMessages}}
