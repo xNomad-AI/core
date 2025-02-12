@@ -14,7 +14,7 @@ import {
 import { Connection, Keypair, RpcResponseAndContext, SignatureStatus, VersionedTransaction } from '@solana/web3.js';
 import { getWalletKey } from "../keypairUtils.js";
 import { isAgentAdmin, NotAgentAdminMessage, walletProvider, WalletProvider } from '../providers/wallet.js';
-import {md5sum} from "./swapUtils.js";
+import { convertNullStrings, md5sum } from './swapUtils.js';
 import { isValidSPLTokenAddress, swapToken } from './swap.js';
 import { getTokensBySymbol } from '../providers/tokenUtils.js';
 import { SolanaClient } from "./solana-client.js";
@@ -81,12 +81,11 @@ Respond with a JSON markdown block containing only the extracted values. Use nul
 }
 \`\`\``;
 
-
 const userConfirmAutoTaskTemplate = `
 {{recentMessages}}
 
 Determine the user's confirmation status for creating an autotask.  
-Consider only the last one or two messages from the conversation history above.  
+Consider only the last three messages from the conversation history above.  
 Respond with a JSON:  
 \`\`\`json
 {
@@ -376,11 +375,12 @@ async function checkResponse(
     });
 
     // generate formatted response from chat
-    const response = await generateObjectDeprecated({
+    let response = await generateObjectDeprecated({
         runtime,
         context: swapContext,
         modelClass: ModelClass.LARGE,
     });
+    response = convertNullStrings(response);
 
     elizaLogger.info(`Message: ${message?.content?.text}, Response:`, response);
 
@@ -408,44 +408,15 @@ async function checkResponse(
             );
         } else {
             elizaLogger.log(
-              "No contract addresses provided, skipping swap"
+              `Does not have token ${response.inputTokenSymbol} in wallet`
             );
-            const responseMsg = {
-                text: "I need the contract addresses to perform the swap",
-            };
-            callback?.(responseMsg);
-            return null
-        }
-    }
-
-    if (!response.outputTokenCA && response.outputTokenSymbol) {
-        elizaLogger.log(
-          `Attempting to resolve CA for output token symbol: ${response.outputTokenSymbol}`
-        );
-        response.outputTokenCA = await getTokenFromWallet(
-          runtime,
-          response.outputTokenSymbol
-        );
-        if (response.outputTokenCA) {
-            elizaLogger.log(
-              `Resolved outputTokenCA: ${response.outputTokenCA}`
-            );
-        } else {
-            elizaLogger.log(
-              "No contract addresses provided, skipping swap"
-            );
-            const responseMsg = {
-                text: "I need the contract addresses to perform the swap",
-            };
-            callback?.(responseMsg);
-            return null
         }
     }
 
     // check if amount is a number
     if (!response.amount || Number.isNaN(Number(response.amount))){
         const responseMsg = {
-            text: 'Please provide a valid input amount to perform the swap',
+            text: `Please provide a valid ${response.inputTokenSymbol} input amount to perform the swap`,
             action: 'EXECUTE_SWAP',
         };
         callback?.(responseMsg);
@@ -472,7 +443,7 @@ async function checkResponse(
         if (tokens?.[0]?.address) {
             response.inputTokenCA = tokens[0].address;
         }else{
-            elizaLogger.log("Invalid input contract address, skipping swap");
+            elizaLogger.log(`Invalid input contract address ${response.inputTokenCA}, skipping swap`);
             const responseMsg = {
                 text: "Please provide the inputToken CA you want to sell",
             };
@@ -486,7 +457,7 @@ async function checkResponse(
         if (tokens?.[0]?.address) {
             response.outputTokenCA = tokens[0].address;
         }else{
-            elizaLogger.log("Invalid output contract address, skipping swap");
+            elizaLogger.log(`Invalid output contract address ${response.outputTokenCA}, skipping swap`);
             const responseMsg = {
                 text: "Please provide the outputToken CA you want to buy",
             };

@@ -1,5 +1,6 @@
 import type { IAgentRuntime } from "@elizaos/core";
 import { z } from "zod";
+import { settings } from '@elizaos/core';
 
 export const solanaEnvSchema = z
     .object({
@@ -83,4 +84,8 @@ export async function validateSolanaConfig(
         }
         throw error;
     }
+}
+
+export function getRuntimeKey(runtime: any, key: string) {
+  return runtime.getSetting(key) || process.env[key] || settings[key];
 }
