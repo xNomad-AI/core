@@ -126,8 +126,12 @@ export class ElizaManagerService {
     ) as Record<string, string>;
   }
 
-  static getAgentSecretSalt(chain: string, nftId: string) {
-    return `salt-${chain}:${nftId}`;
+  getAgentSecretSalt(chain: string, nftId: string) {
+    const prefix = this.appConfig.get<string>('AGENT_SECRET_SALT_PREFIX');
+    if (!prefix) {
+      throw new Error('AGENT_SECRET_SALT_PREFIX is not set');
+    }
+    return `${prefix}-${chain}:${nftId}`;
   }
 
   async getAgentAccount(
@@ -135,7 +139,7 @@ export class ElizaManagerService {
     nftId: string,
     agentId?: string,
   ): Promise<{ solana: string; evm: string }> {
-    const secrectSalt = ElizaManagerService.getAgentSecretSalt(chain, nftId);
+    const secrectSalt = this.getAgentSecretSalt(chain, nftId);
     agentId ??= stringToUuid(nftId);
 
     const { publicKey, evmAddress } =
@@ -210,7 +214,7 @@ export class ElizaManagerService {
       ),
     };
     const envVars = this.getElizaEnvs();
-    const salt = ElizaManagerService.getAgentSecretSalt(chain, nftId);
+    const salt = this.getAgentSecretSalt(chain, nftId);
     const teeMode = this.appConfig.get<string>('TEE_MODE');
     if (!character.settings) {
       character.settings = {};
