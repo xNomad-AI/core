@@ -275,11 +275,11 @@ export const autoTask: Action = {
     'AUTO_SWAP_TOKEN_TASK',
   ],
   suppressInitialMessage: true,
-  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
-    // Check if the necessary parameters are provided in the message
-    return true;
+  validate: async (runtime: IAgentRuntime, message: Memory) => {
+    const isAdmin = await isAgentAdmin(runtime, message);
+    return isAdmin;
   },
-  description: 'Perform auto token swap.',
+  description: 'Perform auto token swap. Enables the agent to automatically execute trades when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers, optimizing trading strategies without manual intervention.',
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,

@@ -40,10 +40,10 @@ export const airdrop: Action = {
   name: 'CLAIM_AIRDROP',
   similes: [],
   suppressInitialMessage: true,
-  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
-    return true;
+  validate: async (runtime: IAgentRuntime, message: Memory) => {
+    return isAgentAdmin(runtime, message);
   },
-  description: 'Perform claim airdrop',
+  description: 'Perform claim airdrop for the user agent account',
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -51,14 +51,6 @@ export const airdrop: Action = {
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
   ): Promise<boolean> => {
-    const isAdmin = await isAgentAdmin(runtime, message);
-    if (!isAdmin) {
-      const responseMsg = {
-        text: NotAgentAdminMessage,
-      };
-      callback?.(responseMsg);
-      return true;
-    }
     // composeState
     if (!state) {
       state = (await runtime.composeState(message)) as State;

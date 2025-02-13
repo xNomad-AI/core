@@ -309,11 +309,11 @@ export const executeSwap: Action = {
     'BUY_TOKENS',
     'SELL_TOKENS',
   ],
-  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
-    // Check if the necessary parameters are provided in the message
-    return true;
+  validate: async (runtime: IAgentRuntime, message: Memory) => {
+    const isAdmin = await isAgentAdmin(runtime, message);
+    return isAdmin;
   },
-  description: 'Perform a token swap.',
+  description: 'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
   handler: swapHandler,
   // template: swapTemplate,
   examples: [

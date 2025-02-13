@@ -174,11 +174,12 @@ export default {
   name: 'CREATE_TOKEN',
   similes: ['CREATE_PUMPFUN_TOKEN'],
   suppressInitialMessage: true,
-  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
-    return true;
+  validate: async (runtime: IAgentRuntime, message: Memory) => {
+    const isAdmin = await isAgentAdmin(runtime, message);
+    return isAdmin;
   },
   description:
-    'Create a new token and buy a specified amount using SOL. Requires deployer private key, token metadata, buy amount in SOL, priority fee, and allowOffCurve flag.',
+    'Create a new token and buy a specified amount using SOL. Requires the token name, description, metadata, buy amount after create in SOL.',
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
