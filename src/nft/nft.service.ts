@@ -27,7 +27,6 @@ export class NftService implements OnApplicationBootstrap {
     private readonly elizaManager: ElizaManagerService,
     private readonly addressService: AddressService,
     private readonly eventEmitter: EventEmitter2,
-
   ) {
     this.logger.setContext(NftService.name);
   }
@@ -41,10 +40,10 @@ export class NftService implements OnApplicationBootstrap {
   // Start AI agents for all indexed NFTs
   async startAIAgents() {
     const configedNfts = await this.mongo.nftConfigs.find().toArray();
-    const configedNftIds = configedNfts.map(nft => nft.nftId);
+    const configedNftIds = configedNfts.map((nft) => nft.nftId);
     const cursor = this.mongo.nfts
-      .find({chain: 'solana', nftId: { $in: configedNftIds }})
-      .addCursorFlag('noCursorTimeout', true)
+      .find({ chain: 'solana', nftId: { $in: configedNftIds } })
+      .addCursorFlag('noCursorTimeout', true);
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
       await this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft]);
@@ -58,10 +57,12 @@ export class NftService implements OnApplicationBootstrap {
       if (nft?.aiAgent?.engine !== 'eliza') {
         return;
       }
-      const isAgentRunning = await this.elizaManager.isAgentRunning(nft.agentId)
+      const isAgentRunning = await this.elizaManager.isAgentRunning(
+        nft.agentId,
+      );
       if (isAgentRunning && !restart) {
         this.logger.log(`Agent for NFT ${nft.nftId} is already running`);
-        return
+        return;
       }
       this.logger.log(
         `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
@@ -93,7 +94,7 @@ export class NftService implements OnApplicationBootstrap {
       { nftId },
       {
         $set: {
-          characterConfig
+          characterConfig,
         },
       },
       { upsert: true },
@@ -101,8 +102,8 @@ export class NftService implements OnApplicationBootstrap {
     const nft = await this.mongo.nfts.findOne({ nftId });
     this.handleNewAINfts([nft], true);
     return {
-      characterConfig
-    }
+      characterConfig,
+    };
   }
 
   async getNftConfig(nftId: string) {
@@ -113,7 +114,7 @@ export class NftService implements OnApplicationBootstrap {
   }
 
   async deleteNftConfig(nftId: string) {
-    await this.mongo.nftConfigs.deleteOne({nftId});
+    await this.mongo.nftConfigs.deleteOne({ nftId });
     const nft = await this.mongo.nfts.findOne({ nftId });
     this.handleNewAINfts([nft], true);
   }
@@ -143,7 +144,6 @@ export class NftService implements OnApplicationBootstrap {
     });
     return owner?.ownerAddress === address;
   }
-
 
   async getCollections(chain: string): Promise<AICollection[]> {
     const collections = await this.mongo.collections.find({ chain }).toArray();
@@ -211,9 +211,12 @@ export class NftService implements OnApplicationBootstrap {
   async getCollectionById(chain: string, id: string) {
     const collection = await this.mongo.collections.findOne({ id, chain });
     const metrics = await this.getCollectionMetrics(chain, id);
-    const nftsCount = await this.mongo.nfts.countDocuments({chain, collectionId: id});
+    const nftsCount = await this.mongo.nfts.countDocuments({
+      chain,
+      collectionId: id,
+    });
     return {
-      collection:{
+      collection: {
         ...collection,
         nftsCount,
       },
@@ -221,45 +224,47 @@ export class NftService implements OnApplicationBootstrap {
     };
   }
 
-  async getFilterTemplate(chain: string, collectionId: string){
-    const traits = await this.mongo.nfts.aggregate([
-      {
-        $match: {
-          collectionId,
-          chain,
-        }
-      },
-      { $unwind: "$traits" },
-      {
-        $group: {
-          _id: {
-            traitType: "$traits.type",
-            traitValue: "$traits.value"
+  async getFilterTemplate(chain: string, collectionId: string) {
+    const traits = await this.mongo.nfts
+      .aggregate([
+        {
+          $match: {
+            collectionId,
+            chain,
           },
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $group: {
-          _id: "$_id.traitType",
-          traitValues: {
-            $push: {
-              value: "$_id.traitValue",
-              count: "$count"
-            }
-          }
-        }
-      },
-      { $sort: { "_id": 1 } },
-      {
-        $project: {
-          traitType: "$_id",
-          traitValues: 1,
-          _id: 0
-        }
-      }
-    ]).toArray();
-    return {traits};
+        },
+        { $unwind: '$traits' },
+        {
+          $group: {
+            _id: {
+              traitType: '$traits.type',
+              traitValue: '$traits.value',
+            },
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $group: {
+            _id: '$_id.traitType',
+            traitValues: {
+              $push: {
+                value: '$_id.traitValue',
+                count: '$count',
+              },
+            },
+          },
+        },
+        { $sort: { _id: 1 } },
+        {
+          $project: {
+            traitType: '$_id',
+            traitValues: 1,
+            _id: 0,
+          },
+        },
+      ])
+      .toArray();
+    return { traits };
   }
 
   async getNftById(chain: string, nftId: string) {
@@ -268,7 +273,9 @@ export class NftService implements OnApplicationBootstrap {
       return null;
     }
     const agentId = stringToUuid(nft.nftId);
-    const agentAccount = nft.agentAccount ?? await this.elizaManager.getAgentAccount(chain, nftId);
+    const agentAccount =
+      nft.agentAccount ??
+      (await this.elizaManager.getAgentAccount(chain, nftId));
     const nftOwner = await this.mongo.nftOwners.findOne({
       chain,
       contractAddress: nft.contractAddress,
@@ -348,7 +355,9 @@ export class NftService implements OnApplicationBootstrap {
           nfts: [],
         };
       }
-      const agentAccount = nft.agentAccount ?? await this.elizaManager.getAgentAccount(chain, nft.nftId);
+      const agentAccount =
+        nft.agentAccount ??
+        (await this.elizaManager.getAgentAccount(chain, nft.nftId));
       const agentId = nft.agentId ?? stringToUuid(nft.nftId);
       assets[nft.collectionId].nfts.push({
         ...nft,

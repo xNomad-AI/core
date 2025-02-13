@@ -135,11 +135,16 @@ export class NftSyncService implements OnApplicationBootstrap {
         for (const nft of result.nfts) {
           const transformedNft = await transformToAINft(nft);
           if (!transformedNft.aiAgent) {
-            this.logger.warn(`this nft is not AI-NFT, nftId: ${transformedNft.nftId}`);
+            this.logger.warn(
+              `this nft is not AI-NFT, nftId: ${transformedNft.nftId}`,
+            );
             continue;
           }
           transformedNft.agentId = stringToUuid(transformedNft.nftId);
-          transformedNft.agentAccount = await this.elizaManager.getAgentAccount('solana', transformedNft.nftId);
+          transformedNft.agentAccount = await this.elizaManager.getAgentAccount(
+            'solana',
+            transformedNft.nftId,
+          );
           nfts.push(transformedNft);
         }
         await this.mongo.nfts.bulkWrite(
@@ -174,13 +179,17 @@ export class NftSyncService implements OnApplicationBootstrap {
       for (const tx of txs.transactions) {
         const activity = transformToActivity(collectionId, tx);
         const owner = transformToOwner(activity);
-        await this.mongo.nftActivities.updateOne({
-          chain: activity.chain,
-          txHash: activity.txHash,
-          contractAddress: activity.contractAddress,
-          tokenId: activity.tokenId,
-          from: activity.from,
-        }, { $set: activity }, { upsert: true, session });
+        await this.mongo.nftActivities.updateOne(
+          {
+            chain: activity.chain,
+            txHash: activity.txHash,
+            contractAddress: activity.contractAddress,
+            tokenId: activity.tokenId,
+            from: activity.from,
+          },
+          { $set: activity },
+          { upsert: true, session },
+        );
         await this.mongo.nftOwners.updateOne(
           {
             chain: activity.chain,

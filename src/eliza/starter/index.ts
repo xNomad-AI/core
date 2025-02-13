@@ -14,7 +14,6 @@ import { initializeDatabase } from './database/index.js';
 import { solanaPlugin } from '@elizaos/plugin-solana';
 import { MongoClient } from 'mongodb';
 
-
 function getSecret(character: Character, secret: string) {
   return character.settings?.secrets?.[secret] || process.env[secret];
 }
@@ -25,10 +24,7 @@ export async function createAgent(
   cache: ICacheManager,
   token: string,
 ): Promise<AgentRuntime> {
-  elizaLogger.info(
-    'Creating runtime for character',
-    character.name,
-  );
+  elizaLogger.info('Creating runtime for character', character.name);
 
   const teeMode = getSecret(character, 'TEE_MODE');
   const walletSecretSalt = getSecret(character, 'WALLET_SECRET_SALT');
@@ -45,9 +41,7 @@ export async function createAgent(
     modelProvider: character.modelProvider,
     evaluators: [],
     character,
-    plugins: [
-      solanaPlugin,
-    ].filter(Boolean),
+    plugins: [solanaPlugin].filter(Boolean),
     providers: [],
     actions: [],
     services: [],
@@ -55,7 +49,7 @@ export async function createAgent(
     cacheManager: cache,
   });
 
-  if (!runtime.getSetting('WALLET_SECRET_SALT')){
+  if (!runtime.getSetting('WALLET_SECRET_SALT')) {
     throw new Error('WALLET_SECRET_SALT not found on agent start');
   }
   return runtime;
@@ -67,7 +61,7 @@ export async function startAgent(
   nftId: string,
   options?: {
     mongoClient?: MongoClient;
-  }
+  },
 ) {
   try {
     character.id ??= stringToUuid(nftId || character.name);
@@ -94,7 +88,10 @@ export async function startAgent(
   }
 }
 
-export async function newTradeAgentRuntime(character: Character, mongoClient: MongoClient) {
+export async function newTradeAgentRuntime(
+  character: Character,
+  mongoClient: MongoClient,
+) {
   const token = getTokenForProvider(character.modelProvider, character);
   const db = await initializeDatabase(mongoClient, `agent`);
   const cache = initializeDbCache(character, db);
@@ -102,11 +99,11 @@ export async function newTradeAgentRuntime(character: Character, mongoClient: Mo
 }
 
 // Handle uncaught exceptions to prevent the process from crashing
-process.on("uncaughtException", function (err) {
-  console.error("[fatal error] uncaughtException", err);
+process.on('uncaughtException', function (err) {
+  console.error('[fatal error] uncaughtException', err);
 });
 
 // Handle unhandled rejections to prevent the process from crashing
-process.on("unhandledRejection", function (err) {
-  console.error("[fatal error] unhandledRejection", err);
+process.on('unhandledRejection', function (err) {
+  console.error('[fatal error] unhandledRejection', err);
 });

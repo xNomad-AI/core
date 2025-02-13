@@ -32,13 +32,9 @@ export class AgentController {
   ) {}
 
   @Post('/')
-  async startNFTAgent(@Body() {
-    nftId,
-    chain,
-    restart,
-  }: CreateAgentDto) {
+  async startNFTAgent(@Body() { nftId, chain, restart }: CreateAgentDto) {
     const nft = await this.mongo.nfts.findOne({
-      nftId
+      nftId,
     });
     if (!nft) {
       throw new NotFoundException('NFT not found');
@@ -46,17 +42,15 @@ export class AgentController {
     await this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft], restart);
   }
 
-
   @Get('/status')
   async getAgentStatus(@Query('agentId') agentId: string) {
-    return this.elizaManager.getAgentStatus(agentId)
+    return this.elizaManager.getAgentStatus(agentId);
   }
 
   @Get('/checkTee')
   async checkTee() {
-    return await this.elizaManager.checkTee()
+    return await this.elizaManager.checkTee();
   }
-
 
   @Delete('/memory')
   async deleteAgentMemory(
@@ -64,7 +58,7 @@ export class AgentController {
     @Query('roomId') roomId: string,
     @Query('userId') userId: string,
   ) {
-    await this.elizaManager.deleteAgentMemory(agentId, {roomId, userId});
+    await this.elizaManager.deleteAgentMemory(agentId, { roomId, userId });
   }
 
   @Get('/account')
@@ -96,7 +90,7 @@ export class AgentController {
   ) {
     const prologue = await this.mongo.nftPrologues.findOne({
       chain,
-      nftId
+      nftId,
     });
     if (!prologue) {
       throw new NotFoundException('Prologue not found');
@@ -105,5 +99,4 @@ export class AgentController {
       prologue: prologue.prologue,
     };
   }
-
 }

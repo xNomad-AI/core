@@ -6,7 +6,15 @@ import {
   AINftOwner,
 } from '../shared/mongo/types.js';
 import { Collection, Nft, NftTx } from '../shared/nftgo.service.js';
-import { IsOptional, IsString, IsInt, Max, Min, IsArray, IsObject } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  Max,
+  Min,
+  IsArray,
+  IsObject,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export type NftSearchOptions = {
@@ -87,7 +95,7 @@ export class NftSearchQueryDto {
   @Max(100)
   limit: number = 100;
 
-// Traits query with a proper transformation to an array of objects
+  // Traits query with a proper transformation to an array of objects
   @IsOptional()
   @IsArray()
   @Transform(({ value }: { value: string }) => {

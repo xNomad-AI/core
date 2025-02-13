@@ -14,7 +14,7 @@ export class ElevenlabsService {
     private readonly httpService: HttpService,
   ) {
     this.apikey = this.appConfig.get<string>('ELEVENLABS_API_KEY');
-    this.endpoint = "https://api.elevenlabs.io";
+    this.endpoint = 'https://api.elevenlabs.io';
   }
 
   async getVoices() {

@@ -1,10 +1,20 @@
-import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  LAMPORTS_PER_SOL,
+} from '@solana/web3.js';
 
-import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, NATIVE_MINT } from "@solana/spl-token";
+import {
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
+  NATIVE_MINT,
+} from '@solana/spl-token';
 
 function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}  
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export class SolanaClient {
   private connection: Connection;
@@ -28,11 +38,12 @@ export class SolanaClient {
 
   async getBalance(token: string) {
     // WSOL
-    if (token === NATIVE_MINT.toBase58() || 
-        token === "So11111111111111111111111111111111111111111" || 
-        token.toUpperCase() === "SOL" || 
-        token.toUpperCase() === "WSOL"
-      ) {
+    if (
+      token === NATIVE_MINT.toBase58() ||
+      token === 'So11111111111111111111111111111111111111111' ||
+      token.toUpperCase() === 'SOL' ||
+      token.toUpperCase() === 'WSOL'
+    ) {
       return this.getSOLBalance();
     }
 
@@ -43,9 +54,13 @@ export class SolanaClient {
     const address = new PublicKey(mintTokenAddress);
 
     const accountInfo = await this.connection.getParsedAccountInfo(address);
-    if (accountInfo.value.owner.equals(TOKEN_2022_PROGRAM_ID)) return TOKEN_2022_PROGRAM_ID;
-    if (accountInfo.value.owner.equals(TOKEN_PROGRAM_ID)) return TOKEN_PROGRAM_ID;
-    throw new Error(`Invalid token program ID, mint=${mintTokenAddress}, owner=${accountInfo.value.owner.toBase58()}`);
+    if (accountInfo.value.owner.equals(TOKEN_2022_PROGRAM_ID))
+      return TOKEN_2022_PROGRAM_ID;
+    if (accountInfo.value.owner.equals(TOKEN_PROGRAM_ID))
+      return TOKEN_PROGRAM_ID;
+    throw new Error(
+      `Invalid token program ID, mint=${mintTokenAddress}, owner=${accountInfo.value.owner.toBase58()}`,
+    );
   }
 
   private async getSOLBalance() {
@@ -56,20 +71,19 @@ export class SolanaClient {
   private async getSPLBalance(mintTokenAddress: string) {
     const programId = await this.getTokenProgramId(mintTokenAddress);
     const associatedAccount = getAssociatedTokenAddressSync(
-        new PublicKey(mintTokenAddress),
-        this.keypair.publicKey,
-        false,
-        programId,
+      new PublicKey(mintTokenAddress),
+      this.keypair.publicKey,
+      false,
+      programId,
     );
 
-    const balance = await this.connection.getTokenAccountBalance(
-      associatedAccount,
-    );
+    const balance =
+      await this.connection.getTokenAccountBalance(associatedAccount);
     return balance.value.uiAmount;
   }
 
   private async isBlockhashExpired(lastValidBlockHeight: number) {
-    let currentBlockHeight = await this.connection.getBlockHeight("confirmed");
+    let currentBlockHeight = await this.connection.getBlockHeight('confirmed');
     // console.log('Last Valid Block height - 150:     ', lastValidBlockHeight - 150);
     // console.log('Difference:                      ',currentBlockHeight - (lastValidBlockHeight-150)); // If Difference is positive, blockhash has expired.
 
@@ -80,7 +94,7 @@ export class SolanaClient {
     let hashExpired = false;
     let txSuccess = false;
     let startTime = new Date();
-    let lastValidHeight = await this.connection.getBlockHeight("confirmed");
+    let lastValidHeight = await this.connection.getBlockHeight('confirmed');
     const checkInterval = 1000;
 
     while (!hashExpired && !txSuccess) {
@@ -89,7 +103,7 @@ export class SolanaClient {
       ]);
 
       if (!statuses || statuses.length === 0) {
-        throw new Error("Failed to get signature status");
+        throw new Error('Failed to get signature status');
       }
 
       const status = statuses[0];
@@ -101,8 +115,8 @@ export class SolanaClient {
       // Break loop if transaction has succeeded
       if (
         status &&
-        (status.confirmationStatus === "confirmed" ||
-          status.confirmationStatus === "finalized")
+        (status.confirmationStatus === 'confirmed' ||
+          status.confirmationStatus === 'finalized')
       ) {
         txSuccess = true;
         const endTime = new Date();

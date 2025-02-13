@@ -1,34 +1,40 @@
-import {
-  Scraper,
-} from 'agent-twitter-client';
+import { Scraper } from 'agent-twitter-client';
 import { sleep } from './utils.service.js';
 
-export async function testTwitterConfig(username, password, email, twitter2faSecret, content: string): Promise<{
+export async function testTwitterConfig(
+  username,
+  password,
+  email,
+  twitter2faSecret,
+  content: string,
+): Promise<{
   isLogin: boolean;
   isPosted?: boolean;
   message?: string;
 }> {
-  console.log('testTwitterConfig', username, password, email, twitter2faSecret, content);
+  console.log(
+    'testTwitterConfig',
+    username,
+    password,
+    email,
+    twitter2faSecret,
+    content,
+  );
   const result: any = {};
   const scraper = new Scraper();
 
   // test login
   try {
-    if (!username){
+    if (!username) {
       throw new Error('Username is required');
     }
-    if (!password){
+    if (!password) {
       throw new Error('Password is required');
     }
-    if (!email){
+    if (!email) {
       throw new Error('Email is required');
     }
-    await scraper.login(
-      username,
-      password,
-      email,
-      twitter2faSecret,
-    );
+    await scraper.login(username, password, email, twitter2faSecret);
   } catch (e) {
     return { isLogin: false, message: e.message };
   }
@@ -38,16 +44,14 @@ export async function testTwitterConfig(username, password, email, twitter2faSec
     if (await scraper.isLoggedIn()) {
       result.isLogin = true;
     }
-  }catch (e) {
+  } catch (e) {
     return { isLogin: false, message: 'login failed' };
   }
 
   // test post
   try {
     if (content) {
-      const postResponse = await scraper.sendTweet(
-        content,
-      );
+      const postResponse = await scraper.sendTweet(content);
       if (postResponse.status === 200) {
         result.isPosted = true;
       } else {

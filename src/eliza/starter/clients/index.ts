@@ -21,22 +21,34 @@ export async function initializeClients(
   //   clients.push(await DiscordClientInterface.start(runtime));
   // }
 
-  const isStartTg = process.env?.ENABLE_TELEGRAM_CLIENT === "true";
-  if (isStartTg && (clientTypes.includes('telegram') || character.settings?.secrets?.TELEGRAM_BOT_TOKEN)) {
+  const isStartTg = process.env?.ENABLE_TELEGRAM_CLIENT === 'true';
+  if (
+    isStartTg &&
+    (clientTypes.includes('telegram') ||
+      character.settings?.secrets?.TELEGRAM_BOT_TOKEN)
+  ) {
     try {
       const telegramClient = await TelegramClientInterface.start(runtime);
       if (telegramClient) clients.push(telegramClient);
-    }catch (e) {
-      console.error(`Failed to start ${character.name} Telegram client: ${e.message}`);
+    } catch (e) {
+      console.error(
+        `Failed to start ${character.name} Telegram client: ${e.message}`,
+      );
     }
   }
 
-  if (clientTypes.includes('twitter') || (character.settings?.secrets?.TWITTER_PASSWORD && character.settings?.secrets?.TWITTER_2FA_SECRET)) {
+  if (
+    clientTypes.includes('twitter') ||
+    (character.settings?.secrets?.TWITTER_PASSWORD &&
+      character.settings?.secrets?.TWITTER_2FA_SECRET)
+  ) {
     try {
       const twitterClients = await TwitterClientInterface.start(runtime);
       clients.push(twitterClients);
-    }catch (e){
-      console.error(`Failed to start ${character.name} Twitter client: ${e.message}`);
+    } catch (e) {
+      console.error(
+        `Failed to start ${character.name} Twitter client: ${e.message}`,
+      );
     }
   }
 

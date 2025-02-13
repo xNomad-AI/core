@@ -41,7 +41,9 @@ export function startIntervalTask(
   const runTask = async () => {
     while (isRunning) {
       try {
-        console.log(`[${taskName}] Task started at ${new Date().toISOString()}`);
+        console.log(
+          `[${taskName}] Task started at ${new Date().toISOString()}`,
+        );
         await task();
         // console.log(`[${taskName}] Task completed successfully.`);
         await sleep(interval);
@@ -64,7 +66,12 @@ export function startIntervalTask(
 }
 
 export function deepMerge(origin: any, updated: any): any {
-  if (typeof origin !== 'object' || typeof updated !== 'object' || origin === null || updated === null) {
+  if (
+    typeof origin !== 'object' ||
+    typeof updated !== 'object' ||
+    origin === null ||
+    updated === null
+  ) {
     return updated;
   }
 

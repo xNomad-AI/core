@@ -20,11 +20,11 @@ export const COLLECTIONS = [
         name: 1,
       },
       {
-        agentId: 1
+        agentId: 1,
       },
       {
-        "agentAccount.solana": 1
-      }
+        'agentAccount.solana': 1,
+      },
     ],
     uniqueIndexes: [
       {
@@ -69,8 +69,8 @@ export const COLLECTIONS = [
     indexes: [],
     uniqueIndexes: [
       {
-        chain:1,
-        nftId:1
+        chain: 1,
+        nftId: 1,
       },
     ],
   },

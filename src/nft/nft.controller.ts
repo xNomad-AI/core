@@ -86,10 +86,15 @@ export class NftController {
   }
 
   @Post('/:chain/:nftId/config/twitter')
-  async updateTwitterConfig(@Request() request,
-                          @Param('chain') chain: string,
-                          @Param('nftId') nftId: string,
-                          @Body() { testContent, characterConfig }: { testContent: string, characterConfig: CharacterConfig },
+  async updateTwitterConfig(
+    @Request() request,
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+    @Body()
+    {
+      testContent,
+      characterConfig,
+    }: { testContent: string; characterConfig: CharacterConfig },
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
@@ -99,12 +104,19 @@ export class NftController {
     const username = characterConfig.settings.secrets.TWITTER_USERNAME;
     const password = characterConfig.settings.secrets.TWITTER_PASSWORD;
     const email = characterConfig.settings.secrets.TWITTER_EMAIL;
-    const twitter2faSecret = characterConfig.settings.secrets.TWITTER_2FA_SECRET;
-    const result = await testTwitterConfig(username, password, email, twitter2faSecret, testContent);
+    const twitter2faSecret =
+      characterConfig.settings.secrets.TWITTER_2FA_SECRET;
+    const result = await testTwitterConfig(
+      username,
+      password,
+      email,
+      twitter2faSecret,
+      testContent,
+    );
     if (!result.isLogin || !result.isPosted) {
       return result;
     }
-    await this.nftService.updateNftConfig({nftId, characterConfig});
+    await this.nftService.updateNftConfig({ nftId, characterConfig });
     return result;
   }
 
@@ -118,7 +130,7 @@ export class NftController {
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!await this.nftService.isNftAdmin(chain, address, nftId)) {
+    if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
     return await this.nftService.updateNftConfig({
@@ -136,7 +148,7 @@ export class NftController {
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!await this.nftService.isNftAdmin(chain, address, nftId)) {
+    if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
     return await this.nftService.getNftConfig(nftId);
@@ -151,7 +163,7 @@ export class NftController {
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!await this.nftService.isNftAdmin(chain, address, nftId)) {
+    if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
     await this.nftService.deleteNftConfig(nftId);
@@ -159,10 +171,7 @@ export class NftController {
 
   @UseGuards(AuthGuard)
   @Get('/agent/auth')
-  async getAgentAuth(
-    @Query('agentId') agentId: string,
-    @Request() request,
-  ) {
+  async getAgentAuth(@Query('agentId') agentId: string, @Request() request) {
     const address = request['X-USER-ADDRESS'];
     const chain = request['X-USER-CHAIN'];
     if (!chain || !address) {
