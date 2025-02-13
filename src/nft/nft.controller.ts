@@ -9,6 +9,7 @@ import {
   Query,
   UnauthorizedException,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
@@ -102,11 +103,16 @@ export class NftController {
     if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
-    const username = characterConfig.settings.secrets.TWITTER_USERNAME;
-    const password = characterConfig.settings.secrets.TWITTER_PASSWORD;
-    const email = characterConfig.settings.secrets.TWITTER_EMAIL;
+
+    const username = characterConfig?.settings?.secrets?.TWITTER_USERNAME;
+    const password = characterConfig.settings?.secrets?.TWITTER_PASSWORD;
+    const email = characterConfig.settings?.secrets?.TWITTER_EMAIL;
     const twitter2faSecret =
-      characterConfig.settings.secrets.TWITTER_2FA_SECRET;
+      characterConfig?.settings?.secrets?.TWITTER_2FA_SECRET;
+
+    if (!username || !password || !email) {
+      throw new BadRequestException('twitter config is not complete, please provide username, password and email');
+    }
     const result = await testTwitterConfig(
       username,
       password,
@@ -114,7 +120,7 @@ export class NftController {
       twitter2faSecret,
       testContent,
     );
-    if (!result.isLogin || !result.isPosted) {
+    if (!result.isLogin) {
       return result;
     }
     await this.nftService.updateNftConfig({ nftId, characterConfig });

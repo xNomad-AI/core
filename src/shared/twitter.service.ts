@@ -12,14 +12,6 @@ export async function testTwitterConfig(
   isPosted?: boolean;
   message?: string;
 }> {
-  console.log(
-    'testTwitterConfig',
-    username,
-    password,
-    email,
-    twitter2faSecret,
-    content,
-  );
   const result: any = {};
   const scraper = new Scraper();
 
