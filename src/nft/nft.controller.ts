@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   Request,
   Param,
   Post,
@@ -98,9 +97,9 @@ export class NftController {
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    // if (!await this.nftService.isNftAdmin(chain, address, nftId)) {
-    //   throw new UnauthorizedException('You are not the owner of this NFT');
-    // }
+    if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
+      throw new UnauthorizedException('You are not the owner of this NFT');
+    }
     const username = characterConfig.settings.secrets.TWITTER_USERNAME;
     const password = characterConfig.settings.secrets.TWITTER_PASSWORD;
     const email = characterConfig.settings.secrets.TWITTER_EMAIL;

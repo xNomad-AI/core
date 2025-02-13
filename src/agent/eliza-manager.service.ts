@@ -205,7 +205,8 @@ export class ElizaManagerService {
   }
 
   async initAgentCharacter(config: ElizaAgentConfig) {
-    let { chain, nftId, character, characterConfig } = config;
+    const { chain, nftId, characterConfig } = config;
+    let { character } = config;
     character = {
       ...character,
       ...characterConfig,

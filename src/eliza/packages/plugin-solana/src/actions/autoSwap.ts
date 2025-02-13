@@ -181,7 +181,10 @@ async function getTokensInWallet(runtime: IAgentRuntime) {
 }
 
 // check if the token symbol is in the wallet
-async function getTokenFromWallet(runtime: IAgentRuntime, tokenSymbol: string) {
+async function _getTokenFromWallet(
+  runtime: IAgentRuntime,
+  tokenSymbol: string,
+) {
   try {
     const items = await getTokensInWallet(runtime);
     const token = items.find((item) => item.symbol === tokenSymbol);
@@ -272,7 +275,7 @@ export const autoTask: Action = {
     'AUTO_SWAP_TOKEN_TASK',
   ],
   suppressInitialMessage: true,
-  validate: async (runtime: IAgentRuntime, message: Memory) => {
+  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     // Check if the necessary parameters are provided in the message
     return true;
   },

@@ -263,7 +263,7 @@ Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\
 // if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
 
 // get all the tokens in the wallet using the wallet provider
-async function getTokensInWallet(runtime: IAgentRuntime) {
+async function _getTokensInWallet(runtime: IAgentRuntime) {
   const { publicKey } = await getWalletKey(runtime, false);
   const walletProvider = new WalletProvider(
     new Connection(
@@ -277,23 +277,6 @@ async function getTokensInWallet(runtime: IAgentRuntime) {
   const walletInfo = await walletProvider.fetchPortfolioValue(runtime);
   const items = walletInfo.items;
   return items;
-}
-
-// check if the token symbol is in the wallet
-async function getTokenFromWallet(runtime: IAgentRuntime, tokenSymbol: string) {
-  try {
-    const items = await getTokensInWallet(runtime);
-    const token = items.find((item) => item.symbol === tokenSymbol);
-
-    if (token) {
-      return token.address;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    elizaLogger.error(`Error checking token in wallet:, ${error}`);
-    return null;
-  }
 }
 
 export function isValidSPLTokenAddress(address: string) {
@@ -326,7 +309,7 @@ export const executeSwap: Action = {
     'BUY_TOKENS',
     'SELL_TOKENS',
   ],
-  validate: async (runtime: IAgentRuntime, message: Memory) => {
+  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     // Check if the necessary parameters are provided in the message
     return true;
   },

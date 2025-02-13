@@ -8,7 +8,6 @@ import {
 import { Connection, PublicKey } from '@solana/web3.js';
 import { BigNumber } from 'bignumber.js';
 import NodeCache from 'node-cache';
-import { getWalletKey } from '../keypairUtils.js';
 
 // Provider configuration
 const PROVIDER_CONFIG = {
@@ -404,26 +403,12 @@ export class WalletProvider {
 
 const walletProvider: Provider = {
   get: async (
-    runtime: IAgentRuntime,
+    _runtime: IAgentRuntime,
     _message: Memory,
     _state?: State,
   ): Promise<string | null> => {
-    try {
-      // const { publicKey } = await getWalletKey(runtime, false);
-      //
-      // const connection = new Connection(
-      //     runtime.getSetting("SOLANA_RPC_URL") ||
-      //         PROVIDER_CONFIG.DEFAULT_RPC
-      // );
-      elizaLogger.info('Wallet provider not implemented yet');
-      return '999';
-      // const provider = new WalletProvider(connection, publicKey);
-
-      // return await provider.getFormattedPortfolio(runtime);
-    } catch (error) {
-      elizaLogger.error('Error in wallet provider:', error);
-      return null;
-    }
+    elizaLogger.debug('Wallet provider not implemented yet');
+    return '999';
   },
 };
 

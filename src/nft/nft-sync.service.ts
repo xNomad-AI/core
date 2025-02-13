@@ -1,13 +1,12 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { sleep, startIntervalTask } from '../shared/utils.service.js';
 import {
-  NEW_AI_NFT_EVENT,
   transformToActivity,
   transformToAICollection,
   transformToAINft,
   transformToOwner,
 } from './nft.types.js';
-import { CollectionTxs, Nft, NftgoService } from '../shared/nftgo.service.js';
+import { CollectionTxs, NftgoService } from '../shared/nftgo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';

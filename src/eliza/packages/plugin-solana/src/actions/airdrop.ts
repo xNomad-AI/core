@@ -40,7 +40,7 @@ export const airdrop: Action = {
   name: 'CLAIM_AIRDROP',
   similes: [],
   suppressInitialMessage: true,
-  validate: async (runtime: IAgentRuntime, message: Memory) => {
+  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     return true;
   },
   description: 'Perform claim airdrop',
@@ -227,7 +227,7 @@ interface AirdropRegistry {
   };
 }
 
-async function getAirdrops(runtime: IAgentRuntime, message: Memory) {
+async function getAirdrops(runtime: IAgentRuntime, _message: Memory) {
   const airdropServer =
     runtime.getSetting('AIRDROP_REGISTER_SERVER') ||
     process.env.AIRDROP_REGISTER_SERVER;

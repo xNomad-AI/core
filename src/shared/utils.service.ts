@@ -56,7 +56,7 @@ export function startIntervalTask(
     }
     console.log(`[${taskName}] Task has been stopped.`);
   };
-  runTask();
+  void runTask();
   return {
     stop: () => {
       console.log(`[${taskName}] Stop signal received.`);

@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  OnApplicationBootstrap,
-} from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { NftgoService } from '../shared/nftgo.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
@@ -52,7 +48,7 @@ export class NftService implements OnApplicationBootstrap {
   }
 
   @OnEvent(NEW_AI_NFT_EVENT, { async: true })
-  async handleNewAINfts(nfts: AINft[], restart?: boolean) {
+  async handleNewAINfts(nfts: AINft[], restart?: boolean): Promise<void> {
     for (const nft of nfts) {
       if (nft?.aiAgent?.engine !== 'eliza') {
         return;
@@ -100,7 +96,7 @@ export class NftService implements OnApplicationBootstrap {
       { upsert: true },
     );
     const nft = await this.mongo.nfts.findOne({ nftId });
-    this.handleNewAINfts([nft], true);
+    void this.handleNewAINfts([nft], true);
     return {
       characterConfig,
     };
@@ -116,7 +112,7 @@ export class NftService implements OnApplicationBootstrap {
   async deleteNftConfig(nftId: string) {
     await this.mongo.nftConfigs.deleteOne({ nftId });
     const nft = await this.mongo.nfts.findOne({ nftId });
-    this.handleNewAINfts([nft], true);
+    void this.handleNewAINfts([nft], true);
   }
 
   async getAgentOwner(agentId: string) {

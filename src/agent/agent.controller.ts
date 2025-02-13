@@ -3,12 +3,9 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   NotFoundException,
   Post,
   Query,
-  UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import { CreateAgentDto } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
@@ -32,7 +29,7 @@ export class AgentController {
   ) {}
 
   @Post('/')
-  async startNFTAgent(@Body() { nftId, chain, restart }: CreateAgentDto) {
+  async startNFTAgent(@Body() { nftId, restart }: CreateAgentDto) {
     const nft = await this.mongo.nfts.findOne({
       nftId,
     });

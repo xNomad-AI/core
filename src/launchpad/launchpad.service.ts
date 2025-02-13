@@ -185,7 +185,7 @@ export class LaunchpadService {
 
     const latestBlockhash = await umi.rpc.getLatestBlockhash();
 
-    let versionedTransaction = new VersionedTransaction(
+    const versionedTransaction = new VersionedTransaction(
       new TransactionMessage({
         payerKey: new PublicKey(userAddress),
         recentBlockhash: latestBlockhash.blockhash,

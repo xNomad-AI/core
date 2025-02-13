@@ -9,7 +9,7 @@ export async function initializeDatabase(
 ): Promise<MongoDBDatabaseAdapter> {
   if (!db) {
     try {
-      let newDB = new MongoDBDatabaseAdapter(client, dbName);
+      const newDB = new MongoDBDatabaseAdapter(client, dbName);
       await newDB.init();
       db = newDB;
     } catch (error) {

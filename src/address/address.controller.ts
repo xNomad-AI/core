@@ -3,11 +3,8 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   Post,
   Query,
-  Res,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { AddressService } from './address.service.js';
 import { NonceType } from '../shared/mongo/types.js';

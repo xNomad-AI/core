@@ -28,11 +28,12 @@
       }
     ],
     "no-constant-binary-expression": "error",
+    "no-constant-condition": "warn",
     "@typescript-eslint/explicit-function-return-type": "off",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-floating-promises": "warn",
-    "@typescript-eslint/require-await": "warn",
-    "@typescript-eslint/no-unsafe-argument": "warn"
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-floating-promises": "off",
+    "@typescript-eslint/require-await": "off",
+    "@typescript-eslint/no-unsafe-argument": "off"
   },
   "overrides": [
     {

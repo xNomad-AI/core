@@ -222,7 +222,7 @@ export class TokenProvider {
         throw new Error(`No data returned for token ${tokenAddress}`);
       }
 
-      this.setCachedData(cacheKey, token);
+      void this.setCachedData(cacheKey, token);
 
       return {
         id: token.id,
@@ -278,7 +278,7 @@ export class TokenProvider {
           elizaLogger.warn(`No price data available for token: ${token}`);
         }
       }
-      this.setCachedData(cacheKey, prices);
+      void this.setCachedData(cacheKey, prices);
       return prices;
     } catch (error) {
       elizaLogger.error('Error fetching prices:', error);
@@ -657,7 +657,7 @@ export class TokenProvider {
       };
 
       // Cache the result
-      this.setCachedData(cacheKey, dexData);
+      void this.setCachedData(cacheKey, dexData);
 
       // Return the pair with the highest liquidity and market cap
       return this.getHighestLiquidityPair(dexData);
@@ -808,7 +808,7 @@ export class TokenProvider {
       elizaLogger.log(`Total unique holders fetched: ${holders.length}`);
 
       // Cache the result
-      this.setCachedData(cacheKey, holders);
+      void this.setCachedData(cacheKey, holders);
 
       return holders;
     } catch (error) {

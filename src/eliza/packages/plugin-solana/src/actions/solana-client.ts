@@ -83,7 +83,8 @@ export class SolanaClient {
   }
 
   private async isBlockhashExpired(lastValidBlockHeight: number) {
-    let currentBlockHeight = await this.connection.getBlockHeight('confirmed');
+    const currentBlockHeight =
+      await this.connection.getBlockHeight('confirmed');
     // console.log('Last Valid Block height - 150:     ', lastValidBlockHeight - 150);
     // console.log('Difference:                      ',currentBlockHeight - (lastValidBlockHeight-150)); // If Difference is positive, blockhash has expired.
 
@@ -93,8 +94,8 @@ export class SolanaClient {
   async waitTransactionEnd(signature: string) {
     let hashExpired = false;
     let txSuccess = false;
-    let startTime = new Date();
-    let lastValidHeight = await this.connection.getBlockHeight('confirmed');
+    const startTime = new Date();
+    const lastValidHeight = await this.connection.getBlockHeight('confirmed');
     const checkInterval = 1000;
 
     while (!hashExpired && !txSuccess) {

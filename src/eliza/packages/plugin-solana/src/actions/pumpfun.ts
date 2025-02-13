@@ -1,13 +1,7 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Wallet } from '@coral-xyz/anchor';
 import axios from 'axios';
-import {
-  Commitment,
-  Connection,
-  Keypair,
-  PublicKey,
-  Transaction,
-} from '@solana/web3.js';
+import { Commitment, Connection, Keypair, Transaction } from '@solana/web3.js';
 import {
   calculateWithSlippageBuy,
   CreateTokenMetadata,
@@ -21,7 +15,6 @@ import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import {
   settings,
   ActionExample,
-  Content,
   HandlerCallback,
   IAgentRuntime,
   Memory,
@@ -181,7 +174,7 @@ export default {
   name: 'CREATE_TOKEN',
   similes: ['CREATE_PUMPFUN_TOKEN'],
   suppressInitialMessage: true,
-  validate: async (runtime: IAgentRuntime, message: Memory) => {
+  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     return true;
   },
   description:
@@ -236,7 +229,7 @@ export default {
 
     elizaLogger.info('Generated content:', content);
 
-    let {
+    const {
       name,
       symbol,
       description,
@@ -245,7 +238,7 @@ export default {
       telegram,
       buyAmountSol,
     } = content;
-    let tokenMetadata = {
+    const tokenMetadata = {
       name,
       symbol,
       description,
@@ -301,7 +294,7 @@ export default {
 
       const wallet = new Wallet(deployerKeypair);
 
-      let provider: AnchorProvider = new AnchorProvider(connection, wallet, {
+      const provider: AnchorProvider = new AnchorProvider(connection, wallet, {
         commitment: 'confirmed',
       });
       let sdk: PumpFunSDK;
@@ -406,9 +399,9 @@ export default {
   ] as ActionExample[][],
 } as Action;
 
-async function uploadTokenMetadata(create: CreateTokenMetadata): Promise<any> {
+async function _uploadTokenMetadata(create: CreateTokenMetadata): Promise<any> {
   elizaLogger.log(`Uploading token metadata to IPFS... ${create.name}`);
-  let formData = new FormData();
+  const formData = new FormData();
   formData.append('name', create.name);
   formData.append('symbol', create.symbol);
   formData.append('description', create.description || '');
@@ -429,7 +422,7 @@ async function uploadTokenMetadata(create: CreateTokenMetadata): Promise<any> {
   }
 }
 
-async function createAndBuyWithUrl(
+async function _createAndBuyWithUrl(
   sdk: PumpFunSDK,
   creator: Keypair,
   mint: Keypair,
@@ -440,14 +433,14 @@ async function createAndBuyWithUrl(
   commitment?: Commitment,
   url?: string,
 ): Promise<TransactionResult> {
-  let createTx = await sdk.getCreateInstructions(
+  const createTx = await sdk.getCreateInstructions(
     creator.publicKey,
     createTokenMetadata.name,
     createTokenMetadata.symbol,
     url,
     mint,
   );
-  let newTx = new Transaction().add(createTx);
+  const newTx = new Transaction().add(createTx);
   if (buyAmountSol > 0) {
     const globalAccount = await sdk.getGlobalAccount('confirmed');
     const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
@@ -464,7 +457,7 @@ async function createAndBuyWithUrl(
     );
     newTx.add(buyTx);
   }
-  let createResults = await sendTx(
+  const createResults = await sendTx(
     sdk.connection,
     newTx,
     creator.publicKey,

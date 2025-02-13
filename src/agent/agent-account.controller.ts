@@ -21,6 +21,7 @@ import {
 } from '@solana/web3.js';
 import { BirdeyeService } from '../shared/birdeye.service.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
+import { TransientLoggerService } from '../shared/transient-logger.service.js';
 
 @Controller('/agent-account')
 export class AgentAccountController {
@@ -28,6 +29,7 @@ export class AgentAccountController {
     private readonly elizaManager: ElizaManagerService,
     private readonly birdEye: BirdeyeService,
     private readonly config: ConfigService,
+    private readonly logger: TransientLoggerService,
   ) {}
 
   @Get('/')
@@ -167,7 +169,9 @@ export class AgentAccountController {
                   publicKey(sourceAccount.mint),
                 );
                 symbol = asset.metadata.symbol;
-              } catch (e) {}
+              } catch (e) {
+                this.logger.error('failed to fetch digital asset', e);
+              }
             }
 
             transfers.push({
