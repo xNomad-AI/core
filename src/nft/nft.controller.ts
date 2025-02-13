@@ -84,6 +84,8 @@ export class NftController {
     return await this.nftService.getNftById(chain, nftId);
   }
 
+
+  @UseGuards(AuthGuard)
   @Post('/:chain/:nftId/config/twitter')
   async updateTwitterConfig(
     @Request() request,
@@ -117,6 +119,31 @@ export class NftController {
     }
     await this.nftService.updateNftConfig({ nftId, characterConfig });
     return result;
+  }
+
+
+  @UseGuards(AuthGuard)
+  @Delete('/:chain/:nftId/config/twitter')
+  async deleteTwitterConfig(
+    @Request() request,
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+  ) {
+    const address = request['X-USER-ADDRESS'];
+    chain = request['X-USER-CHAIN'];
+    if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
+      throw new UnauthorizedException('You are not the owner of this NFT');
+    }
+    await this.nftService.updateNftConfig({ nftId, characterConfig: {
+      settings: {
+        secrets: {
+          TWITTER_USERNAME: '',
+          TWITTER_PASSWORD: '',
+          TWITTER_EMAIL: '',
+          TWITTER_2FA_SECRET: '',
+        },
+      },
+      }});
   }
 
   @UseGuards(AuthGuard)
