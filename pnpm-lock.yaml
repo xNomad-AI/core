@@ -977,7 +977,7 @@ packages:
       whatwg-url: 7.1.0
 
   '@elizaos/client-direct@file:local_dependency/elizaos-client-direct-0.1.9-patch.2.tgz':
-    resolution: {integrity: sha512-Go9dwrw+JzePLpvQeEwqdQHtmirkc/1oJZ6dLP96n8ZLjQHHkHuvaf8kbS9RwVABe7IJ7sQu5QTBG+aGnbjPQQ==, tarball: file:local_dependency/elizaos-client-direct-0.1.9-patch.2.tgz}
+    resolution: {integrity: sha512-uEFns4MfDL9BPhBiTzRsgBZbQANMnl332ZOeWR4M+3bCcXleoIZ8v7zQ0bLhM7e+dyAG7plS9NQTnlsRNL/LrQ==, tarball: file:local_dependency/elizaos-client-direct-0.1.9-patch.2.tgz}
     version: 0.1.9-patch.2
     peerDependencies:
       whatwg-url: 7.1.0
@@ -987,7 +987,7 @@ packages:
     version: 0.1.9
 
   '@elizaos/client-twitter@file:local_dependency/elizaos-client-twitter-0.1.9.tgz':
-    resolution: {integrity: sha512-mOdql/OL4PpmrGXYT3YZeUXzW7x8P+JgGajcCOI7bmAWLnHHEmdyZeribZh42pZLTAMcTO/6tJKcSK5sbN6a5Q==, tarball: file:local_dependency/elizaos-client-twitter-0.1.9.tgz}
+    resolution: {integrity: sha512-BBlLN+avyRVvWlwWhnnUNVutWUx82sWsMkyzsh5eyNuAzu0k2XI32hUTrXEdG5hJu4Mj7Urim1FfF+pg+dcIrw==, tarball: file:local_dependency/elizaos-client-twitter-0.1.9.tgz}
     version: 0.1.9
     peerDependencies:
       whatwg-url: 7.1.0
@@ -996,7 +996,7 @@ packages:
     resolution: {integrity: sha512-rsAAyiPfc0HWWNVrROdQfR0BonVCgb1D1EHi7gLCrag8ZZqGd3UI/xjSiAUmU73e0dPcEo/JQzteAoehZ/ouXQ==}
 
   '@elizaos/core@file:local_dependency/elizaos-core-0.1.9.tgz':
-    resolution: {integrity: sha512-4KhYHAdUPArJEzLol+aylLNVouLrwaQO2gaknFG8lsBt596xkH/soiHjRsBn+Tkf8M966Bk+oC/u4fXghY2kWg==, tarball: file:local_dependency/elizaos-core-0.1.9.tgz}
+    resolution: {integrity: sha512-7DWfKQhsqv/o7E6dxUMP6wQpfFF2uVw8b08WFKEGQg24zji+H0qjy4wvgfgvqSYb9qGB1/u1yil+Df2lX02VGQ==, tarball: file:local_dependency/elizaos-core-0.1.9.tgz}
     version: 0.1.9
 
   '@elizaos/plugin-bootstrap@0.1.9':

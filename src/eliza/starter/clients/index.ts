@@ -28,6 +28,7 @@ export async function initializeClients(
       character.settings?.secrets?.TELEGRAM_BOT_TOKEN)
   ) {
     try {
+      console.log(`Starting Telegram client for ${character.name}`);
       const telegramClient = await TelegramClientInterface.start(runtime);
       if (telegramClient) clients.push(telegramClient);
     } catch (e) {
@@ -43,6 +44,7 @@ export async function initializeClients(
       character.settings?.secrets?.TWITTER_2FA_SECRET)
   ) {
     try {
+      console.log(`Starting Twitter client for ${character.name}`);
       const twitterClients = await TwitterClientInterface.start(runtime);
       clients.push(twitterClients);
     } catch (e) {
