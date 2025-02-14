@@ -107,8 +107,13 @@ export class NftController {
     const username = characterConfig?.settings?.secrets?.TWITTER_USERNAME;
     const password = characterConfig.settings?.secrets?.TWITTER_PASSWORD;
     const email = characterConfig.settings?.secrets?.TWITTER_EMAIL;
-    const twitter2faSecret =
-      characterConfig?.settings?.secrets?.TWITTER_2FA_SECRET;
+    const twitter2faSecret = characterConfig?.settings?.secrets?.TWITTER_2FA_SECRET;
+
+    // convert to string to be compatiable with env
+    if (characterConfig?.settings?.secrets) {
+      characterConfig.settings.secrets.POST_IMMEDIATELY = String(characterConfig.settings.secrets.POST_IMMEDIATELY || false);
+      characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND = String(characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND || false);
+    }
 
     if (!username || !password || !email) {
       throw new BadRequestException('twitter config is not complete, please provide username, password and email');
