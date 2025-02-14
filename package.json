@@ -26,12 +26,10 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
     "@elizaos/adapter-mongodb": "file:local_dependency/elizaos-adapter-mongodb-0.1.9.tgz",
-    "@elizaos/client-auto": "0.1.9",
     "@elizaos/client-direct": "file:local_dependency/elizaos-client-direct-0.1.9-patch.2.tgz",
     "@elizaos/client-telegram": "file:local_dependency/elizaos-client-telegram-0.1.9.tgz",
     "@elizaos/client-twitter": "file:local_dependency/elizaos-client-twitter-0.1.9.tgz",
     "@elizaos/core": "file:local_dependency/elizaos-core-0.1.9.tgz",
-    "@elizaos/plugin-bootstrap": "0.1.9",
     "@elizaos/plugin-solana": "workspace:*",
     "@elizaos/plugin-tee": "file:local_dependency/elizaos-plugin-tee-0.1.9.tgz",
     "@ipld/dag-ucan": "^3.4.5",
