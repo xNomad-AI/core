@@ -108,18 +108,6 @@ async function createAndBuyToken({
       'Success:',
       `https://pump.fun/${mint.publicKey.toBase58()}`,
     );
-    const ata = getAssociatedTokenAddressSync(
-      mint.publicKey,
-      deployer.publicKey,
-      allowOffCurve,
-    );
-    const balance = await connection.getTokenAccountBalance(ata, 'processed');
-    const amount = balance.value.uiAmount;
-    if (amount === null) {
-      elizaLogger.log(`${deployer.publicKey.toBase58()}:`, 'No Account Found');
-    } else {
-      elizaLogger.log(`${deployer.publicKey.toBase58()}:`, amount);
-    }
 
     return {
       success: true,
@@ -147,6 +135,7 @@ Example response:
 {
     "name": "GLITCHIZA",
     "symbol": "GLITCHIZA",
+    "imageUrl":  ""
     "description": "A test token",
     "twitter": "https://x.com/elonmusk",
     "website": "https://x.com",
@@ -160,6 +149,7 @@ Example response:
 Given the recent messages, extract or generate (come up with if not included) the following information about the requested token creation:
 - Token name
 - Token symbol
+- Token image url, the image path user uploaded, if not provided, it will be empty
 - Token description
 - Twitter URL
 - Website URL
@@ -179,7 +169,7 @@ export default {
     return isAdmin;
   },
   description:
-    'Create a new token and buy a specified amount using SOL. Requires the token name, description, metadata, buy amount after create in SOL.',
+    'Create a new token on pumpfun and buy a specified amount using SOL. Requires the token name, symbol and image url, buy amount after create in SOL.',
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -188,15 +178,6 @@ export default {
     callback?: HandlerCallback,
   ): Promise<boolean> => {
     elizaLogger.log('Starting CREATE_TOKEN handler...');
-    const image = message.content?.attachments?.[0]?.url;
-    if (!image) {
-      const responseMsg = {
-        text: 'Please provide an image for the token',
-      };
-      callback?.(responseMsg);
-      return true;
-    }
-
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
       const responseMsg = {
@@ -233,6 +214,7 @@ export default {
     const {
       name,
       symbol,
+      imageUrl,
       description,
       twitter,
       website,
@@ -248,10 +230,30 @@ export default {
       telegram,
     };
     elizaLogger.info(
-      `Content for CREATE_AND_BUY_TOKEN action: ${JSON.stringify(tokenMetadata)}, ${buyAmountSol}`,
+      `Content for CREATE_AND_BUY_TOKEN action: ${JSON.stringify(content)}`,
     );
-    const imageUrl = message.content?.attachments?.[0]?.url;
-
+    if (!imageUrl){
+      callback({
+        text: formatCreateTokenInfo(content) + `
+        Please provide an image for the token.`,
+        });
+      return false;
+    };
+    if (!name){
+      callback({
+        text: formatCreateTokenInfo(content) + `
+        Please provide a name for the token.`,
+      });
+      return false;
+    };
+    if (!symbol){
+      callback({
+        text: formatCreateTokenInfo(content) + `
+        Please provide a symbol for the token.`,
+        });
+      return false;
+    };
+    const file = imageUrl ? await fs.openAsBlob(imageUrl) : null;
     const fullTokenMetadata: CreateTokenMetadata = {
       name: tokenMetadata.name,
       symbol: tokenMetadata.symbol,
@@ -259,7 +261,7 @@ export default {
       twitter: tokenMetadata.twitter,
       telegram: tokenMetadata.telegram,
       website: tokenMetadata.website,
-      file: await fs.openAsBlob(imageUrl),
+      file: file,
     };
 
     // Default priority fee for high network load
@@ -467,4 +469,24 @@ async function _createAndBuyWithUrl(
     commitment,
   );
   return createResults;
+}
+
+
+function formatCreateTokenInfo(params: CreateTokenMetadata): string {
+  return `
+💱 New Token
+----------------------------
+🔹 Name: ${params.name}
+
+🔸 Symbol: ${params.symbol}
+
+🔹 Description: ${params.description}
+
+🔸 Twitter: ${params.twitter}
+
+🔹 Website: ${params.website}
+
+🔸 Telegram: ${params.telegram}
+----------------------------
+  `;
 }
