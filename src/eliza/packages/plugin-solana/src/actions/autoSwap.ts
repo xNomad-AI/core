@@ -334,44 +334,6 @@ export const autoTask: Action = {
       {
         user: '{{user1}}',
         content: {
-          text: 'buy USDC with 0.0001 SOL when price under 0.99',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'Please provide the CA of USDC',
-        },
-      },
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: "Please confirm the swap by replying with 'yes' or 'confirm'.",
-        },
-      },
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'yes',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'AutoTask Created',
-        },
-      },
-    ],
-    [
-      {
-        user: '{{user1}}',
-        content: {
           inputTokenSymbol: 'SOL',
           inputTokenCA: 'So11111111111111111111111111111111111111112',
           outputTokenSymbol: 'USDC',

@@ -321,35 +321,6 @@ export const executeSwap: Action = {
       {
         user: '{{user1}}',
         content: {
-          text: 'buy USDC with 0.0001 SOL',
-          action: 'TOKEN_SWAP',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'Please provide the CA of USDC',
-          action: 'TOKEN_SWAP',
-        },
-      },
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-          action: 'TOKEN_SWAP',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'USDC swapped successfuly. Transaction ID: ...',
-        },
-      },
-    ],
-    [
-      {
-        user: '{{user1}}',
-        content: {
           inputTokenSymbol: 'SOL',
           inputTokenCA: 'So11111111111111111111111111111111111111112',
           outputTokenSymbol: 'USDC',
@@ -360,8 +331,13 @@ export const executeSwap: Action = {
       {
         user: '{{user2}}',
         content: {
-          text: 'Swapping 0.1 SOL for USDC...',
-          action: 'TOKEN_SWAP',
+          text: 'Swap Request:--- swap 0.1 SOL for USDC -----, please confirm by replying with "yes" or "ok"',
+        },
+      },
+      {
+        user: '{{user1}}',
+        content: {
+          text: 'yes',
         },
       },
       {
