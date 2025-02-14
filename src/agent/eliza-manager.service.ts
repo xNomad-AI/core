@@ -76,6 +76,19 @@ export class ElizaManagerService {
     }
   }
 
+  async stopAgent(agentId: string) {
+      // stop all running clients of agent
+    try {
+      const runtime = this.elizaClient.agents.get(agentId);
+      const clientMap =  runtime?.clients;
+      for (const client of clientMap?.values) {
+        client.stop(runtime);
+      }
+    }catch (e){
+      this.logger.error(e)
+    }
+  }
+
   async getAgentStatus(agentId) {
     const runtime = this.elizaClient.agents.get(agentId);
     if (!runtime) {
