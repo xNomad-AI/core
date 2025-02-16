@@ -80,10 +80,7 @@ export class ElizaManagerService {
       // stop all running clients of agent
     try {
       const runtime = this.elizaClient.agents.get(agentId);
-      const clientMap =  runtime?.clients;
-      for (const client of clientMap?.values) {
-        client.stop(runtime);
-      }
+      await runtime.stop();
     }catch (e){
       this.logger.error(e)
     }
