@@ -38,8 +38,9 @@ export async function initializeClients(
     }
   }
 
+  const isStartTwitter = process.env?.ENABLE_TWITTER_CLIENT === 'true';
   if (
-    clientTypes.includes('twitter') ||
+    isStartTwitter &&
     (character.settings?.secrets?.TWITTER_PASSWORD &&
       character.settings?.secrets?.TWITTER_2FA_SECRET)
   ) {
