@@ -217,7 +217,15 @@ Respond with a JSON markdown block containing only the extracted values. Use nul
     "outputTokenCA": string | null,
     "amount": number | string
 }
-\`\`\``;
+\`\`\`
+
+Examples:
+-  buy 0.1 SOL ELIZA should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "ELIZA", "inputTokenCA": null, "outputTokenCA": null, "amount": 0.1}\`;
+-  buy ai16z with 0.001 SOL should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "ai16z", "inputTokenCA": null, "outputTokenCA": null, "amount": 0.001}\`;
+-  sell 1 USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v should return \`{"inputTokenSymbol": "USDC", "outputTokenSymbol": "SOL", "inputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "outputTokenCA": null, "amount": 1}\`;
+-  swap 0.1 SOL for USDC should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "USDC", "inputTokenCA": null, "outputTokenCA": null, "amount": 0.1}\`;
+-  swap 20 ai16z for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v should return \`{"inputTokenSymbol": "ai16z", "outputTokenSymbol": "USDC", "inputTokenCA": null, "outputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "amount": 20}\`;
+`;
 
 const userConfirmTemplate = `
 {{recentMessages}}
@@ -295,6 +303,17 @@ export const executeSwap: Action = {
   description: 'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
   handler: swapHandler,
   examples: [
+    [
+      {
+        user: 'buy ai16z with 0.001 SOL',
+      },
+      {
+        user: '{{user2}}',
+        content: {
+          text: 'Swap Request:--- swap 0.001 SOL for ai16z -----, please confirm by replying with "yes" or "ok"',
+        },
+      },
+    ],
     [
       {
         user: '{{user1}}',
