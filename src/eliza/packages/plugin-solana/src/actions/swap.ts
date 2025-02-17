@@ -305,17 +305,6 @@ export const executeSwap: Action = {
   examples: [
     [
       {
-        user: 'buy ai16z with 0.001 SOL',
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'Swap Request:--- swap 0.001 SOL for ai16z -----, please confirm by replying with "yes" or "ok"',
-        },
-      },
-    ],
-    [
-      {
         user: '{{user1}}',
         content: {
           inputTokenSymbol: 'SOL',
