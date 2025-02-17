@@ -289,8 +289,7 @@ export const executeSwap: Action = {
     'SELL_TOKENS',
   ],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    const isAdmin = await isAgentAdmin(runtime, message);
-    return isAdmin;
+    return await isAgentAdmin(runtime, message);
   },
   description: 'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
   handler: swapHandler,
@@ -514,7 +513,7 @@ async function checkResponse(
   validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
   if (!validInputTokenCA) {
     const tokens = await getTokensBySymbol(
-      getRuntimeKey(runtime, 'BIRDEYE_API_KEY'),
+      runtime,
       response.inputTokenSymbol,
     );
     if (tokens?.[0]?.address) {
@@ -533,7 +532,7 @@ async function checkResponse(
 
   if (!validOutputTokenCA) {
     const tokens = await getTokensBySymbol(
-      getRuntimeKey(runtime, 'BIRDEYE_API_KEY'),
+      runtime,
       response.outputTokenSymbol,
     );
     if (tokens?.[0]?.address) {

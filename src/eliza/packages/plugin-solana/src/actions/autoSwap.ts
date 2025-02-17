@@ -240,8 +240,7 @@ export const autoTask: Action = {
   ],
   suppressInitialMessage: true,
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    const isAdmin = await isAgentAdmin(runtime, message);
-    return isAdmin;
+    return await isAgentAdmin(runtime, message);
   },
   description: 'Perform auto token swap. Enables the agent to automatically execute trades when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers, optimizing trading strategies without manual intervention.',
   handler: async (
@@ -430,7 +429,7 @@ async function checkResponse(
   validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
   if (!validInputTokenCA) {
     const tokens = await getTokensBySymbol(
-      getRuntimeKey(runtime, 'BIRDEYE_API_KEY'),
+      runtime,
       response.inputTokenSymbol,
     );
     if (tokens?.[0]?.address) {
@@ -449,7 +448,7 @@ async function checkResponse(
 
   if (!validOutputTokenCA) {
     const tokens = await getTokensBySymbol(
-      getRuntimeKey(runtime, 'BIRDEYE_API_KEY'),
+      runtime,
       response.outputTokenSymbol,
     );
     if (tokens?.[0]?.address) {

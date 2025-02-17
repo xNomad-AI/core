@@ -164,8 +164,7 @@ export default {
   similes: ['CREATE_PUMPFUN_TOKEN'],
   suppressInitialMessage: true,
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    const isAdmin = await isAgentAdmin(runtime, message);
-    return isAdmin;
+    return await isAgentAdmin(runtime, message);
   },
   description:
     'Create a new token on pumpfun and buy a specified amount using SOL. Requires the token name, symbol and image url, buy amount after create in SOL.',

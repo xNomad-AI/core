@@ -12,7 +12,7 @@ import {
 } from '@elizaos/core';
 import { getWalletKey, sign } from '../keypairUtils.js';
 import {
-  isAgentAdmin,
+  isAgentAdmin, NotAgentAdminMessage,
 } from '../providers/walletUtils.js';
 import { Keypair } from '@solana/web3.js';
 import axios from 'axios';
@@ -40,7 +40,7 @@ export const airdrop: Action = {
   similes: [],
   suppressInitialMessage: true,
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    return isAgentAdmin(runtime, message);
+    return await isAgentAdmin(runtime, message);
   },
   description: 'Perform claim airdrop for the user agent account',
   handler: async (
@@ -50,6 +50,14 @@ export const airdrop: Action = {
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
   ): Promise<boolean> => {
+    const isAdmin = await isAgentAdmin(runtime, message);
+    if (!isAdmin) {
+      const responseMsg = {
+        text: NotAgentAdminMessage,
+      };
+      callback?.(responseMsg);
+      return true;
+    }
     // composeState
     if (!state) {
       state = (await runtime.composeState(message)) as State;

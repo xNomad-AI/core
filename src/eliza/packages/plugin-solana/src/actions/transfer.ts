@@ -26,7 +26,7 @@ import {
 import { composeContext } from "@elizaos/core";
 import { getWalletKey } from "../keypairUtils.js";
 import { generateObjectDeprecated } from "@elizaos/core";
-import { isAgentAdmin } from '../providers/walletUtils.js';
+import { isAgentAdmin, NotAgentAdminMessage } from '../providers/walletUtils.js';
 import { convertNullStrings } from './swapUtils.js';
 import { getRuntimeKey } from '../environment.js';
 import { SolanaClient } from './solana-client.js';
@@ -130,8 +130,7 @@ export const transfer: Action =  {
   suppressInitialMessage: true,
   similes: ["TRANSFER_TOKEN", "WITHDRAW_TOKEN", "WITHDRAW"],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    const isAdmin = await isAgentAdmin(runtime, message);
-    return isAdmin;
+    return await isAgentAdmin(runtime, message);
   },
   description: "Transfer SPL tokens or SOL from agent's wallet to another address, aka send or withdraw a certain amount of tokens to a specific address.",
   handler: async (
@@ -141,8 +140,15 @@ export const transfer: Action =  {
     _options: { [key: string]: unknown },
     callback?: HandlerCallback
   ): Promise<boolean> => {
+    const isAdmin = await isAgentAdmin(runtime, message);
+    if (!isAdmin) {
+      const responseMsg = {
+        text: NotAgentAdminMessage,
+      };
+      callback?.(responseMsg);
+      return null;
+    }
     elizaLogger.log("Starting SEND_TOKEN handler...");
-
     if (!state) {
       state = (await runtime.composeState(message)) as State;
     } else {
