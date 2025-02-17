@@ -61,7 +61,7 @@ export async function swapToken(
   try {
     // Get the decimals for the input token
     const decimals =
-      inputTokenCA === settings.SOL_ADDRESS
+      inputTokenCA === getRuntimeKey(runtime, 'SOL_ADDRESS')
         ? new BigNumber(9)
         : new BigNumber(await getTokenDecimals(connection, inputTokenCA));
 
@@ -124,12 +124,13 @@ export async function swapToken(
     const client = await getSolanaClient(runtime);
     const outProgramId = await client.getTokenProgramId(quoteData.outputMint);
     // get or create fee token account after check to prevent invalid token account creation
+    // only add fee account if the token is not a 2022 token
     // https://station.jup.ag/docs/swap-api/add-fees-to-swap#important-notes
     if (
       getJUP_SWAP_FEE_BPS() !== undefined &&
       getJUP_SWAP_FEE_ACCOUNT() !== undefined &&
       !programId.equals(TOKEN_2022_PROGRAM_ID) &&
-      outProgramId.equals(TOKEN_2022_PROGRAM_ID)
+      !outProgramId.equals(TOKEN_2022_PROGRAM_ID)
     ) {
       elizaLogger.log(
         'get or creating fee account:',
@@ -662,10 +663,10 @@ function formatSwapInfo(params: {
   return `
 💱 Swap Request
 ----------------------------
-🔹 From: ${params.amount} ${params.inputTokenSymbol}  
+🔹 Input: ${params.amount} ${params.inputTokenSymbol}  
    📌 CA: ${params.inputTokenCA}
 
-🔸 To: ${params.outputTokenSymbol}  
+🔸 Output: ${params.outputTokenSymbol}  
    📌 CA: ${params.outputTokenCA}
 ----------------------------
   `;
