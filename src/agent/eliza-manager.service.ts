@@ -6,6 +6,7 @@ import {
   stringToUuid,
 } from '@elizaos/core';
 import {
+  AutoSwapTask,
   AutoSwapTaskTable,
   executeAutoTokenSwapTask,
 } from '@elizaos/plugin-solana';
@@ -115,6 +116,7 @@ export class ElizaManagerService {
     opts?: {
       roomId?: string;
       userId?: string;
+      memoryId?: string;
     },
   ) {
     const filter: any = { agentId };
@@ -123,6 +125,9 @@ export class ElizaManagerService {
     }
     if (opts.userId) {
       filter.roomId = stringToUuid(opts.userId);
+    }
+    if (opts?.memoryId){
+      filter.id = opts.memoryId;
     }
     await this.mongoService.client
       .db('agent')
@@ -252,5 +257,40 @@ export class ElizaManagerService {
     character.knowledge.push(`** I have multi wallet address, on solana it is ${solana}, and on evm is ${evm} **`)
 
     return character;
+  }
+
+
+  async getAgentAutotasks(agentId: string) {
+    const memories = await this.mongoService.client
+      .db('agent')
+      .collection('memories')
+      .find<Memory>({
+        type: AutoSwapTaskTable,
+        agentId,
+      }).sort({_id:-1})
+      .toArray();
+    return memories.map((memory) => {
+      let task: AutoSwapTask;
+      if (typeof memory.content === 'string') {
+        task = JSON.parse(memory.content)?.task as AutoSwapTask;
+      } else {
+        task = memory.content?.task as AutoSwapTask;
+      }
+      return {
+        id: memory.id,
+        userId: memory.userId,
+        ...task,
+      };
+    });
+  }
+
+  async isAgentOwner(agentId: string, ownerAddress : string){
+    const nft = await this.mongoService.nfts.findOne({agentId});
+    const owner = await this.mongoService.nftOwners.findOne({
+      chain: nft?.chain,
+      contractAddress: nft?.contractAddress,
+      tokenId: nft?.tokenId,
+    });
+    return owner?.ownerAddress === ownerAddress;
   }
 }

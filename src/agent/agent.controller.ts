@@ -6,6 +6,9 @@ import {
   NotFoundException,
   Post,
   Query,
+  UnauthorizedException,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateAgentDto } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
@@ -16,6 +19,7 @@ import { ElevenlabsService } from '../shared/elevenlabs.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NEW_AI_NFT_EVENT } from '../nft/nft.types.js';
+import { AuthGuard } from '../shared/auth/auth.guard.js';
 
 @Controller('/agent')
 export class AgentController {
@@ -56,6 +60,35 @@ export class AgentController {
     @Query('userId') userId: string,
   ) {
     await this.elizaManager.deleteAgentMemory(agentId, { roomId, userId });
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/autotasks')
+  async getAgentAutotask(
+    @Query('agentId') agentId: string,
+    @Request() request,
+  ) {
+    const address = request['X-USER-ADDRESS'];
+    if (!(await this.elizaManager.isAgentOwner(agentId, address))) {
+      throw new UnauthorizedException('You are not the owner of this Agent');
+    }
+    return await this.elizaManager.getAgentAutotasks(agentId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('/autotask')
+  async deleteAgentAutotask(
+    @Query('agentId') agentId: string,
+    @Query('taskId') taskId: string,
+    @Request() request,
+  ) {
+    const address = request['X-USER-ADDRESS'];
+    if (!(await this.elizaManager.isAgentOwner(agentId, address))) {
+      throw new UnauthorizedException('You are not the owner of this Agent');
+    }
+    await this.elizaManager.deleteAgentMemory(agentId, {
+      memoryId: taskId
+    });
   }
 
   @Get('/account')
