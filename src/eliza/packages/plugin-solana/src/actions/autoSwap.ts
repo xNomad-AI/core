@@ -24,13 +24,12 @@ import { getWalletKey } from '../keypairUtils.js';
 import {
   isAgentAdmin,
   NotAgentAdminMessage,
-  walletProvider,
-  WalletProvider,
-} from '../providers/wallet.js';
+} from '../providers/walletUtils.js';
 import { convertNullStrings, md5sum } from './swapUtils.js';
 import { isValidSPLTokenAddress, swapToken } from './swap.js';
 import { getTokensBySymbol } from '../providers/tokenUtils.js';
 import { SolanaClient } from './solana-client.js';
+import { getRuntimeKey } from '../environment.js';
 
 export const AutoSwapTaskTable = 'AUTO_TOKEN_SWAP_TASK';
 export interface AutoSwapTask {
@@ -164,41 +163,6 @@ Respond with a JSON:
  **Should return \`"pending"\`**  
 - User1: "create autotask swap 0.0001 SOL for USDC when price under 0.99"  
 `;
-
-// if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
-
-// get all the tokens in the wallet using the wallet provider
-async function getTokensInWallet(runtime: IAgentRuntime) {
-  const { publicKey } = await getWalletKey(runtime, false);
-  const walletProvider = new WalletProvider(
-    new Connection('https://api.mainnet-beta.solana.com'),
-    publicKey,
-  );
-
-  const walletInfo = await walletProvider.fetchPortfolioValue(runtime);
-  const items = walletInfo.items;
-  return items;
-}
-
-// check if the token symbol is in the wallet
-async function _getTokenFromWallet(
-  runtime: IAgentRuntime,
-  tokenSymbol: string,
-) {
-  try {
-    const items = await getTokensInWallet(runtime);
-    const token = items.find((item) => item.symbol === tokenSymbol);
-
-    if (token) {
-      return token.address;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    elizaLogger.error('Error checking token in wallet:', error);
-    return null;
-  }
-}
 
 export async function executeAutoTokenSwapTask(
   runtime: IAgentRuntime,
@@ -371,8 +335,7 @@ async function getSwapTokenPrice(
   tokenCA,
 ): Promise<number | undefined> {
   try {
-    const birdeyeApiKey =
-      runtime.getSetting('BIRDEYE_API_KEY') || process.env.BIRDEYE_API_KEY;
+    const birdeyeApiKey = getRuntimeKey(runtime, 'BIRDEYE_API_KEY');
     const url = `https://public-api.birdeye.so/defi/price?address=${tokenCA}`;
     const response = await fetch(url, {
       headers: {
@@ -413,8 +376,6 @@ async function checkResponse(
     state = await runtime.updateRecentMessageState(state);
   }
 
-  const walletInfo = await walletProvider.get(runtime, message, state);
-  state.walletInfo = walletInfo;
   const swapContext = composeContext({
     state,
     template: autoSwapTemplate,
@@ -469,7 +430,7 @@ async function checkResponse(
   validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
   if (!validInputTokenCA) {
     const tokens = await getTokensBySymbol(
-      runtime.getSetting('BIRDEYE_API_KEY'),
+      getRuntimeKey(runtime, 'BIRDEYE_API_KEY'),
       response.inputTokenSymbol,
     );
     if (tokens?.[0]?.address) {
@@ -488,7 +449,7 @@ async function checkResponse(
 
   if (!validOutputTokenCA) {
     const tokens = await getTokensBySymbol(
-      runtime.getSetting('BIRDEYE_API_KEY'),
+      getRuntimeKey(runtime, 'BIRDEYE_API_KEY'),
       response.outputTokenSymbol,
     );
     if (tokens?.[0]?.address) {
@@ -574,10 +535,7 @@ async function executeSwapTokenTx(
   elizaLogger.info(
     `swapToken ${keypair.publicKey.toBase58()} : ${inputTokenCA} for ${outputTokenCA} amount: ${amount}`,
   );
-  const rpcUrl =
-    runtime.getSetting('SOLANA_RPC_URL') ||
-    process.env.SOLANA_RPC_URL ||
-    'https://api.mainnet-beta.solana.com';
+  const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
 
   const solanaClient = new SolanaClient(rpcUrl, keypair);

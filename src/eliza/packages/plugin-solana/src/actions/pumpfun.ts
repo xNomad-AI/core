@@ -11,7 +11,6 @@ import {
   TransactionResult,
 } from 'pumpdotfun-sdk';
 
-import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import {
   settings,
   ActionExample,
@@ -29,8 +28,7 @@ import {
 import {
   isAgentAdmin,
   NotAgentAdminMessage,
-  walletProvider,
-} from '../providers/wallet.js';
+} from '../providers/walletUtils.js';
 
 async function createAndBuyToken({
   deployer,
@@ -127,6 +125,7 @@ async function createAndBuyToken({
 // Save the base64 data to a file
 import * as fs from 'fs';
 import { getWalletKey } from '../keypairUtils.js';
+import { getRuntimeKey } from '../environment.js';
 
 const pumpfunTemplate = `Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
 
@@ -192,10 +191,6 @@ export default {
     } else {
       state = await runtime.updateRecentMessageState(state);
     }
-
-    // Get wallet info for context
-    const walletInfo = await walletProvider.get(runtime, message, state);
-    state.walletInfo = walletInfo;
 
     // Generate structured content from natural language
     const pumpContext = composeContext({
@@ -281,10 +276,7 @@ export default {
       );
 
       // Setup connection and SDK
-      const rpcUrl =
-        runtime.getSetting('SOLANA_RPC_URL') ||
-        settings.SOLANA_RPC_URL ||
-        'https://api.mainnet-beta.solana.com';
+      const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
       const connection = new Connection(rpcUrl, {
         commitment: 'confirmed',
         confirmTransactionInitialTimeout: 120000, // 120 seconds

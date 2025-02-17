@@ -13,11 +13,10 @@ import {
 import { getWalletKey, sign } from '../keypairUtils.js';
 import {
   isAgentAdmin,
-  NotAgentAdminMessage,
-  walletProvider,
-} from '../providers/wallet.js';
+} from '../providers/walletUtils.js';
 import { Keypair } from '@solana/web3.js';
 import axios from 'axios';
+import { getRuntimeKey } from '../environment.js';
 
 const claimAirdropTemplate = `
 {{recentMessages}}
@@ -57,10 +56,6 @@ export const airdrop: Action = {
     } else {
       state = await runtime.updateRecentMessageState(state);
     }
-
-    const walletInfo = await walletProvider.get(runtime, message, state);
-
-    state.walletInfo = walletInfo;
 
     const context = composeContext({
       state,
@@ -220,9 +215,7 @@ interface AirdropRegistry {
 }
 
 async function getAirdrops(runtime: IAgentRuntime, _message: Memory) {
-  const airdropServer =
-    runtime.getSetting('AIRDROP_REGISTER_SERVER') ||
-    process.env.AIRDROP_REGISTER_SERVER;
+  const airdropServer = getRuntimeKey(runtime, 'AIRDROP_REGISTER_SERVER');
   const url = `${airdropServer}/registry`;
   const response = await fetch(url);
   const result = await response.json();

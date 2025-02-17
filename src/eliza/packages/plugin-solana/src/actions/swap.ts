@@ -23,9 +23,7 @@ import { getWalletKey } from '../keypairUtils.js';
 import {
   isAgentAdmin,
   NotAgentAdminMessage,
-  walletProvider,
-  WalletProvider,
-} from '../providers/wallet.js';
+} from '../providers/walletUtils.js';
 import { convertNullStrings, getTokenDecimals } from './swapUtils.js';
 import {
   getOrCreateAssociatedTokenAccount,
@@ -262,22 +260,6 @@ Respond with a JSON:
 Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
 // if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
 
-// get all the tokens in the wallet using the wallet provider
-async function _getTokensInWallet(runtime: IAgentRuntime) {
-  const { publicKey } = await getWalletKey(runtime, false);
-  const walletProvider = new WalletProvider(
-    new Connection(
-      runtime.getSetting('SOLANA_RPC_URL') ||
-        process.env.SOLANA_RPC_URL ||
-        'https://api.mainnet-beta.solana.com',
-    ),
-    publicKey,
-  );
-
-  const walletInfo = await walletProvider.fetchPortfolioValue(runtime);
-  const items = walletInfo.items;
-  return items;
-}
 
 export function isValidSPLTokenAddress(address: string) {
   try {
@@ -295,11 +277,8 @@ export function isValidSPLTokenAddress(address: string) {
   }
 }
 
-// swapToken should took CA, not symbol
-
 export const executeSwap: Action = {
   name: 'EXECUTE_SWAP',
-  // every return has using callback generate the message, so we do not need the suppressInitialMessage
   suppressInitialMessage: true,
   similes: [
     'SWAP_TOKENS',
@@ -315,7 +294,6 @@ export const executeSwap: Action = {
   },
   description: 'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
   handler: swapHandler,
-  // template: swapTemplate,
   examples: [
     [
       {
@@ -370,10 +348,7 @@ async function swapHandler(
   }
 
   try {
-    const rpcUrl =
-      runtime.getSetting('SOLANA_RPC_URL') ||
-      process.env.SOLANA_RPC_URL ||
-      'https://api.mainnet-beta.solana.com';
+    const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
     const connection = new Connection(rpcUrl);
     const { keypair } = await getWalletKey(runtime, true);
     const walletPublicKey = keypair.publicKey;
@@ -406,10 +381,7 @@ async function swapHandler(
 
     elizaLogger.log('Signing transaction...');
     transaction.sign([keypair]);
-
     elizaLogger.log('Sending transaction...');
-
-    // const latestBlockhash = await connection.getLatestBlockhash();
 
     let txid: string;
     try {
@@ -488,8 +460,6 @@ async function checkResponse(
     state = await runtime.updateRecentMessageState(state);
   }
 
-  const walletInfo = await walletProvider.get(runtime, message, state);
-  state.walletInfo = walletInfo;
   const swapContext = composeContext({
     state,
     template: swapTemplate,
@@ -544,7 +514,7 @@ async function checkResponse(
   validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
   if (!validInputTokenCA) {
     const tokens = await getTokensBySymbol(
-      runtime.getSetting('BIRDEYE_API_KEY'),
+      getRuntimeKey(runtime, 'BIRDEYE_API_KEY'),
       response.inputTokenSymbol,
     );
     if (tokens?.[0]?.address) {
@@ -563,7 +533,7 @@ async function checkResponse(
 
   if (!validOutputTokenCA) {
     const tokens = await getTokensBySymbol(
-      runtime.getSetting('BIRDEYE_API_KEY'),
+      getRuntimeKey(runtime, 'BIRDEYE_API_KEY'),
       response.outputTokenSymbol,
     );
     if (tokens?.[0]?.address) {
@@ -703,10 +673,7 @@ function formatSwapInfo(params: {
 }
 
 async function getSolanaClient(runtime: IAgentRuntime) {
-  const rpcUrl =
-    runtime.getSetting('SOLANA_RPC_URL') ||
-    process.env.SOLANA_RPC_URL ||
-    'https://api.mainnet-beta.solana.com';
+  const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const { keypair } = await getWalletKey(runtime, true);
   return new SolanaClient(rpcUrl, keypair);
 }

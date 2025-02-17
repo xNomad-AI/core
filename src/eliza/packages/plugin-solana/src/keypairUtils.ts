@@ -45,7 +45,7 @@ export async function getWalletKey(
             walletSecretSalt,
             agentId: runtime.agentId,
             teeMode,
-            requirePrivateKey,
+            requirePrivateKey: true,
           },
           {
             headers: {

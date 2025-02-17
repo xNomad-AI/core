@@ -1,6 +1,7 @@
 import { getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
 import { type Connection, PublicKey } from '@solana/web3.js';
-import { elizaLogger } from '@elizaos/core';
+import { elizaLogger, IAgentRuntime } from '@elizaos/core';
+import { getRuntimeKey } from '../environment.js';
 
 const tokenNameMap: { [mintAddress: string]: string } = {
   EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
@@ -16,6 +17,7 @@ const tokenSymbolMap: { [symbol: string]: string } = {
   ai16z: 'HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC',
   ELIZA: '5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM',
 };
+
 export async function getTokenPriceInSol(tokenSymbol: string): Promise<number> {
   const response = await fetch(
     `https://price.jup.ag/v6/price?ids=${tokenSymbol}`,
@@ -79,9 +81,10 @@ function getTokenName(mintAddress: PublicKey): string {
 }
 
 export async function getTokensBySymbol(
-  birdeypeApikey: string,
+  runtime: IAgentRuntime,
   keyword: string,
 ) {
+  const birdeypeApikey = getRuntimeKey(runtime, 'BIRDEYE_API_KEY');
   if (!keyword) {
     return [];
   }

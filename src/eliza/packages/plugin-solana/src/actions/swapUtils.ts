@@ -324,12 +324,13 @@ export function md5sum(data: string): string {
   return createHash('md5').update(data).digest('hex');
 }
 
+// convert null strings to null
 export function convertNullStrings(obj) {
   for (const key in obj) {
     if (obj[key] === 'null') {
       obj[key] = null;
     } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-      convertNullStrings(obj[key]); // 递归处理嵌套对象
+      convertNullStrings(obj[key]);
     }
   }
   return obj;
