@@ -151,11 +151,6 @@ export const transfer: Action =  {
       return null;
     }
     elizaLogger.log("Starting SEND_TOKEN handler...");
-    if (!state) {
-      state = (await runtime.composeState(message)) as State;
-    } else {
-      state = await runtime.updateRecentMessageState(state);
-    }
 
     const transferContext = composeContext({
       state,

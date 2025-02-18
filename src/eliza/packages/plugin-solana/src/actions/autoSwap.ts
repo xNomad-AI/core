@@ -372,13 +372,6 @@ async function checkResponse(
     return null;
   }
 
-  // composeState
-  if (!state) {
-    state = (await runtime.composeState(message)) as State;
-  } else {
-    state = await runtime.updateRecentMessageState(state);
-  }
-
   const swapContext = composeContext({
     state,
     template: autoSwapTemplate,
