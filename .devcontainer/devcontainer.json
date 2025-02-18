@@ -1,0 +1,21 @@
+// See https://aka.ms/vscode-remote/devcontainer.json for format details.
+{
+  "name": "elizaos-dev",
+  "workspaceFolder": "/app",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "core",
+  "privileged": true,
+  // curl -XPOST 'http://localhost:8080/agent' -d '{ "nftId": "xx", "chain": "solana", "restart": true}' -H 'Content-Type: application/json'
+  "customizations": {
+      "vscode": {
+          "extensions": [
+              "vscode.json-language-features",
+              "esbenp.prettier-vscode"
+          ],
+          "settings": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode",
+            "editor.formatOnSave": true
+          }
+      }
+  }
+}

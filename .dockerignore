@@ -1,12 +1,11 @@
 .github
-.env.example
 .idea
-.git
+# .git
 .vscode
 .db_data
 .env
 .env.agent-eliza
-
+.pnpm-store
 node_modules
 dist
 redis
