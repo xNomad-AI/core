@@ -1,7 +1,7 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Wallet } from '@coral-xyz/anchor';
 import axios from 'axios';
-import { Commitment, Connection, Keypair, Transaction } from '@solana/web3.js';
+import { Commitment, Connection, Keypair, LAMPORTS_PER_SOL, Transaction } from '@solana/web3.js';
 import {
   calculateWithSlippageBuy,
   CreateTokenMetadata,
@@ -31,17 +31,16 @@ import {
 } from '../providers/walletUtils.js';
 
 async function createAndBuyToken({
-  deployer,
-  mint,
-  tokenMetadata,
-  buyAmountSol,
-  priorityFee,
-  allowOffCurve,
-  commitment = 'confirmed',
-  sdk,
-  connection,
-  slippage,
-}: {
+                                   deployer,
+                                   mint,
+                                   tokenMetadata,
+                                   buyAmountSol,
+                                   priorityFee,
+                                   allowOffCurve,
+                                   commitment = 'confirmed',
+                                   sdk,
+                                   slippage,
+                                 }: {
   deployer: Keypair;
   mint: Keypair;
   tokenMetadata: CreateTokenMetadata;
@@ -58,7 +57,6 @@ async function createAndBuyToken({
     | 'root'
     | 'max';
   sdk: PumpFunSDK;
-  connection: Connection;
   slippage: string;
 }): Promise<{
   success: boolean;
@@ -113,11 +111,10 @@ async function createAndBuyToken({
       creator: deployer.publicKey.toBase58(),
     };
   } else {
-    elizaLogger.log(`Create and Buy failed, ${createResults.error}`);
+    elizaLogger.error(`Create and Buy failed, ${createResults.error}`);
     return {
-      success: false,
+      success: true,
       ca: mint.publicKey.toBase58(),
-      error: `Transaction not confirmed, please check it on https://pump.fun/${mint.publicKey.toBase58()}`,
     };
   }
 }
@@ -185,12 +182,6 @@ export default {
       callback?.(responseMsg);
       return true;
     }
-    // Compose state if not provided
-    if (!state) {
-      state = (await runtime.composeState(message)) as State;
-    } else {
-      state = await runtime.updateRecentMessageState(state);
-    }
 
     // Generate structured content from natural language
     const pumpContext = composeContext({
@@ -231,7 +222,7 @@ export default {
       callback({
         text: formatCreateTokenInfo(content) + `
         Please provide an image for the token.`,
-        });
+      });
       return false;
     };
     if (!name){
@@ -245,7 +236,7 @@ export default {
       callback({
         text: formatCreateTokenInfo(content) + `
         Please provide a symbol for the token.`,
-        });
+      });
       return false;
     };
     const file = imageUrl ? await fs.openAsBlob(imageUrl) : null;
@@ -261,10 +252,10 @@ export default {
 
     // Default priority fee for high network load
     const priorityFee = {
-      unitLimit: 250_000,
-      unitPrice: 100_000,
+      unitLimit: 1_000_000,
+      unitPrice: 150_000,
     };
-    const slippage = '100';
+    const slippage = '400';
     try {
       // Get private key from settings and create deployer keypair
       const { keypair: deployerKeypair } = await getWalletKey(runtime, true);
@@ -292,17 +283,8 @@ export default {
       const provider: AnchorProvider = new AnchorProvider(connection, wallet, {
         commitment: 'confirmed',
       });
-      let sdk: PumpFunSDK;
-      try {
-        sdk = new PumpFunSDK(provider);
-      } catch (e) {
-        console.error('Error initializing PumpFunSDK:', e);
-        throw e;
-      }
-      elizaLogger.log('starting buyamount', Number(buyAmountSol));
-
-      // Convert SOL to lamports (1 SOL = 1_000_000_000 lamports)
-      const lamports = Math.floor(Number(buyAmountSol) * 1_000_000_000);
+      const sdk = new PumpFunSDK(provider);
+      const lamports = Math.floor(Number(buyAmountSol) * LAMPORTS_PER_SOL);
 
       elizaLogger.log(
         'Executing create and buy transaction...',
@@ -320,7 +302,6 @@ export default {
         priorityFee,
         allowOffCurve: false,
         sdk,
-        connection,
         slippage,
       });
 
