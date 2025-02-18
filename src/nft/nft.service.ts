@@ -12,7 +12,7 @@ import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { AddressService } from '../address/address.service.js';
 import { stringToUuid } from '@elizaos/core';
-import { deepMerge } from '../shared/utils.service.js';
+import { deepMerge, sleep } from '../shared/utils.service.js';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -35,6 +35,7 @@ export class NftService implements OnApplicationBootstrap {
 
   // Start AI agents for all indexed NFTs
   async startAIAgents() {
+    await this.elizaManager.startAgentServer();
     const configedNfts = await this.mongo.nftConfigs.find().toArray();
     const configedNftIds = configedNfts.map((nft) => nft.nftId);
     const cursor = this.mongo.nfts
@@ -43,8 +44,8 @@ export class NftService implements OnApplicationBootstrap {
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
       await this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft]);
+      await sleep(1500);
     }
-    await this.elizaManager.startAgentServer();
   }
 
   @OnEvent(NEW_AI_NFT_EVENT, { async: true })
