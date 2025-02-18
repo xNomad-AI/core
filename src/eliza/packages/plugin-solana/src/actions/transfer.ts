@@ -38,7 +38,9 @@ export interface TransferContent extends Content {
   amount: number | null;
 }
 
-const transferTemplate = `Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
+const transferTemplate = `
+You are an expert on solana token transfers.
+Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
 
 Example response:
 \`\`\`json

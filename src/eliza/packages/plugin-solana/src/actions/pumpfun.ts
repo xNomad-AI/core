@@ -127,7 +127,8 @@ import * as fs from 'fs';
 import { getWalletKey } from '../keypairUtils.js';
 import { getRuntimeKey } from '../environment.js';
 
-const pumpfunTemplate = `Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
+const pumpfunTemplate = `
+You are an expert on solana token creation, It mainly refers to token launches on Pump.fun. Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
 
 Example response:
 \`\`\`json

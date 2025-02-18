@@ -62,7 +62,7 @@ Example response:
 
 {{recentMessages}}
 
-Given the recent messages and wallet information below:
+You are an expert on solana token swap. Given the recent messages and wallet information below:
 
 {{walletInfo}}
 
@@ -75,6 +75,10 @@ Amount to swap (number or string)
 Delay (if provided, e.g., “after 5 minutes” → "300s")
 Price trigger condition ("under" or "over" or null)
 Price target (if provided, should be number or null)
+
+**Special Rules:**
+- If the user says "buy [token]", it means swapping SOL for that token.
+- If the user says "sell [token]", it means swapping that token for SOL.
 
 Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined. The result should be a valid JSON object with the following schema:
 \`\`\`json

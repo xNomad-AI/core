@@ -196,7 +196,7 @@ Example response:
 
 {{recentMessages}}
 
-Given the recent messages above:
+You are an expert on solana token swaps. Given the recent messages above:
 
 Extract the following information about the requested token swap:
 - Input token symbol (the token being sold)
@@ -206,6 +206,10 @@ Extract the following information about the requested token swap:
 - Amount to swap
 
 Ensure you only extract the current swap request from the user, and avoid extracting any historical swap messages.
+
+**Special Rules:**
+- If the user says "buy [token]", it means swapping SOL for that token.
+- If the user says "sell [token]", it means swapping that token for SOL.
 
 The Token contract address (aka CA) should be a 44 character string, for example: [EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v], [7Xu2oddJ3DMQ1UdgoC8ewK6Kq73kcXUcYCcnfzxqpump]
 Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined. The result should be a valid JSON object with the following schema:
