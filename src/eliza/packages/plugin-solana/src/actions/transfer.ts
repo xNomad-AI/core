@@ -247,15 +247,6 @@ export const transfer: Action =  {
         return;
       }
 
-      const senderATA = getAssociatedTokenAddressSync(mintPubkey, senderKeypair.publicKey, false, programId);
-      const senderTokenBalance = await connection.getTokenAccountBalance(senderATA);
-      if (senderTokenBalance.value.amount < mintAmount.toString()) {
-        callback({
-          text: `Insufficient token balance. Sender has ${senderTokenBalance.value.uiAmount} ${content.tokenSymbol}, but needs ${content.amount} to complete the transfer.`,
-        });
-        return;
-      }
-
       let transaction = new Transaction();
       if (content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS')) {
         transaction.add(SystemProgram.transfer({
@@ -264,6 +255,14 @@ export const transfer: Action =  {
           lamports: mintAmount,
         }));
       }else{
+        const senderATA = getAssociatedTokenAddressSync(mintPubkey, senderKeypair.publicKey, true, programId);
+        const senderTokenBalance = await connection.getTokenAccountBalance(senderATA);
+        if (senderTokenBalance.value.amount < mintAmount.toString()) {
+          callback({
+            text: `Insufficient token balance. Sender has ${senderTokenBalance.value.uiAmount} ${content.tokenSymbol}, but needs ${content.amount} to complete the transfer.`,
+          });
+          return;
+        }
         const instructions = [];
         if (!recipientATAInfo) {
           instructions.push(

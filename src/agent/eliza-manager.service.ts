@@ -245,9 +245,9 @@ export class ElizaManagerService {
     character.settings['WALLET_SECRET_SALT'] = salt;
     if (character.modelProvider === "deepseek" && !character.settings['modelConfig']) {
       character.settings['modelConfig'] = {
-        temperature: 0.5,
+        temperature: 0.4,
         max_response_length: 4096,
-        maxInputTokens: 128000
+        maxInputTokens: 64000
       }
     }
     const {solana, evm} = await this.getAgentAccount(chain, nftId);

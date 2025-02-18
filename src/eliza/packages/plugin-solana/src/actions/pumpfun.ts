@@ -125,7 +125,9 @@ import { getWalletKey } from '../keypairUtils.js';
 import { getRuntimeKey } from '../environment.js';
 
 const pumpfunTemplate = `
-You are an expert on solana token creation, It mainly refers to token launches on Pump.fun. Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
+You are an expert on solana token creation, It mainly refers to token launches on Pump.fun.
+Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated requests. 
+Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
 
 Example response:
 \`\`\`json
@@ -252,8 +254,8 @@ export default {
 
     // Default priority fee for high network load
     const priorityFee = {
-      unitLimit: 1_000_000,
-      unitPrice: 150_000,
+      unitLimit: 500_000,
+      unitPrice: 200_000,
     };
     const slippage = '400';
     try {
