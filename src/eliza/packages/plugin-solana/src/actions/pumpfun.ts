@@ -449,7 +449,7 @@ async function _createAndBuyWithUrl(
 
 function formatCreateTokenInfo(params: CreateTokenMetadata): string {
   return `
-💱 New Token
+💱 Create Token On pump.fun
 ----------------------------
 🔹 Name: ${params.name}
 

@@ -1,8 +1,8 @@
 {
   "name": "@xnomad/core",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "AI-NFT core running environment",
+  "author": "xnomad",
   "private": true,
   "license": "MIT",
   "type": "module",

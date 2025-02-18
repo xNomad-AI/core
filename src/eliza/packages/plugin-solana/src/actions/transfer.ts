@@ -1,8 +1,8 @@
 import {
   getAssociatedTokenAddressSync,
   createTransferInstruction,
-  createAssociatedTokenAccountInstruction,
-} from "@solana/spl-token";
+  createAssociatedTokenAccountInstruction, ACCOUNT_SIZE,
+} from '@solana/spl-token';
 import { elizaLogger } from "@elizaos/core";
 import {
   ComputeBudgetProgram,
@@ -175,6 +175,14 @@ export const transfer: Action =  {
       callback({
         text: `Please provide the amount of tokens to transfer`,
       });
+      return true;
+    }
+
+    if (!content.recipient){
+      callback({
+        text: `Please provide the address to transfer the tokens to`,
+      });
+      return true;
     }
 
     if (!content.tokenAddress && content.tokenSymbol?.toUpperCase() === 'SOL'){
@@ -233,15 +241,14 @@ export const transfer: Action =  {
       const mintAmount = BigInt(Number(content.amount) * Math.pow(10, mintDecimals));
 
       const solBalance = await connection.getBalance(senderKeypair.publicKey);
-      const gasFee = 0.001 * LAMPORTS_PER_SOL;
-      const solTransferOut = content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS') ? Number(mintAmount) : 0;
+      let solTransferOut = content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS') ? Number(mintAmount) : 0;
       const programId = await new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair).getTokenProgramId(content.tokenAddress);
 
       let transaction = new Transaction();
       if (content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS')) {
-        if (solBalance < (gasFee + solTransferOut)) {
+        if (solBalance < solTransferOut) {
           callback({
-            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(solTransferOut + gasFee) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(solTransferOut) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
           });
           return;
         }
@@ -255,9 +262,10 @@ export const transfer: Action =  {
         const recipientATA = getAssociatedTokenAddressSync(mintPubkey, recipientPubkey, false, programId);
         const recipientATAInfo = await connection.getAccountInfo(recipientATA);
         const rentExemptAmount = recipientATAInfo ? 0 : await connection.getMinimumBalanceForRentExemption(165);
-        if (solBalance < (solTransferOut + gasFee + rentExemptAmount)) {
+        solTransferOut += rentExemptAmount;
+        if (solBalance < solTransferOut) {
           callback({
-            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(solTransferOut + gasFee + rentExemptAmount) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${ solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
           });
           return;
         }
@@ -293,8 +301,17 @@ export const transfer: Action =  {
         );
         transaction.add(...instructions);
       }
-
-
+      const recentBlockhash = await connection.getLatestBlockhash('confirmed');
+      transaction.feePayer = senderKeypair.publicKey;
+      transaction.recentBlockhash = recentBlockhash.blockhash;
+      const estimatedFee = await transaction.getEstimatedFee(connection);
+      const rentExemption = await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
+      if (solBalance < (solTransferOut + estimatedFee + rentExemption)) {
+        callback({
+          text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+        });
+        return;
+      }
       const signature = await sendAndConfirmTransaction(
         connection,
         transaction,
