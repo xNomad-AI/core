@@ -234,8 +234,8 @@ Examples:
 const userConfirmTemplate = `
 {{recentMessages}}
 
-Determine the user's response status regarding the swap confirmation.  
-Consider only the last three messages messages from the conversation history above.  
+Analyzing the user’s response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
+Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
 Respond with a JSON:  
 \`\`\`json
 {
@@ -248,6 +248,10 @@ Respond with a JSON:
 "rejected" → The user has responded with anything other than a confirmation.
 "pending" → The user has provided a complete swap request, but User2 has not yet sent the confirmation prompt.
 
+**Additional Rules:**  
+•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
+•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
+•If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
 
 ✅ **Should return \`"confirmed"\`**  
@@ -271,6 +275,7 @@ Respond with a JSON:
 - User1: "buy 0.1 SOL ELIZA"  
 
 Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
+
 // if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
 
 

@@ -130,8 +130,8 @@ The response should be
 const userConfirmAutoTaskTemplate = `
 {{recentMessages}}
 
-Determine the user's confirmation status for creating an autotask.  
-Consider only the last three messages from the conversation history above.  
+Analyzing the user’s response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
+Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
 Respond with a JSON:  
 \`\`\`json
 {
@@ -144,6 +144,10 @@ Respond with a JSON:
 - \`"rejected"\` → The user responded with anything other than a confirmation after User2 send confirmation message.
 - \`"pending"\` → The user has provided a complete autotask request, but User2 has not yet sent the confirmation prompt.  
 
+**Additional Rules:**  
+•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
+•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
+•If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
 
  **Should return \`"confirmed"\`**  

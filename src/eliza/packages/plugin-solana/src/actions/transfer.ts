@@ -90,8 +90,8 @@ Ensure that the extraction is precise and accurate, focusing on the latest unfin
 const userConfirmTemplate = `
 {{recentMessages}}
 
-Determine the user's response status regarding the swap confirmation.  
-Consider only the last three messages messages from the conversation history above.  
+Analyzing the user’s response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
+Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
 Respond with a JSON:  
 \`\`\`json
 {
@@ -99,11 +99,16 @@ Respond with a JSON:
 }
 \`\`\`  
 
-**Decision Criteria:**  
-"confirmed" → The user has explicitly confirmed the transfer using words like “yes”, “confirm”, “okay”, “sure”, etc.
-"rejected" → The user has responded with anything other than a confirmation.
-"pending" → The user has provided a complete transfer request, but User2 has not yet sent the confirmation prompt.
+Decision Criteria:
+•"confirmed" → The user has explicitly confirmed the transfer using words like “yes”, “confirm”, “okay”, “sure”, etc.
+•"rejected" → The user has responded with anything other than a confirmation.
+•"pending" → The user has provided a complete transfer request, but User2 has not yet sent the confirmation prompt.
 
+Additional Rules:
+•If the user issues a new transfer instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
+•Analyze the last five messages to understand the user’s intent in context.
+•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
+•If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
 
 ✅ **Should return \`"confirmed"\`**  
@@ -130,11 +135,11 @@ Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\
 export const transfer: Action =  {
   name: "SEND_TOKEN",
   suppressInitialMessage: true,
-  similes: ["TRANSFER_TOKEN", "WITHDRAW_TOKEN", "WITHDRAW"],
+  similes: ["TRANSFER_TOKEN", "TRANSFER", "WITHDRAW_TOKEN", "WITHDRAW"],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return await isAgentAdmin(runtime, message);
   },
-  description: "Transfer SPL tokens or SOL from agent's wallet to another address, aka send or withdraw a certain amount of tokens to a specific address.",
+  description: "Transfer SPL tokens or SOL from agent's wallet to another address, aka [send |withdraw|transfer] [amount] [tokenSymbol] [tokenCA] to [address] ",
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -164,6 +169,7 @@ export const transfer: Action =  {
     });
 
     content = convertNullStrings(content) as TransferContent;
+    elizaLogger.log(`Transfer Context ${transferContext} Generated Response: ${JSON.stringify(content)}`);
 
     if (!content.amount || isNaN(content.amount as number)){
       callback({
@@ -223,28 +229,42 @@ export const transfer: Action =  {
       const recipientPubkey = new PublicKey(content.recipient);
 
       const mintInfo = await connection.getParsedAccountInfo(mintPubkey);
-      const decimals = (mintInfo.value?.data as any)?.parsed?.info?.decimals;
-      const adjustedAmount = BigInt(Number(content.amount) * Math.pow(10, decimals));
+      const mintDecimals = (mintInfo.value?.data as any)?.parsed?.info?.decimals;
+      const mintAmount = BigInt(Number(content.amount) * Math.pow(10, mintDecimals));
+
+      const solBalance = await connection.getBalance(senderKeypair.publicKey);
+      const gasFee = 0.002 * LAMPORTS_PER_SOL;
+      const solTransferOut = content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS') ? Number(mintAmount) : 0;
+      const programId = await new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair).getTokenProgramId(content.tokenAddress);
+      const recipientATA = getAssociatedTokenAddressSync(mintPubkey, recipientPubkey, false, programId);
+      const recipientATAInfo = await connection.getAccountInfo(recipientATA);
+      const rentExemptAmount = recipientATAInfo ? 0 : await connection.getMinimumBalanceForRentExemption(165);
+
+      if (solBalance < (solTransferOut + gasFee + rentExemptAmount)) {
+        callback({
+          text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(solTransferOut + gasFee + rentExemptAmount) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+        });
+        return;
+      }
+
+      const senderATA = getAssociatedTokenAddressSync(mintPubkey, senderKeypair.publicKey, false, programId);
+      const senderTokenBalance = await connection.getTokenAccountBalance(senderATA);
+      if (senderTokenBalance.value.amount < mintAmount.toString()) {
+        callback({
+          text: `Insufficient token balance. Sender has ${senderTokenBalance.value.uiAmount} ${content.tokenSymbol}, but needs ${content.amount} to complete the transfer.`,
+        });
+        return;
+      }
+
       let transaction = new Transaction();
       if (content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS')) {
-        const senderBalance = await connection.getBalance(senderKeypair.publicKey);
-        if (senderBalance < adjustedAmount) {
-          callback({
-            text: `Insufficient balance. Sender has ${senderBalance / LAMPORTS_PER_SOL} SOL, but needs ${adjustedAmount/ BigInt(LAMPORTS_PER_SOL)} SOL to complete the transfer.`,
-          });
-          return;
-        }
         transaction.add(SystemProgram.transfer({
           fromPubkey: senderKeypair.publicKey,
           toPubkey: recipientPubkey,
-          lamports: adjustedAmount,
+          lamports: mintAmount,
         }));
       }else{
-        const programId = await new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair).getTokenProgramId(content.tokenAddress);
-        const senderATA = getAssociatedTokenAddressSync(mintPubkey, senderKeypair.publicKey, false, programId);
-        const recipientATA = getAssociatedTokenAddressSync(mintPubkey, recipientPubkey, false, programId);
         const instructions = [];
-        const recipientATAInfo = await connection.getAccountInfo(recipientATA);
         if (!recipientATAInfo) {
           instructions.push(
             createAssociatedTokenAccountInstruction(
@@ -262,7 +282,7 @@ export const transfer: Action =  {
             senderATA,
             recipientATA,
             senderKeypair.publicKey,
-            adjustedAmount,
+            mintAmount,
             [],
             programId,
           )
