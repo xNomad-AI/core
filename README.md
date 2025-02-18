@@ -1,4 +1,5 @@
 # core 🤖
+
 The comprehensive core service for running, indexing, and engaging with AI-NFTs is detailed in the [xNomad Documentation](https://docs.xnomad.ai/).
 
 ## ✨ Features
@@ -11,6 +12,7 @@ The comprehensive core service for running, indexing, and engaging with AI-NFTs 
 - TEE Environment Compatibility
 
 ## ⛓️ Supported Blockchains
+
 - Solana
 - EVM (Coming soon)
 
@@ -19,37 +21,51 @@ The comprehensive core service for running, indexing, and engaging with AI-NFTs 
 Each NFT agent operates with a TEE-protected private account, ensuring secure and private management of assets corresponding to NFT holders. The TEE environment is powered by **Phala Network**, providing robust protection for sensitive operations.
 
 ### Development Environment
+
 For development purposes, you can use docker-compose to launch Phala Docker, providing a simulated TEE environment.
+
 ### Production Environment
+
 In production, the core server operates within a Phala Confidential VM, with the TEE environment secured by the Phala Network to ensure robust end-to-end security and compliance for real-world deployments. For more details, refer to the Phala Cloud Documentation.
 
 With this setup, you can confidently manage NFT-related assets in a fully private and secure manner, leveraging the power of TEE to enhance user trust and platform reliability.
 
 ## 🚀 Quick Start
 
-### Setup Prerequisites
-```shell
-docker-compose up -d
-```
 ### Start Application Locally
+
 ```shell
+# vscode reopen and rebuild in devcontainer
+
 pnpm install
 
 # copy and edit the .env file
-cp .env.example .env 
-# copy and edit the eliza config file
+cp .env.example .env
+# change the apikeys in .env
+# https://openai.com/api/
+# OPENAI_API_KEY=xx
+# https://bds.birdeye.so/
+# BIRDEYE_API_KEY=xx
+# https://developer.nftgo.io/developers
+# NFTGO_API_KEY=xx
+
+pnpm start:local
+```
+
+### Start Application on Phala Network
+
+```shell
+# start wallet
+# your should change the WALLET_SERVICE_SECRET_TOKEN !
+docker-compose -f docker-compose-wallet.yml up
+
+# start core
+# your should add the required values in .env
+cp .env.example .env
 cp .env.agent-eliza.example .env.agent-eliza
 
-pnpm start
-```
-### Start Application on Phala Network
-```shell
-# copy and edit the .env file
-cp .env.example .env 
-# copy and edit the eliza config file
-cp .env.agent-eliza.example .env.agent-eliza
-docker build --platform linux/amd64 -t xnomadai/core:<YOUR_IMAGE_VERSION> .
-TEE_MODE=PRODUCTION docker-compose -f docker-compose-core.yml up
+docker build --platform linux/amd64 -t YOURORG/core:<YOUR_IMAGE_VERSION> .
+docker-compose -f docker-compose-core.yml up
 ```
 
 ## 📜  License
@@ -57,6 +73,7 @@ TEE_MODE=PRODUCTION docker-compose -f docker-compose-core.yml up
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## 📞 Contact
+
 - **Website**: [xnomad.ai](https://xnomad.ai)
 - **Twitter**: [@xNomadAI](https://x.com/xNomadAI)
 

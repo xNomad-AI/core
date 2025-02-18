@@ -47,6 +47,7 @@ export class WalletProxyService {
         {
           headers: {
             'x-secret-token': this.secretToken,
+            'Content-Type': 'application/json',
           },
         },
       ),

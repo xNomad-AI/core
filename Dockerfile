@@ -1,13 +1,18 @@
-FROM node:23.5.0-bookworm
-
-RUN git clone https://github.com/xNomad-AI/core.git /app
+FROM node:23.5.0-bookworm AS base
 
 WORKDIR /app
 
-RUN git checkout develop
+RUN npm install -g pnpm@9.15.2
+RUN apt-get update && \
+    apt-get install build-essential -y
 
-RUN npm install -g pnpm && pnpm install -w --frozen-lockfile
+COPY . .
 
-RUN pnpm build
+# RUN pnpm install --frozen-lockfile
+RUN pnpm install
+# build workspace packages
+RUN pnpm run build
+# remove devDependencies
+RUN pnpm prune --production
 
-CMD ["node", "dist/main.js"]
+CMD [ "node", "dist/main.js" ]

@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  phala:
-    image: phalanetwork/tappd-simulator:latest
-    container_name: phala-tee-simulator
+  core:
+    image: YOURORG/core:<YOUR_IMAGE_VERSION>
+    container_name: core
     ports:
-      - "8090:8090"
+      - "8080:8080"
+      - "3000:3000"
     restart: always
-    networks: 
-    - core_local
+
   mongodb:
     image: mongo:4.4
     container_name: mongodb
@@ -31,9 +31,11 @@ services:
       interval: 5s
       retries: 10
       timeout: 30s
+
 networks:
   core_local:
     driver: bridge
+
 volumes:
   mongo_data:
     driver: local
