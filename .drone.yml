@@ -68,6 +68,17 @@ steps:
       ref:
         - refs/heads/develop
         - refs/heads/deploy/*
+trigger:
+  ref:
+    - refs/heads/develop
+    - refs/heads/deploy/*
+type: docker
+volumes: []
+---
+depends_on: []
+kind: pipeline
+name: wallet
+steps:
   - depends_on: []
     environment: {}
     image: plugins/docker
@@ -75,7 +86,6 @@ steps:
     settings:
       build_args:
         - ENV=dev
-        - COMMAND=dist/main-wallet-service.js
       build_args_from_env: []
       dockerfile: wallet.Dockerfile
       password:
@@ -136,9 +146,7 @@ steps:
         - refs/heads/develop
         - refs/heads/deploy/*
 trigger:
-  ref:
-    - refs/heads/develop
-    - refs/heads/deploy/*
+  ref: refs/heads/deploy/wallet
 type: docker
 volumes: []
 ---

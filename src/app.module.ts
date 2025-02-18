@@ -33,4 +33,4 @@ EventEmitter.defaultMaxListeners = 10;
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

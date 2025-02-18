@@ -14,7 +14,7 @@ import { WalletModule } from './wallet/wallet.module.js';
   controllers: [],
   providers: [],
 })
-class AppModule {}
+class AppModule { }
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

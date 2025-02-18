@@ -560,6 +560,7 @@ async function checkResponse(
     }
   }
 
+  elizaLogger.log(`start check token program, Response: ${JSON.stringify(response)}`);
   // check the input token is a valid SPL token address
   const client = await getSolanaClient(runtime);
   let programId: PublicKey;
@@ -577,19 +578,39 @@ async function checkResponse(
     return null;
   }
 
+  elizaLogger.log(`start check input balance, Response: ${JSON.stringify(response)}`);
   // check balance
-  const balance = await client.getBalance(response.inputTokenCA);
-  if (balance < response.amount) {
-    elizaLogger.error(`${response.inputTokenCA} Insufficient balance for swap`);
-    const responseMsg = {
-      text:
-        'Insufficient balance for swap, required: ' +
-        response.amount +
-        ' but only have: ' +
-        balance,
-    };
-    callback?.(responseMsg);
-    return null;
+  try {
+    const balance = await client.getBalance(response.inputTokenCA);
+    if (balance < response.amount) {
+      elizaLogger.error(`${response.inputTokenCA} Insufficient balance for swap`);
+      const responseMsg = {
+        text:
+          'Insufficient balance for swap, required: ' +
+          response.amount +
+          ' but only ' +
+          balance + " available.",
+      };
+      callback?.(responseMsg);
+      return null;
+    }
+  } catch (error) {
+    if (error.message === "failed to get token account balance: Invalid param: could not find account") {
+      elizaLogger.warn(`${response.inputTokenCA} Insufficient balance for swap`);
+      const responseMsg = {
+        text:
+          'Insufficient balance for swap, required: ' +
+          response.amount +
+          ' but only 0 available.',
+      };
+      callback?.(responseMsg);
+      return null;
+    } else {
+      callback?.({
+        text: 'Check balance failed, please try again later',
+      });
+      return null;
+    }
   }
 
   const WSOL_AMOUNT = await client.getBalance(NATIVE_MINT.toBase58());
