@@ -233,22 +233,18 @@ export const transfer: Action =  {
       const mintAmount = BigInt(Number(content.amount) * Math.pow(10, mintDecimals));
 
       const solBalance = await connection.getBalance(senderKeypair.publicKey);
-      const gasFee = 0.002 * LAMPORTS_PER_SOL;
+      const gasFee = 0.001 * LAMPORTS_PER_SOL;
       const solTransferOut = content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS') ? Number(mintAmount) : 0;
       const programId = await new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair).getTokenProgramId(content.tokenAddress);
-      const recipientATA = getAssociatedTokenAddressSync(mintPubkey, recipientPubkey, false, programId);
-      const recipientATAInfo = await connection.getAccountInfo(recipientATA);
-      const rentExemptAmount = recipientATAInfo ? 0 : await connection.getMinimumBalanceForRentExemption(165);
-
-      if (solBalance < (solTransferOut + gasFee + rentExemptAmount)) {
-        callback({
-          text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(solTransferOut + gasFee + rentExemptAmount) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
-        });
-        return;
-      }
 
       let transaction = new Transaction();
       if (content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS')) {
+        if (solBalance < (gasFee + solTransferOut)) {
+          callback({
+            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(solTransferOut + gasFee) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+          });
+          return;
+        }
         transaction.add(SystemProgram.transfer({
           fromPubkey: senderKeypair.publicKey,
           toPubkey: recipientPubkey,
@@ -256,6 +252,15 @@ export const transfer: Action =  {
         }));
       }else{
         const senderATA = getAssociatedTokenAddressSync(mintPubkey, senderKeypair.publicKey, true, programId);
+        const recipientATA = getAssociatedTokenAddressSync(mintPubkey, recipientPubkey, false, programId);
+        const recipientATAInfo = await connection.getAccountInfo(recipientATA);
+        const rentExemptAmount = recipientATAInfo ? 0 : await connection.getMinimumBalanceForRentExemption(165);
+        if (solBalance < (solTransferOut + gasFee + rentExemptAmount)) {
+          callback({
+            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(solTransferOut + gasFee + rentExemptAmount) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+          });
+          return;
+        }
         const senderTokenBalance = await connection.getTokenAccountBalance(senderATA);
         if (senderTokenBalance.value.amount < mintAmount.toString()) {
           callback({
