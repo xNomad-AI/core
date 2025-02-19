@@ -26,7 +26,7 @@ import {
 import { composeContext } from "@elizaos/core";
 import { getWalletKey } from "../keypairUtils.js";
 import { generateObjectDeprecated } from "@elizaos/core";
-import { isAgentAdmin, NotAgentAdminMessage } from '../providers/walletUtils.js';
+import { getWalletTokenBySymbol, isAgentAdmin, NotAgentAdminMessage } from '../providers/walletUtils.js';
 import { convertNullStrings } from './swapUtils.js';
 import { getRuntimeKey } from '../environment.js';
 import { SolanaClient } from './solana-client.js';
@@ -42,7 +42,7 @@ const transferTemplate = `
 You are an expert on solana token transfers.
 Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
 
-Example response:
+# Example response:
 \`\`\`json
 {
     "tokenSymbol":  "ELIZA",
@@ -54,6 +54,7 @@ Example response:
 
 {{recentMessages}}
 
+# Task
 Extract the latest token transfer request from the recent conversation history.
 
 Focus on the most recent message that mentions a token transfer. Ignore transactions that have already been confirmed as “successfully sent.”
@@ -62,17 +63,28 @@ Extract the following information:
 •Token symbol
 •Token contract address (44 characters long, if available)
 •Recipient wallet address (44 characters long)
-•Amount to transfer (Convert values like 1M to 1000000, 5.1K to 5100, etc.)
+•Amount to transfer (Convert values like 1M to 1000000, 5.1K to 5100, 0.154 to 0.154, etc.)
 
-Requirements:
+# Requirements:
 •Only extract the latest unconfirmed transfer request. If multiple transfers are mentioned, choose the most recent one.
 •Exclude any transfer requests that are followed by a confirmation message (e.g., “Successfully sent”).
 •If the token contract address is not explicitly mentioned, leave it blank.
 •Use the most recent mention of the amount, token symbol, and recipient address.
 
 If no token address is mentioned, respond with null.
+## Response Example:
+Given the following example transfer request:
+"Transfer 0.27 SOL So11111111111111111111111111111111111111111 to EwH7gvicP4BjURMjpKPNf5hCGbjQg3RxVK2HCgkTuGRc"
 
-Example:
+The extracted result should be:
+{
+  "tokenSymbol": "SOL",
+  "tokenAddress": "So11111111111111111111111111111111111111111",
+  "recipient": "EwH7gvicP4BjURMjpKPNf5hCGbjQg3RxVK2HCgkTuGRc",
+  "amount": 0.27
+}
+
+## Conversation Example:
 Given the following conversation:
 - User: send 1 ELIZA to FVg6p4nBWNWgFgJmJHdygWuiQY4g7PyXmzXxcshf128a  
 - Bot: Failed to send 1 ELIZA to FVg6p4nBWNWgFgJmJHdygWuiQY4g7PyXmzXxcshf128a.  
@@ -128,7 +140,6 @@ Additional Rules:
 - User1: "withdraw"  
 
 Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
-// if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
 
 
 
@@ -189,11 +200,18 @@ export const transfer: Action =  {
       content.tokenAddress = getRuntimeKey(runtime, 'SOL_ADDRESS');
     }
 
-    if (!content.tokenAddress){
-      callback({
-        text: `Please provide the token CA to transfer`,
-      });
-      return false;
+    const { keypair: senderKeypair } = await getWalletKey(runtime, true);
+
+
+    if (!content.tokenAddress) {
+      const walletToken = await getWalletTokenBySymbol(runtime, senderKeypair.publicKey.toBase58(), content.tokenSymbol);
+      content.tokenAddress = walletToken?.address;
+      if (!content.tokenAddress) {
+        callback({
+          text: `Please provide the token CA to transfer`,
+        });
+        return false;
+      }
     }
 
     const confirmContext = composeContext({
@@ -219,17 +237,14 @@ export const transfer: Action =  {
     if (confirmResponse.userAcked == 'pending') {
       const transferInfo = formatTransferInfo(content);
       const responseMsg = {
-        text: `
-                ${transferInfo}
-✅ Please confirm the withdraw by replying with 'yes' or 'ok'.
-                `,
+        text: `${transferInfo}
+✅ Please confirm the withdraw by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
       };
       callback?.(responseMsg);
       return null;
     }
 
     try {
-      const { keypair: senderKeypair } = await getWalletKey(runtime, true);
       elizaLogger.log(`${senderKeypair.publicKey.toBase58()} start transfer content:`, content);
 
       const connection = new Connection(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), 'confirmed');

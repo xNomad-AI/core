@@ -512,10 +512,8 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'pending') {
     const swapInfo = formatTaskInfo(response);
     const responseMsg = {
-      text: `
-                ${swapInfo}
-✅ Please confirm the swap by replying with 'yes' or 'ok'.
-                `,
+      text: `${swapInfo}
+✅ Please confirm the swap by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
       action: 'EXECUTE_SWAP',
     };
     callback?.(responseMsg);
