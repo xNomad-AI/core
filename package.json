@@ -1,6 +1,6 @@
 {
   "name": "@xnomad/core",
-  "version": "0.0.1",
+  "version": "0.1.2",
   "description": "AI-NFT core running environment",
   "author": "xnomad",
   "private": true,
@@ -15,7 +15,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:local": "pnpm run build && node dist/main",
-    "start:wallet": "pnpm run dist/main-wallet-service.js",
+    "start:wallet": "pnpm run build && node dist/main-wallet-service.js",
     "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",

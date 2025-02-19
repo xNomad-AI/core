@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   core-wallet:
-    image: xnomadai/core-wallet:0.1.4
+    image: xnomadai/core-wallet:0.1.2
     container_name: core-wallet
     environment:
       - NODE_ENV=production

@@ -43,12 +43,14 @@ pnpm install
 cp .env.example .env
 # change the apikeys in .env
 # https://openai.com/api/
-# OPENAI_API_KEY=xx
-# https://bds.birdeye.so/
-# BIRDEYE_API_KEY=xx
-# https://developer.nftgo.io/developers
-# NFTGO_API_KEY=xx
+# OPENAI_API_KEY=..
+# BIRDEYE_API_KEY=..
+# NFTGO_API_KEY=..
+# ...
 
+# start tee wallet service
+pnpm start:wallet
+# start core service
 pnpm start:local
 ```
 
@@ -62,7 +64,6 @@ docker-compose -f docker-compose-wallet.yml up
 # start core
 # your should add the required values in .env
 cp .env.example .env
-cp .env.agent-eliza.example .env.agent-eliza
 
 docker build --platform linux/amd64 -t YOURORG/core:<YOUR_IMAGE_VERSION> .
 docker-compose -f docker-compose-core.yml up

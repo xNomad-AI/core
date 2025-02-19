@@ -66,7 +66,7 @@ services:
   wallet: 
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    image: xnomadai/core-wallet:0.1.4
+    image: xnomadai/core-wallet:0.1.2
     environment:
       - WALLET_SERVICE_SECRET_TOKEN="EDIT THIS"
       - TEE_MODE=DOCKER
