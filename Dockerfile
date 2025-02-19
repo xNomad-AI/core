@@ -1,23 +1,18 @@
-FROM node:23.5.0-bookworm as base
-
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+FROM node:23.5.0-bookworm AS base
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --prod --frozen-lockfile && \
-  pnpm add @elizaos/client-twitter@0.1.7-alpha.2
-
-FROM base as build
-
-RUN pnpm install --frozen-lockfile
+RUN npm install -g pnpm@9.15.2
+RUN apt-get update && \
+    apt-get install build-essential -y
 
 COPY . .
 
+# RUN pnpm install --frozen-lockfile
+RUN pnpm install
+# build workspace packages
 RUN pnpm run build
+# remove devDependencies
+RUN pnpm prune --production
 
-FROM base as runner
-
-COPY --from=build /app/dist /app/dist
 CMD [ "node", "dist/main.js" ]

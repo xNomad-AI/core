@@ -1,8 +1,9 @@
+import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TransientLoggerService } from './transient-logger.service.js';
-import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { TransientLoggerService } from './transient-logger.service.js';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export class Collection {
   collection_id: string;
@@ -194,6 +195,7 @@ export class CollectionMetrics {
 export class NftgoService {
   private endpoint: string;
   private apikey: string;
+  private proxyUrl: string;
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly appConfig: ConfigService,
@@ -201,34 +203,57 @@ export class NftgoService {
   ) {
     this.endpoint = this.appConfig.get<string>('NFTGO_ENDPOINT');
     this.apikey = this.appConfig.get<string>('NFTGO_API_KEY');
+    this.proxyUrl = this.appConfig.get<string>('CORE_HTTPS_PROXY');
+  }
+
+  get defaultHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'X-API-KEY': this.apikey,
+    };
+  }
+
+  private async request(endpoint: string, config?: Record<string, unknown>) {
+    if (!config) {
+      config = {
+        headers: this.defaultHeaders,
+      };
+    }
+
+    if (this.proxyUrl) {
+      config = {
+        ...config,
+        httpsAgent: new HttpsProxyAgent(this.proxyUrl),
+      };
+    }
+
+    const url = new URL(endpoint, this.endpoint).toString();
+    try {
+      const response = await firstValueFrom(this.httpService.get(url, config));
+      return response.data;
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch ${url}, resp: ${error.response?.data}`,
+        error,
+      );
+      throw error;
+    }
   }
 
   async getCollectionMetrics(collectionId: string): Promise<CollectionMetrics> {
-    const url = `${this.endpoint}/v1/collection/metrics?collection_id=${collectionId}`;
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-KEY': this.apikey,
-      },
-    };
-    const response = await firstValueFrom(this.httpService.get(url, config));
-    return response.data as CollectionMetrics;
+    return this.request(`/v1/collection/metrics?collection_id=${collectionId}`);
   }
 
   // ids: comma separated collection ids
   async getAICollections(chain: string, cids: string): Promise<Collection[]> {
-    const url = `${this.endpoint}/${chain}/v1/collections/ids`;
     const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-KEY': this.apikey,
-      },
+      headers: this.defaultHeaders,
       params: {
         cids,
       },
     };
-    const response = await firstValueFrom(this.httpService.get(url, config));
-    return response.data?.collections as Collection[];
+    return (await this.request(`/${chain}/v1/collections/ids`, config))
+      .collections;
   }
 
   async getCollectionTxs(
@@ -239,13 +264,9 @@ export class NftgoService {
       startTime?: number;
       cursor?: string;
     },
-  ) {
-    const url = `${this.endpoint}/v1/history/collection/transactions`;
+  ): Promise<CollectionTxs> {
     const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-KEY': this.apikey,
-      },
+      headers: this.defaultHeaders,
       params: {
         limit: options?.limit,
         cursor: options?.cursor,
@@ -255,8 +276,7 @@ export class NftgoService {
         asc: true,
       },
     };
-    const response = await firstValueFrom(this.httpService.get(url, config));
-    return response.data as CollectionTxs;
+    return this.request(`/v1/history/collection/transactions`, config);
   }
 
   async getCollectionNfts(
@@ -266,20 +286,15 @@ export class NftgoService {
       limit?: number;
       cursor?: string;
     },
-  ) {
-    const url = `${this.endpoint}/${chain}/v1/collection/nfts`;
+  ): Promise<CollectionNfts> {
     const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-KEY': this.apikey,
-      },
+      headers: this.defaultHeaders,
       params: {
         limit: options?.limit,
         cursor: options?.cursor,
         collection_id: collectionId,
       },
     };
-    const response = await firstValueFrom(this.httpService.get(url, config));
-    return response.data as CollectionNfts;
+    return this.request(`/${chain}/v1/collection/nfts`, config);
   }
 }

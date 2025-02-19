@@ -1,11 +1,20 @@
+.github
+.idea
+# .git
+.vscode
+.db_data
+.env
+.env.agent-eliza
+.pnpm-store
 node_modules
 dist
-.github
-test
-.env.example
 redis
-.idea
-.git
-.vscode
+data
+test
 db
-.db_data
+# src/eliza/packages/plugin-solana/node_modules
+# src/eliza/packages/plugin-solana/dist
+
+# Ignore node_modules and dist directories under src
+src/**/node_modules
+src/**/dist

@@ -6,7 +6,15 @@ import {
   AINftOwner,
 } from '../shared/mongo/types.js';
 import { Collection, Nft, NftTx } from '../shared/nftgo.service.js';
-import { IsOptional, IsString, IsInt, Max, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  Max,
+  Min,
+  IsArray,
+  IsObject,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export type NftSearchOptions = {
@@ -16,14 +24,32 @@ export type NftSearchOptions = {
   sortBy?: NftSearchSortBy;
   limit: number;
   offset: number;
+  traitsQuery?: { traitValue: string; traitType: string }[];
 };
 
 export type NftSearchSortBy = 'rarityDesc' | 'numberAsc' | 'numberDesc';
 
-export function transformToAINft(nft: Nft): AINft {
+export async function transformToAINft(nft: Nft): Promise<AINft> {
   // solana and some non-evm chain's NFT has either token_id or contract_address, not both
   const tokenId = nft.token_id || nft.contract_address;
   const contractAddress = nft.contract_address || nft.token_id;
+
+  // Try to get aiAgent from extra_info or fetch metadata if necessary
+  let aiAgent = nft.extra_info?.['ai_agent'];
+  if (!aiAgent && nft.extra_info?.['metadata_original_url']) {
+    try {
+      const metadata = await fetch(
+        nft.extra_info['metadata_original_url'] as string,
+      ).then((res) => {
+        return res.json();
+      });
+      aiAgent = metadata?.ai_agent;
+    } catch (error) {
+      console.error('Error fetching metadata:', error);
+    }
+  }
+
+  // Construct the AINft object
   return {
     nftId: `${nft.blockchain}:${contractAddress}:${tokenId}`,
     chain: nft.blockchain,
@@ -36,7 +62,9 @@ export function transformToAINft(nft: Nft): AINft {
     tokenURI: nft.image,
     rarity: nft.rarity,
     traits: nft.traits,
-    aiAgent: nft.extra_info['ai_agent'] as AIAgent,
+    aiAgent: aiAgent as AIAgent,
+    agentAccount: undefined,
+    agentId: undefined,
     updatedAt: new Date(),
     createdAt: new Date(),
   };
@@ -66,6 +94,20 @@ export class NftSearchQueryDto {
   @Min(1)
   @Max(100)
   limit: number = 100;
+
+  // Traits query with a proper transformation to an array of objects
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }: { value: string }) => {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      return []; // Return an empty array if the string is not valid JSON
+    }
+  })
+  @IsArray()
+  @IsObject({ each: true })
+  traitsQuery?: { traitValue: string; traitType: string }[];
 }
 
 export interface AssetsByCollection {

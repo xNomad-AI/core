@@ -29,4 +29,14 @@ export class SolanaService {
       return false;
     }
   }
+
+  static signMessage(message: string, secretKey: string): string {
+    const secretKeyBuffer = bs58.decode(secretKey);
+    const keyPair = nacl.sign.keyPair.fromSecretKey(secretKeyBuffer);
+    const signature = nacl.sign.detached(
+      new TextEncoder().encode(message),
+      keyPair.secretKey,
+    );
+    return bs58.encode(signature);
+  }
 }

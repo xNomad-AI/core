@@ -1,4 +1,4 @@
-# build, 9Gi
+# build, 4Gi
 docker build . -t core:localv0.1
 
 docker rm -f core || echo not exists

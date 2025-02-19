@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  core-wallet:
+    image: xnomadai/core-wallet:0.1.2
+    container_name: core-wallet
+    environment:
+      - NODE_ENV=production
+      - TEE_MODE=PRODUCTION
+      - WALLET_SERVICE_SECRET_TOKEN="YOUR SECRET TOKEN"
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/tappd.sock:/var/run/tappd.sock
+    restart: always

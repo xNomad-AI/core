@@ -1,3 +1,4 @@
+set -e
 # add env files
 cp .env.example scripts/env/.env
 cp .env.agent-eliza.example scripts/env/.env.agent-eliza
@@ -5,7 +6,7 @@ cp .env.agent-eliza.example scripts/env/.env.agent-eliza
 # start local running env
 docker compose up -d
 
-# build, 9Gi
+# build, 4Gi
 docker build . -t core:localv0.1
 
 # change the mongodb var in .env file
@@ -16,6 +17,7 @@ sed -i '/MONGODB_URL/c\MONGODB_URL='"$MONGODB_URL" scripts/env/.env
 # check the mongodb url
 grep MONGODB_URL scripts/env/.env
 
+docker rm -f core || true
 # start the docker
 docker run --rm --name core \
     -v ./scripts/env/.env:/app/.env \

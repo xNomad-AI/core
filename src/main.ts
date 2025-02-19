@@ -9,6 +9,12 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.enableCors({
+    origin: '*',
+    methods: '*',
+    allowedHeaders: '*',
+    credentials: true,
+  });
   const port = process.env.CORE_SERVER_PORT || 8080;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);

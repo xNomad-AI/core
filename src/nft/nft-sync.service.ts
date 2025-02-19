@@ -1,7 +1,6 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { sleep } from '../shared/utils.service.js';
+import { sleep, startIntervalTask } from '../shared/utils.service.js';
 import {
-  NEW_AI_NFT_EVENT,
   transformToActivity,
   transformToAICollection,
   transformToAINft,
@@ -12,9 +11,11 @@ import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { stringToUuid } from '@elizaos/core';
+import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 
-const SYNC_NFTS_INTERVAL = 1000 * 30;
-const SYNC_TXS_INTERVAL = 1000 * 5;
+const SYNC_NFTS_INTERVAL = 1000 * 60 * 2;
+const SYNC_TXS_INTERVAL = 1000 * 10;
 
 @Injectable()
 export class NftSyncService implements OnApplicationBootstrap {
@@ -23,6 +24,7 @@ export class NftSyncService implements OnApplicationBootstrap {
     private readonly nftgo: NftgoService,
     private readonly mongo: MongoService,
     private readonly config: ConfigService,
+    private readonly elizaManager: ElizaManagerService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(NftSyncService.name);
@@ -37,8 +39,16 @@ export class NftSyncService implements OnApplicationBootstrap {
   // subscribe AI Nft txs
   async subscribeAINfts(): Promise<void> {
     for (const collection of await this.getAICollections()) {
-      this.syncCollectionTxs(collection.id);
-      this.syncCollectionNfts(collection.id);
+      startIntervalTask(
+        'syncCollectionTxs',
+        () => this.syncCollectionTxs(collection.id),
+        SYNC_TXS_INTERVAL,
+      );
+      startIntervalTask(
+        'syncCollectionNfts',
+        () => this.syncCollectionNfts(collection.id),
+        SYNC_NFTS_INTERVAL,
+      );
     }
   }
 
@@ -93,13 +103,13 @@ export class NftSyncService implements OnApplicationBootstrap {
         );
         await this.processCollectionTxs(collectionId, result);
         cursor = result.next_cursor;
-        await sleep(SYNC_TXS_INTERVAL);
+        await sleep(100);
       } catch (error) {
         this.logger.error(
           `Error syncing txs for collection: ${collectionId}`,
           error,
         );
-        await sleep(30000);
+        await sleep(60000);
       }
     } while (cursor);
   }
@@ -112,11 +122,30 @@ export class NftSyncService implements OnApplicationBootstrap {
         const result = await this.nftgo.getCollectionNfts(
           'solana',
           collectionId,
+          {
+            limit: 50,
+            cursor,
+          },
         );
         this.logger.log(
-          `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}`,
+          `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}, cursor: ${cursor}, name: ${result?.nfts[0]?.name}`,
         );
-        const nfts = result.nfts.map((nft) => transformToAINft(nft));
+        const nfts = [];
+        for (const nft of result.nfts) {
+          const transformedNft = await transformToAINft(nft);
+          if (!transformedNft.aiAgent) {
+            this.logger.warn(
+              `this nft is not AI-NFT, nftId: ${transformedNft.nftId}`,
+            );
+            continue;
+          }
+          transformedNft.agentId = stringToUuid(transformedNft.nftId);
+          transformedNft.agentAccount = await this.elizaManager.getAgentAccount(
+            'solana',
+            transformedNft.nftId,
+          );
+          nfts.push(transformedNft);
+        }
         await this.mongo.nfts.bulkWrite(
           nfts.map((nft) => ({
             updateOne: {
@@ -126,15 +155,18 @@ export class NftSyncService implements OnApplicationBootstrap {
             },
           })),
         );
-        this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
+        if (result.next_cursor) {
+          await this.mongo.updateKeyStore(key, result.next_cursor);
+        }
+        //   this.eventEmitter.emit(NEW_AI_NFT_EVENT, nfts);
         cursor = result.next_cursor;
-        await sleep(SYNC_NFTS_INTERVAL);
+        await sleep(100);
       } catch (error) {
         this.logger.error(
           `Error syncing nfts for collection: ${collectionId}`,
           error,
         );
-        await sleep(30000);
+        await sleep(60000);
       }
     } while (cursor);
   }
@@ -146,7 +178,17 @@ export class NftSyncService implements OnApplicationBootstrap {
       for (const tx of txs.transactions) {
         const activity = transformToActivity(collectionId, tx);
         const owner = transformToOwner(activity);
-        await this.mongo.nftActivities.insertOne(activity, { session });
+        await this.mongo.nftActivities.updateOne(
+          {
+            chain: activity.chain,
+            txHash: activity.txHash,
+            contractAddress: activity.contractAddress,
+            tokenId: activity.tokenId,
+            from: activity.from,
+          },
+          { $set: activity },
+          { upsert: true, session },
+        );
         await this.mongo.nftOwners.updateOne(
           {
             chain: activity.chain,
@@ -157,7 +199,9 @@ export class NftSyncService implements OnApplicationBootstrap {
           { upsert: true, session },
         );
       }
-      await this.mongo.updateKeyStore(key, txs.next_cursor, session);
+      if (txs.next_cursor) {
+        await this.mongo.updateKeyStore(key, txs.next_cursor, session);
+      }
     });
     await session.endSession();
   }

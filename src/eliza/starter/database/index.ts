@@ -1,18 +1,21 @@
-import { SqliteDatabaseAdapter } from '@elizaos/adapter-sqlite';
-import Database from 'better-sqlite3';
-import fs from 'fs';
-import path from 'path';
+import { MongoDBDatabaseAdapter } from '@elizaos/adapter-mongodb';
+import { MongoClient } from 'mongodb';
 
-export function initializeDatabase(sqliteFile: string) {
-  const dir = path.dirname(sqliteFile);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+let db: MongoDBDatabaseAdapter | undefined;
+
+export async function initializeDatabase(
+  client: MongoClient,
+  dbName: string,
+): Promise<MongoDBDatabaseAdapter> {
+  if (!db) {
+    try {
+      const newDB = new MongoDBDatabaseAdapter(client, dbName);
+      await newDB.init();
+      db = newDB;
+    } catch (error) {
+      console.error('Failed to initialize MongoDBDatabaseAdapter:', error);
+      throw error;
+    }
   }
-  try {
-    const db = new SqliteDatabaseAdapter(new Database(sqliteFile));
-    return db;
-  } catch (error) {
-    console.error('Failed to initialize SQLite database:', error);
-    throw error;
-  }
+  return db;
 }

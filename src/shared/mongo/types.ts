@@ -38,6 +38,11 @@ export interface AINft {
     rank: number;
   };
   aiAgent: AIAgent;
+  agentId: string;
+  agentAccount: {
+    solana: string;
+    evm: string;
+  };
   updatedAt: Date;
   createdAt: Date;
 }
@@ -78,6 +83,24 @@ export interface AIAgent {
 export interface KeyStore {
   key: string;
   value: any;
+}
+
+export interface CharacterConfig extends Partial<Character> {}
+
+export interface NftConfig {
+  nftId: string;
+  chain: string;
+  characterConfig: CharacterConfig;
+}
+
+export interface NftPrologues {
+  _id?: string;
+  chain: string;
+  nftId: string;
+  tokenId: string;
+  prologue: string;
+  updatedAt: Date;
+  createdAt: Date;
 }
 
 export interface AddressNonce {

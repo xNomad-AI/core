@@ -10,13 +10,15 @@ import {
   AINftActivity,
   KeyStore,
   AddressNonce,
+  NftConfig,
+  NftPrologues,
 } from './types.js';
 import { ConfigService } from '@nestjs/config';
 import { UtilsService } from '../utils.service.js';
 
 @Injectable()
 export class MongoService implements OnModuleInit {
-  client: MongoClient;
+  public client: MongoClient;
   constructor(
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
@@ -27,7 +29,9 @@ export class MongoService implements OnModuleInit {
   onModuleInit() {
     const source = `${this.appConfig.get('MONGODB_URL')}`;
     const maskedSource = `${source.slice(0, 10)}*****${source.slice(-15)}`;
-    this.client = new MongoClient(source);
+    this.client = new MongoClient(source, {
+      tlsAllowInvalidCertificates: true,
+    });
     this.logger.log(`Initialized mongo: ${maskedSource}`);
     void this.ensureIndexes();
   }
@@ -103,6 +107,14 @@ export class MongoService implements OnModuleInit {
 
   get nftActivities() {
     return this.getCollection<AINftActivity>('nftActivities');
+  }
+
+  get nftConfigs() {
+    return this.getCollection<NftConfig>('nftConfigs');
+  }
+
+  get nftPrologues() {
+    return this.getCollection<NftPrologues>('nftPrologues');
   }
 
   get addressNonces() {

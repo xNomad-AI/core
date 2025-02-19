@@ -75,6 +75,7 @@ web_modules/
 # dotenv environment variable files
 .env
 .env.agent-eliza
+.env.wallet-service
 .env.development.local
 .env.test.local
 .env.production.local
@@ -134,3 +135,7 @@ dist
 glibc-2.34
 
 .db_data
+temp.sh
+.pnpm-store
+.drone.jsonnet
+.drone.jsonnet.yml

@@ -13,11 +13,17 @@ export const COLLECTIONS = [
     indexes: [
       {
         collectionId: 1,
-        'rarity.score': -1,
+        'rarity.rank': -1,
       },
       {
         collectionId: 1,
         name: 1,
+      },
+      {
+        agentId: 1,
+      },
+      {
+        'agentAccount.solana': 1,
       },
     ],
     uniqueIndexes: [
@@ -50,9 +56,21 @@ export const COLLECTIONS = [
     uniqueIndexes: [
       {
         chain: 1,
-        txHash: 1,
         contractAddress: 1,
         tokenId: 1,
+        txHash: 1,
+        from: 1,
+      },
+    ],
+  },
+  {
+    db: DB_NAME,
+    name: 'nftPrologues',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        chain: 1,
+        nftId: 1,
       },
     ],
   },
@@ -72,8 +90,18 @@ export const COLLECTIONS = [
     indexes: [],
     uniqueIndexes: [
       {
-        account: 1,
-        type: 1,
+        address: 1,
+        nonceType: 1,
+      },
+    ],
+  },
+  {
+    db: DB_NAME,
+    name: 'nftConfigs',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        nftId: 1,
       },
     ],
   },
