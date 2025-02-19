@@ -1,7 +1,13 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Wallet } from '@coral-xyz/anchor';
 import axios from 'axios';
-import { Commitment, Connection, Keypair, LAMPORTS_PER_SOL, Transaction } from '@solana/web3.js';
+import {
+  Commitment,
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  Transaction,
+} from '@solana/web3.js';
 import {
   calculateWithSlippageBuy,
   CreateTokenMetadata,
@@ -31,16 +37,16 @@ import {
 } from '../providers/walletUtils.js';
 
 async function createAndBuyToken({
-                                   deployer,
-                                   mint,
-                                   tokenMetadata,
-                                   buyAmountSol,
-                                   priorityFee,
-                                   allowOffCurve,
-                                   commitment = 'confirmed',
-                                   sdk,
-                                   slippage,
-                                 }: {
+  deployer,
+  mint,
+  tokenMetadata,
+  buyAmountSol,
+  priorityFee,
+  allowOffCurve,
+  commitment = 'confirmed',
+  sdk,
+  slippage,
+}: {
   deployer: Keypair;
   mint: Keypair;
   tokenMetadata: CreateTokenMetadata;
@@ -220,27 +226,33 @@ export default {
     elizaLogger.info(
       `Content for CREATE_AND_BUY_TOKEN action: ${JSON.stringify(content)}`,
     );
-    if (!imageUrl){
+    if (!imageUrl) {
       callback({
-        text: formatCreateTokenInfo(content) + `
+        text:
+          formatCreateTokenInfo(content) +
+          `
         Please provide an image for the token.`,
       });
       return false;
-    };
-    if (!name){
+    }
+    if (!name) {
       callback({
-        text: formatCreateTokenInfo(content) + `
+        text:
+          formatCreateTokenInfo(content) +
+          `
         Please provide a name for the token.`,
       });
       return false;
-    };
-    if (!symbol){
+    }
+    if (!symbol) {
       callback({
-        text: formatCreateTokenInfo(content) + `
+        text:
+          formatCreateTokenInfo(content) +
+          `
         Please provide a symbol for the token.`,
       });
       return false;
-    };
+    }
     const file = imageUrl ? await fs.openAsBlob(imageUrl) : null;
     const fullTokenMetadata: CreateTokenMetadata = {
       name: tokenMetadata.name,
@@ -445,7 +457,6 @@ async function _createAndBuyWithUrl(
   );
   return createResults;
 }
-
 
 function formatCreateTokenInfo(params: CreateTokenMetadata): string {
   return `

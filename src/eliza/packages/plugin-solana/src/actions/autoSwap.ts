@@ -250,7 +250,8 @@ export const autoTask: Action = {
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return await isAgentAdmin(runtime, message);
   },
-  description: 'Perform auto token swap. Enables the agent to automatically execute trades when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers, optimizing trading strategies without manual intervention.',
+  description:
+    'Perform auto token swap. Enables the agent to automatically execute trades when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers, optimizing trading strategies without manual intervention.',
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -429,10 +430,7 @@ async function checkResponse(
   validInputTokenCA = isValidSPLTokenAddress(response.inputTokenCA);
   validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
   if (!validInputTokenCA) {
-    const tokens = await getTokensBySymbol(
-      runtime,
-      response.inputTokenSymbol,
-    );
+    const tokens = await getTokensBySymbol(runtime, response.inputTokenSymbol);
     if (tokens?.[0]?.address) {
       response.inputTokenCA = tokens[0].address;
     } else {
@@ -448,10 +446,7 @@ async function checkResponse(
   }
 
   if (!validOutputTokenCA) {
-    const tokens = await getTokensBySymbol(
-      runtime,
-      response.outputTokenSymbol,
-    );
+    const tokens = await getTokensBySymbol(runtime, response.outputTokenSymbol);
     if (tokens?.[0]?.address) {
       response.outputTokenCA = tokens[0].address;
     } else {

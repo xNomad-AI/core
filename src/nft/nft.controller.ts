@@ -85,7 +85,6 @@ export class NftController {
     return await this.nftService.getNftById(chain, nftId);
   }
 
-
   @UseGuards(AuthGuard)
   @Post('/:chain/:nftId/config/twitter')
   async updateTwitterConfig(
@@ -107,16 +106,23 @@ export class NftController {
     const username = characterConfig?.settings?.secrets?.TWITTER_USERNAME;
     const password = characterConfig.settings?.secrets?.TWITTER_PASSWORD;
     const email = characterConfig.settings?.secrets?.TWITTER_EMAIL;
-    const twitter2faSecret = characterConfig?.settings?.secrets?.TWITTER_2FA_SECRET;
+    const twitter2faSecret =
+      characterConfig?.settings?.secrets?.TWITTER_2FA_SECRET;
 
     // convert to string to be compatiable with env
     if (characterConfig?.settings?.secrets) {
-      characterConfig.settings.secrets.POST_IMMEDIATELY = String(characterConfig.settings.secrets.POST_IMMEDIATELY || false);
-      characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND = String(characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND || false);
+      characterConfig.settings.secrets.POST_IMMEDIATELY = String(
+        characterConfig.settings.secrets.POST_IMMEDIATELY || false,
+      );
+      characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND = String(
+        characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND || false,
+      );
     }
 
     if (!username || !password || !email) {
-      throw new BadRequestException('twitter config is not complete, please provide username, password and email');
+      throw new BadRequestException(
+        'twitter config is not complete, please provide username, password and email',
+      );
     }
     const result = await testTwitterConfig(
       username,
@@ -132,7 +138,6 @@ export class NftController {
     return result;
   }
 
-
   @UseGuards(AuthGuard)
   @Delete('/:chain/:nftId/config/twitter')
   async deleteTwitterConfig(
@@ -145,16 +150,19 @@ export class NftController {
     if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
-    await this.nftService.updateNftConfig({ nftId, characterConfig: {
-      settings: {
-        secrets: {
-          TWITTER_USERNAME: '',
-          TWITTER_PASSWORD: '',
-          TWITTER_EMAIL: '',
-          TWITTER_2FA_SECRET: '',
+    await this.nftService.updateNftConfig({
+      nftId,
+      characterConfig: {
+        settings: {
+          secrets: {
+            TWITTER_USERNAME: '',
+            TWITTER_PASSWORD: '',
+            TWITTER_EMAIL: '',
+            TWITTER_2FA_SECRET: '',
+          },
         },
       },
-      }});
+    });
   }
 
   @UseGuards(AuthGuard)

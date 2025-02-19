@@ -87,7 +87,7 @@ export class AgentController {
       throw new UnauthorizedException('You are not the owner of this Agent');
     }
     await this.elizaManager.deleteAgentMemory(agentId, {
-      memoryId: taskId
+      memoryId: taskId,
     });
   }
 

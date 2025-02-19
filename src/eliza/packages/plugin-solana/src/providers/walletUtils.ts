@@ -1,8 +1,4 @@
-import {
-  type IAgentRuntime,
-  type Memory,
-  elizaLogger,
-} from '@elizaos/core';
+import { type IAgentRuntime, type Memory, elizaLogger } from '@elizaos/core';
 
 import { getRuntimeKey } from '../environment.js';
 
@@ -69,14 +65,17 @@ export async function getWalletTokenBySymbol(
 ): Promise<Item> {
   const portfolio = await getWalletPortfolio(runtime, address);
   const token = portfolio?.items.find((item) => item.symbol === symbol);
-  return token
+  return token;
 }
 
-export async function getWalletPortfolio(runtime: IAgentRuntime, address: string ): Promise<WalletPortfolio|undefined> {
+export async function getWalletPortfolio(
+  runtime: IAgentRuntime,
+  address: string,
+): Promise<WalletPortfolio | undefined> {
   try {
     const birdeyeApikey = getRuntimeKey(runtime, 'BIRDEYE_API_KEY');
     const response = await fetch(
-    `https://public-api.birdeye.so/v1/wallet/token_list?wallet=${address}`,
+      `https://public-api.birdeye.so/v1/wallet/token_list?wallet=${address}`,
       {
         method: 'GET',
         headers: {
@@ -85,18 +84,19 @@ export async function getWalletPortfolio(runtime: IAgentRuntime, address: string
           'x-chain': 'solana',
         },
       },
-    )
+    );
     if (response.status !== 200) {
-      elizaLogger.error(`Failed to fetch wallet portfolio ${address} ${response.status}`);
-      return undefined
+      elizaLogger.error(
+        `Failed to fetch wallet portfolio ${address} ${response.status}`,
+      );
+      return undefined;
     }
-    const data = await response.json() ;
-    const birdEyeResponse =
-      data as BirdEyeAPIResponse<WalletPortfolio>;
+    const data = await response.json();
+    const birdEyeResponse = data as BirdEyeAPIResponse<WalletPortfolio>;
     if (birdEyeResponse.success) {
       return birdEyeResponse.data;
     }
-  }catch (e){
+  } catch (e) {
     elizaLogger.error(`Failed to fetch wallet portfolio ${address} ${e}`);
   }
   return undefined;

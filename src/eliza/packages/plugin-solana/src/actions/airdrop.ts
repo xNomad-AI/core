@@ -12,7 +12,8 @@ import {
 } from '@elizaos/core';
 import { getWalletKey, sign } from '../keypairUtils.js';
 import {
-  isAgentAdmin, NotAgentAdminMessage,
+  isAgentAdmin,
+  NotAgentAdminMessage,
 } from '../providers/walletUtils.js';
 import { Keypair } from '@solana/web3.js';
 import axios from 'axios';

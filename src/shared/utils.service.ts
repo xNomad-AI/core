@@ -17,7 +17,7 @@ export class UtilsService {
   }
 
   static getEnvFromFile(filepath: string): Record<string, string> {
-    const envFileContent = fs.readFileSync(filepath, 'utf8'); // 读取文件内容
+    const envFileContent = fs.readFileSync(filepath, 'utf8');
     return dotenv.parse(envFileContent);
   }
 }
@@ -79,7 +79,6 @@ export function deepMerge(origin: any, updated: any): any {
 
   for (const key of Object.keys(updated)) {
     if (Array.isArray(updated[key])) {
-      // 如果 source[key] 是数组，直接覆盖 target[key]
       result[key] = updated[key];
     } else if (typeof updated[key] === 'object' && updated[key] !== null) {
       result[key] = deepMerge(result[key], updated[key]);

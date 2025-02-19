@@ -223,7 +223,7 @@ export class NftgoService {
     if (this.proxyUrl) {
       config = {
         ...config,
-        httpsAgent: new HttpsProxyAgent(this.proxyUrl)
+        httpsAgent: new HttpsProxyAgent(this.proxyUrl),
       };
     }
 
@@ -232,7 +232,10 @@ export class NftgoService {
       const response = await firstValueFrom(this.httpService.get(url, config));
       return response.data;
     } catch (error) {
-      this.logger.error(`Failed to fetch ${url}, resp: ${error.response?.data}`, error);
+      this.logger.error(
+        `Failed to fetch ${url}, resp: ${error.response?.data}`,
+        error,
+      );
       throw error;
     }
   }
@@ -249,7 +252,8 @@ export class NftgoService {
         cids,
       },
     };
-    return (await this.request(`/${chain}/v1/collections/ids`, config)).collections;
+    return (await this.request(`/${chain}/v1/collections/ids`, config))
+      .collections;
   }
 
   async getCollectionTxs(

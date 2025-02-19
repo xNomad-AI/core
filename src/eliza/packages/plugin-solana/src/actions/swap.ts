@@ -278,7 +278,6 @@ Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\
 
 // if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
 
-
 export function isValidSPLTokenAddress(address: string) {
   try {
     const publicKey = new PublicKey(address);
@@ -309,7 +308,8 @@ export const executeSwap: Action = {
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return await isAgentAdmin(runtime, message);
   },
-  description: 'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
+  description:
+    'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
   handler: swapHandler,
   examples: [
     [
@@ -523,10 +523,7 @@ async function checkResponse(
   validInputTokenCA = isValidSPLTokenAddress(response.inputTokenCA);
   validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
   if (!validInputTokenCA) {
-    const tokens = await getTokensBySymbol(
-      runtime,
-      response.inputTokenSymbol,
-    );
+    const tokens = await getTokensBySymbol(runtime, response.inputTokenSymbol);
     if (tokens?.[0]?.address) {
       response.inputTokenCA = tokens[0].address;
     } else {
@@ -542,10 +539,7 @@ async function checkResponse(
   }
 
   if (!validOutputTokenCA) {
-    const tokens = await getTokensBySymbol(
-      runtime,
-      response.outputTokenSymbol,
-    );
+    const tokens = await getTokensBySymbol(runtime, response.outputTokenSymbol);
     if (tokens?.[0]?.address) {
       response.outputTokenCA = tokens[0].address;
     } else {
@@ -560,7 +554,9 @@ async function checkResponse(
     }
   }
 
-  elizaLogger.log(`start check token program, Response: ${JSON.stringify(response)}`);
+  elizaLogger.log(
+    `start check token program, Response: ${JSON.stringify(response)}`,
+  );
   // check the input token is a valid SPL token address
   const client = await getSolanaClient(runtime);
   let programId: PublicKey;
@@ -578,25 +574,35 @@ async function checkResponse(
     return null;
   }
 
-  elizaLogger.log(`start check input balance, Response: ${JSON.stringify(response)}`);
+  elizaLogger.log(
+    `start check input balance, Response: ${JSON.stringify(response)}`,
+  );
   // check balance
   try {
     const balance = await client.getBalance(response.inputTokenCA);
     if (balance < response.amount) {
-      elizaLogger.error(`${response.inputTokenCA} Insufficient balance for swap`);
+      elizaLogger.error(
+        `${response.inputTokenCA} Insufficient balance for swap`,
+      );
       const responseMsg = {
         text:
           'Insufficient balance for swap, required: ' +
           response.amount +
           ' but only ' +
-          balance + " available.",
+          balance +
+          ' available.',
       };
       callback?.(responseMsg);
       return null;
     }
   } catch (error) {
-    if (error.message === "failed to get token account balance: Invalid param: could not find account") {
-      elizaLogger.warn(`${response.inputTokenCA} Insufficient balance for swap`);
+    if (
+      error.message ===
+      'failed to get token account balance: Invalid param: could not find account'
+    ) {
+      elizaLogger.warn(
+        `${response.inputTokenCA} Insufficient balance for swap`,
+      );
       const responseMsg = {
         text:
           'Insufficient balance for swap, required: ' +

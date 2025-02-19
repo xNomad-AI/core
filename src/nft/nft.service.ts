@@ -61,7 +61,7 @@ export class NftService implements OnApplicationBootstrap {
         this.logger.log(`Agent for NFT ${nft.nftId} is already running`);
         return;
       }
-      if (isAgentRunning && restart){
+      if (isAgentRunning && restart) {
         this.logger.log(`Restarting agent for NFT ${nft.nftId}`);
         await this.elizaManager.stopAgent(nft.agentId);
       }

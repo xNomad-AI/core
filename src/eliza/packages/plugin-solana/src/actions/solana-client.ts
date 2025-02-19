@@ -4,9 +4,7 @@ import {
   PublicKey,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import {
-  elizaLogger,
-} from '@elizaos/core';
+import { elizaLogger } from '@elizaos/core';
 
 import {
   getAssociatedTokenAddressSync,
@@ -86,7 +84,8 @@ export class SolanaClient {
   }
 
   private async isBlockhashExpired(lastValidBlockHeight: number) {
-    const currentBlockHeight = await this.connection.getBlockHeight('confirmed');
+    const currentBlockHeight =
+      await this.connection.getBlockHeight('confirmed');
     return currentBlockHeight > lastValidBlockHeight - 150;
   }
 
@@ -121,7 +120,9 @@ export class SolanaClient {
         txSuccess = true;
         const endTime = new Date();
         const elapsed = (endTime.getTime() - startTime.getTime()) / 1000;
-        elizaLogger.info(`Transaction Success. Elapsed time: ${elapsed} seconds.`);
+        elizaLogger.info(
+          `Transaction Success. Elapsed time: ${elapsed} seconds.`,
+        );
         elizaLogger.info(
           `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
         );
@@ -134,7 +135,9 @@ export class SolanaClient {
       if (hashExpired) {
         const endTime = new Date();
         const elapsed = (endTime.getTime() - startTime.getTime()) / 1000;
-        elizaLogger.warn(`Blockhash has expired. Elapsed time: ${elapsed} seconds.`);
+        elizaLogger.warn(
+          `Blockhash has expired. Elapsed time: ${elapsed} seconds.`,
+        );
         // (add your own logic to Fetch a new blockhash and resend the transaction or throw an error)
         break;
       }

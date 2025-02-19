@@ -1,11 +1,11 @@
 import {
   getAssociatedTokenAddressSync,
   createTransferInstruction,
-  createAssociatedTokenAccountInstruction, ACCOUNT_SIZE,
+  createAssociatedTokenAccountInstruction,
+  ACCOUNT_SIZE,
 } from '@solana/spl-token';
-import { elizaLogger } from "@elizaos/core";
+import { elizaLogger } from '@elizaos/core';
 import {
-  ComputeBudgetProgram,
   Connection,
   LAMPORTS_PER_SOL,
   PublicKey,
@@ -22,11 +22,15 @@ import {
   ModelClass,
   type State,
   type Action,
-} from "@elizaos/core";
-import { composeContext } from "@elizaos/core";
-import { getWalletKey } from "../keypairUtils.js";
-import { generateObjectDeprecated } from "@elizaos/core";
-import { getWalletTokenBySymbol, isAgentAdmin, NotAgentAdminMessage } from '../providers/walletUtils.js';
+} from '@elizaos/core';
+import { composeContext } from '@elizaos/core';
+import { getWalletKey } from '../keypairUtils.js';
+import { generateObjectDeprecated } from '@elizaos/core';
+import {
+  getWalletTokenBySymbol,
+  isAgentAdmin,
+  NotAgentAdminMessage,
+} from '../providers/walletUtils.js';
 import { convertNullStrings } from './swapUtils.js';
 import { getRuntimeKey } from '../environment.js';
 import { SolanaClient } from './solana-client.js';
@@ -141,22 +145,21 @@ Additional Rules:
 
 Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
 
-
-
-export const transfer: Action =  {
-  name: "SEND_TOKEN",
+export const transfer: Action = {
+  name: 'SEND_TOKEN',
   suppressInitialMessage: true,
-  similes: ["TRANSFER_TOKEN", "TRANSFER", "WITHDRAW_TOKEN", "WITHDRAW"],
+  similes: ['TRANSFER_TOKEN', 'TRANSFER', 'WITHDRAW_TOKEN', 'WITHDRAW'],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return await isAgentAdmin(runtime, message);
   },
-  description: "Transfer SPL tokens or SOL from agent's wallet to another address, aka [send |withdraw|transfer] [amount] [tokenSymbol] [tokenCA] to [address] ",
+  description:
+    "Transfer SPL tokens or SOL from agent's wallet to another address, aka [send |withdraw|transfer] [amount] [tokenSymbol] [tokenCA] to [address] ",
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
     state: State,
     _options: { [key: string]: unknown },
-    callback?: HandlerCallback
+    callback?: HandlerCallback,
   ): Promise<boolean> => {
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
@@ -166,7 +169,7 @@ export const transfer: Action =  {
       callback?.(responseMsg);
       return null;
     }
-    elizaLogger.log("Starting SEND_TOKEN handler...");
+    elizaLogger.log('Starting SEND_TOKEN handler...');
 
     const transferContext = composeContext({
       state,
@@ -180,31 +183,36 @@ export const transfer: Action =  {
     });
 
     content = convertNullStrings(content) as TransferContent;
-    elizaLogger.log(`Transfer Context ${transferContext} Generated Response: ${JSON.stringify(content)}`);
+    elizaLogger.log(
+      `Transfer Context ${transferContext} Generated Response: ${JSON.stringify(content)}`,
+    );
 
-    if (!content.amount || isNaN(content.amount as number)){
+    if (!content.amount || isNaN(content.amount as number)) {
       callback({
         text: `Please provide the amount of tokens to transfer`,
       });
       return true;
     }
 
-    if (!content.recipient){
+    if (!content.recipient) {
       callback({
         text: `Please provide the address to transfer the tokens to`,
       });
       return true;
     }
 
-    if (!content.tokenAddress && content.tokenSymbol?.toUpperCase() === 'SOL'){
+    if (!content.tokenAddress && content.tokenSymbol?.toUpperCase() === 'SOL') {
       content.tokenAddress = getRuntimeKey(runtime, 'SOL_ADDRESS');
     }
 
     const { keypair: senderKeypair } = await getWalletKey(runtime, true);
 
-
     if (!content.tokenAddress) {
-      const walletToken = await getWalletTokenBySymbol(runtime, senderKeypair.publicKey.toBase58(), content.tokenSymbol);
+      const walletToken = await getWalletTokenBySymbol(
+        runtime,
+        senderKeypair.publicKey.toBase58(),
+        content.tokenSymbol,
+      );
       content.tokenAddress = walletToken?.address;
       if (!content.tokenAddress) {
         callback({
@@ -245,47 +253,80 @@ export const transfer: Action =  {
     }
 
     try {
-      elizaLogger.log(`${senderKeypair.publicKey.toBase58()} start transfer content:`, content);
+      elizaLogger.log(
+        `${senderKeypair.publicKey.toBase58()} start transfer content:`,
+        content,
+      );
 
-      const connection = new Connection(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), 'confirmed');
+      const connection = new Connection(
+        getRuntimeKey(runtime, 'SOLANA_RPC_URL'),
+        'confirmed',
+      );
       const mintPubkey = new PublicKey(content.tokenAddress);
       const recipientPubkey = new PublicKey(content.recipient);
 
       const mintInfo = await connection.getParsedAccountInfo(mintPubkey);
-      const mintDecimals = (mintInfo.value?.data as any)?.parsed?.info?.decimals;
-      const mintAmount = BigInt(Number(content.amount) * Math.pow(10, mintDecimals));
+      const mintDecimals = (mintInfo.value?.data as any)?.parsed?.info
+        ?.decimals;
+      const mintAmount = BigInt(
+        Number(content.amount) * Math.pow(10, mintDecimals),
+      );
 
       const solBalance = await connection.getBalance(senderKeypair.publicKey);
-      let solTransferOut = content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS') ? Number(mintAmount) : 0;
-      const programId = await new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair).getTokenProgramId(content.tokenAddress);
+      let solTransferOut =
+        content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS')
+          ? Number(mintAmount)
+          : 0;
+      const programId = await new SolanaClient(
+        getRuntimeKey(runtime, 'SOLANA_RPC_URL'),
+        senderKeypair,
+      ).getTokenProgramId(content.tokenAddress);
 
-      let transaction = new Transaction();
+      const transaction = new Transaction();
       if (content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS')) {
         if (solBalance < solTransferOut) {
           callback({
-            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(solTransferOut) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
           });
           return;
         }
-        transaction.add(SystemProgram.transfer({
-          fromPubkey: senderKeypair.publicKey,
-          toPubkey: recipientPubkey,
-          lamports: mintAmount,
-        }));
-      }else{
-        const senderATA = getAssociatedTokenAddressSync(mintPubkey, senderKeypair.publicKey, true, programId);
-        const recipientATA = getAssociatedTokenAddressSync(mintPubkey, recipientPubkey, false, programId);
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: senderKeypair.publicKey,
+            toPubkey: recipientPubkey,
+            lamports: mintAmount,
+          }),
+        );
+      } else {
+        const senderATA = getAssociatedTokenAddressSync(
+          mintPubkey,
+          senderKeypair.publicKey,
+          true,
+          programId,
+        );
+        const recipientATA = getAssociatedTokenAddressSync(
+          mintPubkey,
+          recipientPubkey,
+          false,
+          programId,
+        );
         const recipientATAInfo = await connection.getAccountInfo(recipientATA);
-        const rentExemptAmount = recipientATAInfo ? 0 : await connection.getMinimumBalanceForRentExemption(165);
+        const rentExemptAmount = recipientATAInfo
+          ? 0
+          : await connection.getMinimumBalanceForRentExemption(165);
         solTransferOut += rentExemptAmount;
         if (solBalance < solTransferOut) {
           callback({
-            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${ solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
           });
           return;
         }
-        const senderTokenBalance = await connection.getTokenAccountBalance(senderATA);
-        if (BigInt(senderTokenBalance.value.amount) < BigInt(mintAmount.toString())) {
+        const senderTokenBalance =
+          await connection.getTokenAccountBalance(senderATA);
+        if (
+          BigInt(senderTokenBalance.value.amount) <
+          BigInt(mintAmount.toString())
+        ) {
           callback({
             text: `Insufficient token balance. Sender has ${senderTokenBalance.value.uiAmount} ${content.tokenSymbol}, but needs ${content.amount} to complete the transfer.`,
           });
@@ -300,7 +341,7 @@ export const transfer: Action =  {
               recipientPubkey,
               mintPubkey,
               programId,
-            )
+            ),
           );
         }
 
@@ -312,7 +353,7 @@ export const transfer: Action =  {
             mintAmount,
             [],
             programId,
-          )
+          ),
         );
         transaction.add(...instructions);
       }
@@ -320,8 +361,9 @@ export const transfer: Action =  {
       transaction.feePayer = senderKeypair.publicKey;
       transaction.recentBlockhash = recentBlockhash.blockhash;
       const estimatedFee = await transaction.getEstimatedFee(connection);
-      const rentExemption = await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
-      if (solBalance < (solTransferOut + estimatedFee + rentExemption)) {
+      const rentExemption =
+        await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
+      if (solBalance < solTransferOut + estimatedFee + rentExemption) {
         callback({
           text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
         });
@@ -352,7 +394,7 @@ export const transfer: Action =  {
 
       return true;
     } catch (error) {
-      elizaLogger.error("Error during token transfer:", error);
+      elizaLogger.error('Error during token transfer:', error);
       if (callback) {
         callback({
           text: `Issue with the transfer: ${error.message}`,
@@ -366,22 +408,21 @@ export const transfer: Action =  {
   examples: [
     [
       {
-        user: "{{user1}}",
+        user: '{{user1}}',
         content: {
-          text: "Send 69 EZSIS BieefG47jAHCGZBxi2q87RDuHyGZyYC3vAzxpyu8pump to 9jW8FPr6BSSsemWPV22UUCzSqkVdTp6HTyPqeqyuBbCa",
+          text: 'Send 69 EZSIS BieefG47jAHCGZBxi2q87RDuHyGZyYC3vAzxpyu8pump to 9jW8FPr6BSSsemWPV22UUCzSqkVdTp6HTyPqeqyuBbCa',
         },
       },
       {
-        user: "{{user2}}",
+        user: '{{user2}}',
         content: {
-          text: "Sending the tokens now...",
-          action: "SEND_TOKEN",
+          text: 'Sending the tokens now...',
+          action: 'SEND_TOKEN',
         },
       },
     ],
   ] as ActionExample[][],
 } as Action;
-
 
 function formatTransferInfo(content: TransferContent): string {
   return `

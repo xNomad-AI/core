@@ -41,14 +41,15 @@ export async function initializeClients(
   const isStartTwitter = process.env?.ENABLE_TWITTER_CLIENT === 'true';
   if (
     isStartTwitter &&
-    (character.settings?.secrets?.TWITTER_PASSWORD &&
-      character.settings?.secrets?.TWITTER_2FA_SECRET)
+    character.settings?.secrets?.TWITTER_PASSWORD &&
+    character.settings?.secrets?.TWITTER_2FA_SECRET
   ) {
     try {
-      const isSuspended = character.settings?.secrets?.TWITTER_LOGIN_SUSPEND == 'true';
-      if (isSuspended){
+      const isSuspended =
+        character.settings?.secrets?.TWITTER_LOGIN_SUSPEND == 'true';
+      if (isSuspended) {
         console.log(`Suspended Twitter client for ${character.name}`);
-      }else{
+      } else {
         console.log(`Starting Twitter client for ${character.name}`);
         const twitterClients = await TwitterClientInterface.start(runtime);
         clients.push(twitterClients);
