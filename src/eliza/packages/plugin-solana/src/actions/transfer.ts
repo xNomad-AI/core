@@ -285,7 +285,7 @@ export const transfer: Action =  {
           return;
         }
         const senderTokenBalance = await connection.getTokenAccountBalance(senderATA);
-        if (senderTokenBalance.value.amount < mintAmount.toString()) {
+        if (BigInt(senderTokenBalance.value.amount) < BigInt(mintAmount.toString())) {
           callback({
             text: `Insufficient token balance. Sender has ${senderTokenBalance.value.uiAmount} ${content.tokenSymbol}, but needs ${content.amount} to complete the transfer.`,
           });
