@@ -586,7 +586,7 @@ function formatTaskInfo(params: AutoSwapTask): string {
     params.priceCondition !== 'null' &&
     params.priceTarget !== 'null'
   ) {
-    trigger = `when price is ${params.priceCondition} ${params.priceTarget}`;
+    trigger = `when $${params.inputTokenSymbol || params.inputTokenCA} price is ${params.priceCondition} ${params.priceTarget}`;
   }
   if (params.startAt) {
     trigger += `\nstart at: ${JSON.stringify(params.startAt)}`;
