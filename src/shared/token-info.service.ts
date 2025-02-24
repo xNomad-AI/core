@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { TransientLoggerService } from './transient-logger.service.js';
 
-interface TokenBasicInfoResponse {
+export interface TokenBasicInfoResponse {
   address: string;
   name: string;
   symbol: string;
@@ -14,7 +14,7 @@ interface TokenBasicInfoResponse {
   chain: string;
 }
 
-interface TokenInfoResponse {
+export interface TokenInfoResponse {
   address: string;
   aiSummary: string;
   chain: string;
@@ -28,7 +28,7 @@ interface TokenInfoResponse {
   logo: string;
 }
 
-interface TokenTwitterInfoResponse {
+export interface TokenTwitterInfoResponse {
   followers_count: number;
   influencers_count: number;
   projects_count: number;
@@ -53,7 +53,7 @@ interface TokenTwitterInfoResponse {
   };
 }
 
-interface TokenNewsResponse {
+export interface TokenNewsResponse {
   id: number;
   token_address: string;
   symbol: string;

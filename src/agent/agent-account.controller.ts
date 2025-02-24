@@ -20,8 +20,8 @@ import {
   SystemProgram,
 } from '@solana/web3.js';
 import { BirdeyeService } from '../shared/birdeye.service.js';
-import { ElizaManagerService } from './eliza-manager.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { ElizaManagerService } from './eliza-manager.service.js';
 
 @Controller('/agent-account')
 export class AgentAccountController {
@@ -65,6 +65,14 @@ export class AgentAccountController {
     @Query('address') address: string,
   ) {
     return await this.birdEye.getWalletPortfolio({ chain, address });
+  }
+
+  @Get('/defi/search')
+  async searchToken(
+    @Query('chain') chain: string,
+    @Query('query') query: string,
+  ) {
+    return await this.birdEye.searchToken({ chain, query });
   }
 
   @Get('/defi/transfer-txs')

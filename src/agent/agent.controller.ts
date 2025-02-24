@@ -1,3 +1,4 @@
+import { CacheTTL } from '@nestjs/cache-manager';
 import {
   Body,
   Controller,
@@ -6,20 +7,20 @@ import {
   NotFoundException,
   Post,
   Query,
-  UnauthorizedException,
   Request,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { CreateAgentDto } from './agent.types.js';
-import { ElizaManagerService } from './eliza-manager.service.js';
 import { ConfigService } from '@nestjs/config';
-import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { CacheTTL } from '@nestjs/cache-manager';
-import { ElevenlabsService } from '../shared/elevenlabs.service.js';
-import { MongoService } from '../shared/mongo/mongo.service.js';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NEW_AI_NFT_EVENT } from '../nft/nft.types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
+import { ElevenlabsService } from '../shared/elevenlabs.service.js';
+import { MongoService } from '../shared/mongo/mongo.service.js';
+import { TokenInfoService } from '../shared/token-info.service.js';
+import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { CreateAgentDto } from './agent.types.js';
+import { ElizaManagerService } from './eliza-manager.service.js';
 
 @Controller('/agent')
 export class AgentController {
@@ -30,6 +31,7 @@ export class AgentController {
     private logger: TransientLoggerService,
     private mongo: MongoService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tokenInfo: TokenInfoService,
   ) {}
 
   @Post('/')
@@ -128,5 +130,28 @@ export class AgentController {
     return {
       prologue: prologue.prologue,
     };
+  }
+
+  @Get('/token/basic-info')
+  async getTokenBasicInfo(@Query('tokenAddress') tokenAddress: string) {
+    return await this.tokenInfo.getTokenBasicInfo(tokenAddress);
+  }
+
+  @Get('/token/info')
+  @CacheTTL(60)
+  async getTokenInfo(@Query('tokenAddress') tokenAddress: string) {
+    return await this.tokenInfo.getTokenInfo(tokenAddress);
+  }
+
+  @Get('/token/twitter-info')
+  @CacheTTL(3600)
+  async getTokenTwitterInfo(@Query('tokenAddress') tokenAddress: string) {
+    return await this.tokenInfo.getTokenTwitterInfo(tokenAddress);
+  }
+
+  @Get('/token/news')
+  @CacheTTL(60)
+  async getTokenNews(@Query('tokenAddress') tokenAddress: string) {
+    return await this.tokenInfo.getTokenNews(tokenAddress);
   }
 }

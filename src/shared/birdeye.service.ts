@@ -1,8 +1,8 @@
+import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TransientLoggerService } from './transient-logger.service.js';
-import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { TransientLoggerService } from './transient-logger.service.js';
 
 class BirdEyeAPIResponse<T> {
   success: boolean;
@@ -71,6 +71,41 @@ export class TokenPortfolio {
   valueUsd?: number;
 }
 
+export interface BirdEyeSearchItemData {
+  name: string;
+  symbol: string;
+  address: string;
+  fdv: string;
+  market_cap: string;
+  liquidity: string;
+  volume_24h_change_percent: string;
+  price: string;
+  price_change_24h_percent: string;
+  network: string;
+  buy_24h: string;
+  buy_24h_change_percent: string;
+  sell_24h: string;
+  sell_24h_change_percent: string;
+  trade_24h: string;
+  trade_24h_change_percent: string;
+  unique_wallet_24h: string;
+  unique_view_24h_change_percent: string;
+  last_trade_human_time: string;
+  last_trade_unix_time: string;
+  volume_24h_usd: string;
+  logo_uri: string;
+  verified: boolean;
+}
+
+export interface BirdERyeSearchData {
+  type: string;
+  result?: BirdEyeSearchItemData[];
+}
+
+export class TokenSearchResult {
+  items: BirdERyeSearchData[];
+}
+
 @Injectable()
 export class BirdeyeService {
   private endpoint: string;
@@ -126,5 +161,43 @@ export class BirdeyeService {
       throw new Error('Failed to fetch wallet portfolio');
     }
     return birdEyeResponse.data;
+  }
+
+  async searchToken(params: {
+    chain: string;
+    query: string;
+  }): Promise<BirdEyeSearchItemData[]> {
+    const config = {
+      method: 'GET',
+      url: `${this.endpoint}/defi/v3/search`,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': this.apikey,
+      },
+      params: {
+        keyword: params.query,
+        chain: params.chain,
+        target: 'token',
+        sort_by: 'liquidity',
+        sort_type: 'desc',
+        offset: 0,
+        limit: 20,
+      },
+    };
+
+    const response = await firstValueFrom(this.httpService.request(config));
+    const birdEyeResponse =
+      response.data as BirdEyeAPIResponse<TokenSearchResult>;
+    if (
+      !birdEyeResponse.success ||
+      !birdEyeResponse.data ||
+      !birdEyeResponse.data.items ||
+      birdEyeResponse.data.items.length < 1 ||
+      birdEyeResponse.data.items[0].type !== 'token'
+    ) {
+      this.logger.log('Failed to search token');
+      return [];
+    }
+    return birdEyeResponse.data.items[0].result;
   }
 }
