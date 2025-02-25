@@ -268,6 +268,12 @@ export const transfer: Action = {
       const mintInfo = await connection.getParsedAccountInfo(mintPubkey);
       const mintDecimals = (mintInfo.value?.data as any)?.parsed?.info
         ?.decimals;
+      if (!mintDecimals || isNaN(mintDecimals)) {
+        callback({
+          text: `Token ${content.tokenAddress} not found. Please provide a valid token address.`,
+        });
+        return false;
+      }
       const mintAmount = BigInt(
         Number(content.amount) * Math.pow(10, mintDecimals),
       );
