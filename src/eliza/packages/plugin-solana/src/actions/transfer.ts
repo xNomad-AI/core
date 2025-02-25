@@ -266,6 +266,12 @@ export const transfer: Action = {
       const recipientPubkey = new PublicKey(content.recipient);
 
       const mintInfo = await connection.getParsedAccountInfo(mintPubkey);
+      if (!mintInfo){
+        callback({
+          text: `Token ${content.tokenAddress} not found. Please provide a valid token address.`,
+        });
+        return false;
+      }
       const mintDecimals = (mintInfo.value?.data as any)?.parsed?.info
         ?.decimals;
       const mintAmount = BigInt(
