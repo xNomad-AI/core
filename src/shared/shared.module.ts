@@ -4,7 +4,6 @@ import { BirdeyeService } from './birdeye.service.js';
 import { ElevenlabsService } from './elevenlabs.service.js';
 import { MongoService } from './mongo/mongo.service.js';
 import { NftgoService } from './nftgo.service.js';
-import { PhalaService } from './phala.service.js';
 import { TokenInfoService } from './token-info.service.js';
 import { TradeMonitorService } from './trade-monitor.service.js';
 import { TransientLoggerService } from './transient-logger.service.js';
@@ -14,7 +13,6 @@ import { TransientLoggerService } from './transient-logger.service.js';
   imports: [HttpModule],
   providers: [
     TransientLoggerService,
-    PhalaService,
     NftgoService,
     MongoService,
     BirdeyeService,
@@ -24,7 +22,6 @@ import { TransientLoggerService } from './transient-logger.service.js';
   ],
   exports: [
     TransientLoggerService,
-    PhalaService,
     NftgoService,
     MongoService,
     BirdeyeService,
