@@ -986,7 +986,7 @@ packages:
       whatwg-url: 7.1.0
 
   '@elizaos/core@file:local_dependency/elizaos-core-0.1.9.tgz':
-    resolution: {integrity: sha512-sy7plX55XVJNV2Qwml/4ojcNICiT6CkO67ux4pq/u2mt/7nj61vVf6mvFnNditfc52qhk2n4LUbUQoIuSkXdrw==, tarball: file:local_dependency/elizaos-core-0.1.9.tgz}
+    resolution: {integrity: sha512-mL4cLzOEla8NRJ/6ZKAOizXIMhgCd0agXiDAtvjKL8F2MGdnax8sUeu+qu9AdrYJRNY3NVeUN6zd/AEt38/rsg==, tarball: file:local_dependency/elizaos-core-0.1.9.tgz}
     version: 0.1.9
 
   '@elizaos/plugin-image-generation@0.1.9':
