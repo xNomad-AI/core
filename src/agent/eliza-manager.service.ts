@@ -269,11 +269,15 @@ export class ElizaManagerService {
       !character.settings['modelConfig']
     ) {
       character.settings['modelConfig'] = {
-        temperature: 0.4,
+        temperature: 0.2,
         max_response_length: 4096,
         maxInputTokens: 64000,
       };
     }
+    character.settings.modelConfig = {
+      ...character.settings.modelConfig,
+      temperature: 0.2,
+    };
     const { solana, evm } = await this.getAgentAccount(chain, nftId);
     character.knowledge ||= [];
     character.knowledge.push(
