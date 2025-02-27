@@ -34,7 +34,7 @@ export async function getTokenPriceInSol(tokenSymbol: string): Promise<number> {
   return data.data[tokenSymbol].price;
 }
 
-async function getTokenBalance(
+export async function getTokenBalance(
   connection: Connection,
   walletPublicKey: PublicKey,
   tokenMintAddress: PublicKey,
@@ -57,7 +57,7 @@ async function getTokenBalance(
   }
 }
 
-async function getTokenBalances(
+export async function getTokenBalances(
   connection: Connection,
   walletPublicKey: PublicKey,
 ): Promise<{ [tokenName: string]: number }> {
@@ -151,4 +151,24 @@ export function validateAndAssignCA(tokenSymbol: string, tokenCA: string){
   return null;
 }
 
-export { getTokenBalance, getTokenBalances };
+export async function getSwapTokenPrice(
+  runtime: IAgentRuntime,
+  tokenCA,
+): Promise<number | undefined> {
+  try {
+    const birdeyeApiKey = getRuntimeKey(runtime, 'BIRDEYE_API_KEY');
+    const url = `https://public-api.birdeye.so/defi/price?address=${tokenCA}`;
+    const response = await fetch(url, {
+      headers: {
+        'X-API-KEY': birdeyeApiKey,
+        accept: 'application/json',
+        'x-chain': 'solana',
+      },
+    });
+    const result = await response.json();
+    return result?.data.value;
+  } catch (error) {
+    elizaLogger.error(`Error fetching token price: ${error}`);
+    return undefined;
+  }
+}
