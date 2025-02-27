@@ -102,6 +102,9 @@ importers:
       amqplib:
         specifier: ^0.10.5
         version: 0.10.5
+      body-parser:
+        specifier: ^1.20.3
+        version: 1.20.3
       bs58:
         specifier: ^6.0.0
         version: 6.0.0

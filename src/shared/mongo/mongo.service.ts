@@ -1,20 +1,21 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Collection, Document, MongoClient } from 'mongodb';
 import { TransientLoggerService } from '../transient-logger.service.js';
+import { UtilsService } from '../utils.service.js';
 import { COLLECTIONS } from './configs.js';
 import {
-  CollectionName,
+  AddressNonce,
   AICollection,
   AINft,
-  AINftOwner,
   AINftActivity,
+  AINftOwner,
+  CollectionName,
   KeyStore,
-  AddressNonce,
   NftConfig,
+  NftPrimaryCoin,
   NftPrologues,
 } from './types.js';
-import { ConfigService } from '@nestjs/config';
-import { UtilsService } from '../utils.service.js';
 
 @Injectable()
 export class MongoService implements OnModuleInit {
@@ -115,6 +116,10 @@ export class MongoService implements OnModuleInit {
 
   get nftPrologues() {
     return this.getCollection<NftPrologues>('nftPrologues');
+  }
+
+  get nftPrimaryCoins() {
+    return this.getCollection<NftPrimaryCoin>('nftPrimaryCoins');
   }
 
   get addressNonces() {

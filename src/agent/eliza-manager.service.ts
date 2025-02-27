@@ -14,6 +14,7 @@ import { TEEMode } from '@elizaos/plugin-tee';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Timeout } from '@nestjs/schedule';
+import { Keypair } from '@solana/web3.js';
 import { newTradeAgentRuntime, startAgent } from '../eliza/starter/index.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { CharacterConfig } from '../shared/mongo/types.js';
@@ -168,6 +169,26 @@ export class ElizaManagerService {
     return {
       solana: publicKey.toBase58(),
       evm: evmAddress,
+    };
+  }
+
+  async getAgentAccountKeypair(
+    chain: string,
+    nftId: string,
+    agentId?: string,
+  ): Promise<{ solanaKeypair: Keypair }> {
+    const secrectSalt = this.getAgentSecretSalt(chain, nftId);
+    agentId ??= stringToUuid(nftId);
+
+    const { keypair } = await this.walletProxyService.getWalletKey(
+      secrectSalt,
+      agentId,
+      this.appConfig.get<string>('TEE_MODE') as TEEMode,
+      false,
+    );
+
+    return {
+      solanaKeypair: keypair,
     };
   }
 
