@@ -25,10 +25,9 @@ import {
   isAgentAdmin,
   NotAgentAdminMessage,
 } from '../providers/walletUtils.js';
-import { convertNullStrings, md5sum } from './swapUtils.js';
-import { isValidSPLTokenAddress, swapToken } from './swap.js';
-import { getTokensBySymbol } from '../providers/tokenUtils.js';
-import { SolanaClient } from './solana-client.js';
+import { convertNullStrings, md5sum, swapToken } from '../providers/swapUtils.js';
+import { isValidSPLTokenAddress, getTokensBySymbol } from '../providers/tokenUtils.js';
+import { SolanaClient } from '../providers/solana-client.js';
 import { getRuntimeKey } from '../environment.js';
 
 export const AutoSwapTaskTable = 'AUTO_TOKEN_SWAP_TASK';

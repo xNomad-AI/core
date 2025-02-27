@@ -129,7 +129,7 @@ async function createAndBuyToken({
 import * as fs from 'fs';
 import { getWalletKey } from '../keypairUtils.js';
 import { getRuntimeKey } from '../environment.js';
-import { convertNullStrings } from './swapUtils.js';
+import { convertNullStrings } from '../providers/swapUtils.js';
 import * as path from 'path';
 
 const pumpfunTemplate = `

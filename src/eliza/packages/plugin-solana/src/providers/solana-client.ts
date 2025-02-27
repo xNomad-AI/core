@@ -4,7 +4,7 @@ import {
   PublicKey,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import { elizaLogger } from '@elizaos/core';
+import { elizaLogger, IAgentRuntime } from '@elizaos/core';
 
 import {
   getAssociatedTokenAddressSync,
@@ -12,48 +12,55 @@ import {
   TOKEN_2022_PROGRAM_ID,
   NATIVE_MINT,
 } from '@solana/spl-token';
+import { getRuntimeKey } from '../environment.js';
+import { getWalletKey } from '../keypairUtils.js';
 
-function sleep(ms: number): Promise<void> {
+export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export async function getSolanaClient(runtime: IAgentRuntime) {
+  const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
+  const { keypair } = await getWalletKey(runtime, true);
+  return new SolanaClient(rpcUrl, keypair);
+}
+
 export class SolanaClient {
-  private connection: Connection;
-  private keypair: Keypair;
+  connection: Connection;
+  keypair: Keypair;
   constructor(rpcUrl: string, keypair: Keypair) {
     this.connection = new Connection(rpcUrl);
     this.keypair = keypair;
   }
 
-  getCollection() {
-    return this.connection;
-  }
-
-  getKeypair() {
-    return this.keypair;
-  }
 
   get publicKey() {
     return this.keypair.publicKey;
   }
 
   async getBalance(token: string) {
-    // WSOL
-    if (
-      token === NATIVE_MINT.toBase58() ||
-      token === 'So11111111111111111111111111111111111111111' ||
-      token.toUpperCase() === 'SOL' ||
-      token.toUpperCase() === 'WSOL'
-    ) {
-      return this.getSOLBalance();
+    try {
+      // WSOL
+      if (
+        token === NATIVE_MINT.toBase58() ||
+        token === 'So11111111111111111111111111111111111111111' ||
+        token.toUpperCase() === 'SOL' ||
+        token.toUpperCase() === 'WSOL'
+      ) {
+        return this.getSOLBalance();
+      }
+      return this.getSPLBalance(token);
+    }catch (e){
+      if (e.message?.includes('Invalid param: could not find account')){
+        return 0;
+      }else{
+        throw e
+      }
     }
-
-    return this.getSPLBalance(token);
   }
 
   async getTokenProgramId(mintTokenAddress: string) {
     const address = new PublicKey(mintTokenAddress);
-
     const accountInfo = await this.connection.getParsedAccountInfo(address);
     if (accountInfo.value.owner.equals(TOKEN_2022_PROGRAM_ID))
       return TOKEN_2022_PROGRAM_ID;
@@ -142,7 +149,6 @@ export class SolanaClient {
         break;
       }
 
-      // Check again after 2.5 sec
       await sleep(checkInterval);
     }
   }

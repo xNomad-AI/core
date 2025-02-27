@@ -1,7 +1,15 @@
-import { getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
+import {
+  getAccount,
+  getAssociatedTokenAddress,
+  getOrCreateAssociatedTokenAccount,
+  TOKEN_2022_PROGRAM_ID,
+} from '@solana/spl-token';
 import { type Connection, PublicKey } from '@solana/web3.js';
 import { elizaLogger, IAgentRuntime } from '@elizaos/core';
 import { getRuntimeKey } from '../environment.js';
+import { BigNumber } from 'bignumber.js';
+import { getTokenDecimals } from './swapUtils.js';
+import { getWalletKey } from '../keypairUtils.js';
 
 const tokenNameMap: { [mintAddress: string]: string } = {
   EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
@@ -80,6 +88,12 @@ function getTokenName(mintAddress: PublicKey): string {
   return tokenNameMap[mintAddress.toBase58()] || 'Unknown Token';
 }
 
+
+export async function getTokenCABySymbol(runtime: IAgentRuntime, keyword: string): Promise<string|undefined>{
+  const tokens = await getTokensBySymbol(runtime, keyword);
+  return tokens?.[0]?.address;
+}
+
 export async function getTokensBySymbol(
   runtime: IAgentRuntime,
   keyword: string,
@@ -104,6 +118,37 @@ export async function getTokensBySymbol(
     elizaLogger.error(`Error getting token CA: ${error}`);
     return [];
   }
+}
+
+
+export function isValidSPLTokenAddress(address: string) {
+  try {
+    const publicKey = new PublicKey(address);
+    // Check if the public key is associated with an existing token program
+    return (
+      publicKey &&
+      publicKey.toBase58().length >= 43 &&
+      publicKey.toBase58().length < 45
+    );
+    // SPL TOKEN=44
+    // WSOL=43
+  } catch (error) {
+    return false; // Not a valid public key
+  }
+}
+
+// tokenSymbol maybe mismatched with tokenCA, so we need to validate and assign the correct one
+export function validateAndAssignCA(tokenSymbol: string, tokenCA: string){
+  const isValidSymbol = isValidSPLTokenAddress(tokenSymbol);
+  const isValidCA = isValidSPLTokenAddress(tokenCA);
+
+  if (isValidSymbol && !isValidCA) {
+    return tokenSymbol;
+  }
+  if (isValidCA){
+    return tokenCA;
+  }
+  return null;
 }
 
 export { getTokenBalance, getTokenBalances };

@@ -7,7 +7,7 @@ import {
   type State,
   type Action, composeContext, generateObjectDeprecated, ModelClass, elizaLogger,
 } from '@elizaos/core';
-import { convertNullStrings } from './swapUtils.js';
+import { convertNullStrings } from '../providers/swapUtils.js';
 import { getTokensBySymbol } from '../providers/tokenUtils.js';
 
 const analyzeTokenTemplate = `

@@ -31,9 +31,9 @@ import {
   isAgentAdmin,
   NotAgentAdminMessage,
 } from '../providers/walletUtils.js';
-import { convertNullStrings } from './swapUtils.js';
+import { convertNullStrings } from '../providers/swapUtils.js';
 import { getRuntimeKey } from '../environment.js';
-import { SolanaClient } from './solana-client.js';
+import { SolanaClient } from '../providers/solana-client.js';
 
 export interface TransferContent extends Content {
   tokenAddress: string | null;

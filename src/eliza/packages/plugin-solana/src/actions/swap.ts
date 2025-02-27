@@ -6,7 +6,6 @@ import {
   type IAgentRuntime,
   type Memory,
   ModelClass,
-  settings,
   type State,
   type Action,
   elizaLogger,
@@ -18,168 +17,25 @@ import {
   SignatureStatus,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { BigNumber } from 'bignumber.js';
 import { getWalletKey } from '../keypairUtils.js';
 import {
   isAgentAdmin,
   NotAgentAdminMessage,
 } from '../providers/walletUtils.js';
-import { convertNullStrings, getTokenDecimals } from './swapUtils.js';
-import {
-  getOrCreateAssociatedTokenAccount,
-  NATIVE_MINT,
-  TOKEN_2022_PROGRAM_ID,
-} from '@solana/spl-token';
-import { SolanaClient } from './solana-client.js';
-import { getTokensBySymbol } from '../providers/tokenUtils.js';
+import { convertNullStrings, swapToken } from '../providers/swapUtils.js';
+import { NATIVE_MINT } from '@solana/spl-token';
+import { getSolanaClient, sleep } from '../providers/solana-client.js';
+import { getTokenCABySymbol, validateAndAssignCA } from '../providers/tokenUtils.js';
 import { getRuntimeKey } from '../environment.js';
 
-const DEFAULT_CONFIG = {
-  JUP_SWAP_FEE_ACCOUNT: '5o5pzvdWLieWQ5JumkbsSgDn7ME69ewnx76VUnb4x3sd',
-  JUP_SWAP_FEE_BPS: 100,
-};
-
-function getJUP_SWAP_FEE_BPS() {
-  return settings.JUP_SWAP_FEE_BPS || DEFAULT_CONFIG.JUP_SWAP_FEE_BPS;
-}
-
-function getJUP_SWAP_FEE_ACCOUNT() {
-  const ret =
-    settings.JUP_SWAP_FEE_ACCOUNT || DEFAULT_CONFIG.JUP_SWAP_FEE_ACCOUNT;
-  return ret;
-}
-
-export async function swapToken(
-  connection: Connection,
-  walletPublicKey: PublicKey,
-  inputTokenCA: string,
-  outputTokenCA: string,
-  amount: number,
-  runtime: IAgentRuntime,
-  programId: PublicKey,
-): Promise<any> {
-  try {
-    // Get the decimals for the input token
-    const decimals =
-      inputTokenCA === getRuntimeKey(runtime, 'SOL_ADDRESS')
-        ? new BigNumber(9)
-        : new BigNumber(await getTokenDecimals(connection, inputTokenCA));
-
-    elizaLogger.log('Decimals:', decimals.toString());
-
-    // Use BigNumber for adjustedAmount: amount * (10 ** decimals)
-    const amountBN = new BigNumber(amount);
-    const adjustedAmount = amountBN.multipliedBy(
-      new BigNumber(10).pow(decimals),
-    );
-
-    elizaLogger.info('Fetching quote with params:', {
-      inputMint: inputTokenCA,
-      outputMint: outputTokenCA,
-      amount: adjustedAmount,
-    });
-
-    // auto slippage
-    let url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputTokenCA}&outputMint=${outputTokenCA}&amount=${adjustedAmount}&dynamicSlippage=true&autoSlippage=true&maxAccounts=64&onlyDirectRoutes=false&asLegacyTransaction=false`;
-    if (
-      getJUP_SWAP_FEE_BPS() !== undefined &&
-      getJUP_SWAP_FEE_ACCOUNT() !== undefined
-    ) {
-      url += `&platformFeeBps=${getJUP_SWAP_FEE_BPS()}`;
-    }
-
-    const quoteResponse = await fetch(url);
-    const quoteData = await quoteResponse.json();
-
-    if (!quoteData || quoteData.error) {
-      elizaLogger.error('Quote error:', quoteData);
-      throw new Error(
-        `Failed to get quote: ${quoteData?.error || 'Unknown error'}`,
-      );
-    }
-
-    elizaLogger.info('Quote received');
-    elizaLogger.log('Quote received:', quoteData);
-
-    const swapRequestBody = {
-      quoteResponse: quoteData,
-      userPublicKey: walletPublicKey.toBase58(),
-      dynamicComputeUnitLimit: true,
-      dynamicSlippage: true,
-      prioritizationFeeLamports: {
-        priorityLevelWithMaxLamports: {
-          global: false,
-          // 0.01 SOL
-          maxLamports: 10000000,
-          priorityLevel: 'veryHigh',
-        },
-      },
-      priorityLevelWithMaxLamports: {
-        // 0.01 SOL
-        maxLamports: 10000000,
-        priorityLevel: 'veryHigh',
-      },
-    };
-
-    const client = await getSolanaClient(runtime);
-    const outProgramId = await client.getTokenProgramId(quoteData.outputMint);
-    // get or create fee token account after check to prevent invalid token account creation
-    // only add fee account if the token is not a 2022 token
-    // https://station.jup.ag/docs/swap-api/add-fees-to-swap#important-notes
-    if (
-      getJUP_SWAP_FEE_BPS() !== undefined &&
-      getJUP_SWAP_FEE_ACCOUNT() !== undefined &&
-      !programId.equals(TOKEN_2022_PROGRAM_ID) &&
-      !outProgramId.equals(TOKEN_2022_PROGRAM_ID)
-    ) {
-      elizaLogger.log(
-        'get or creating fee account:',
-        getJUP_SWAP_FEE_ACCOUNT(),
-        programId.toBase58(),
-      );
-      const { keypair } = await getWalletKey(runtime, true);
-      const FEE_ACCOUNT_INPUT_MINT_ACCOUNT = (
-        await getOrCreateAssociatedTokenAccount(
-          connection,
-          keypair,
-          new PublicKey(quoteData.inputMint),
-          new PublicKey(getJUP_SWAP_FEE_ACCOUNT()),
-          true,
-          undefined,
-          undefined,
-          programId,
-        )
-      ).address;
-
-      swapRequestBody['feeAccount'] = FEE_ACCOUNT_INPUT_MINT_ACCOUNT.toBase58();
-    }
-
-    elizaLogger.info('Requesting swap');
-    elizaLogger.log('Requesting swap with body:', swapRequestBody);
-
-    const swapResponse = await fetch('https://quote-api.jup.ag/v6/swap', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(swapRequestBody),
-    });
-
-    const swapData = await swapResponse.json();
-
-    if (!swapData || !swapData.swapTransaction) {
-      elizaLogger.error(`Swap error:, ${JSON.stringify(swapData)}`);
-      throw new Error(
-        `Failed to get swap transaction: ${swapData?.error || 'No swap transaction returned'}`,
-      );
-    }
-
-    elizaLogger.log('Swap transaction received');
-    return swapData;
-  } catch (error) {
-    elizaLogger.error('Error in swapToken:', error);
-    throw error;
-  }
+interface SwapTokenRequest {
+  inputTokenSymbol: string;
+  inputTokenCA: string;
+  outputTokenSymbol: string;
+  outputTokenCA: string;
+  inputTokenAmount: number | null;
+  inputTokenPercentage: number | null;
+  outputTokenAmount: number | null;
 }
 
 const swapTemplate = `
@@ -190,7 +46,9 @@ Example response:
     "outputTokenSymbol": "USDC",
     "inputTokenCA": "So11111111111111111111111111111111111111112",
     "outputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    "amount": 1.5
+    "inputTokenAmount": 0.02,
+    "inputTokenPercentage": "100%",
+    "outputTokenAmount": null
 }
 \`\`\`
 
@@ -203,7 +61,9 @@ Extract the following information about the requested token swap:
 - Output token symbol (the token being bought)
 - Input token contract address if provided
 - Output token contract address if provided
-- Amount to swap
+- Input token amount
+- Input token percentage, sell all means percentage is 1
+- Output token amount
 
 Ensure you only extract the current swap request from the user, and avoid extracting any historical swap messages.
 
@@ -219,16 +79,21 @@ Respond with a JSON markdown block containing only the extracted values. Use nul
     "outputTokenSymbol": string | null,
     "inputTokenCA": string | null,
     "outputTokenCA": string | null,
-    "amount": number | string
+    "inputTokenAmount": number | string,
+    "inputTokenPercentage": number | null,
+    "outputTokenAmount": number | null
 }
 \`\`\`
 
 Examples:
+-  buy 100 ai16z should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "ai16z", "inputTokenCA": null, "outputTokenCA": null, "outputTokenAmount": 100}\`;
 -  buy 0.1 SOL ELIZA should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "ELIZA", "inputTokenCA": null, "outputTokenCA": null, "amount": 0.1}\`;
 -  buy ai16z with 0.001 SOL should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "ai16z", "inputTokenCA": null, "outputTokenCA": null, "amount": 0.001}\`;
--  sell 1 USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v should return \`{"inputTokenSymbol": "USDC", "outputTokenSymbol": "SOL", "inputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "outputTokenCA": null, "amount": 1}\`;
+-  sell 1 USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v should return \`{"inputTokenSymbol": "USDC", "outputTokenSymbol": "SOL", "inputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "outputTokenCA": null, "inputTokenAmount": 1}\`;
 -  swap 0.1 SOL for USDC should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "USDC", "inputTokenCA": null, "outputTokenCA": null, "amount": 0.1}\`;
--  swap 20 ai16z for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v should return \`{"inputTokenSymbol": "ai16z", "outputTokenSymbol": "USDC", "inputTokenCA": null, "outputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "amount": 20}\`;
+-  swap 20 ai16z for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v should return \`{"inputTokenSymbol": "ai16z", "outputTokenSymbol": "USDC", "inputTokenCA": null, "outputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "inputTokenAmount": 20}\`;
+-  sell all ELIZA should return \`{"inputTokenSymbol": "ELIZA", "outputTokenSymbol": "SOL", "inputTokenCA": null, "outputTokenCA": null, "inputTokenPercentage": 1}\`;
+-  sell 50% ELIZA should return \`{"inputTokenSymbol": "ELIZA", "outputTokenSymbol": "SOL", "inputTokenCA": null, "outputTokenCA": null, "inputTokenPercentage": 0.5}\`;
 `;
 
 const userConfirmTemplate = `
@@ -276,24 +141,6 @@ Respond with a JSON:
 
 Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
 
-// if we get the token symbol but not the CA, check walet for matching token, and if we have, get the CA for it
-
-export function isValidSPLTokenAddress(address: string) {
-  try {
-    const publicKey = new PublicKey(address);
-    // Check if the public key is associated with an existing token program
-    return (
-      publicKey &&
-      publicKey.toBase58().length >= 43 &&
-      publicKey.toBase58().length < 45
-    );
-    // SPL TOKEN=44
-    // WSOL=43
-  } catch (error) {
-    return false; // Not a valid public key
-  }
-}
-
 export const executeSwap: Action = {
   name: 'EXECUTE_SWAP',
   suppressInitialMessage: true,
@@ -310,7 +157,7 @@ export const executeSwap: Action = {
   },
   description:
     'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
-  handler: swapHandler,
+  handler: handleExecuteSwap,
   examples: [
     [
       {
@@ -346,7 +193,7 @@ export const executeSwap: Action = {
   ] as ActionExample[][],
 } as Action;
 
-async function swapHandler(
+async function handleExecuteSwap(
   runtime: IAgentRuntime,
   message: Memory,
   state: State,
@@ -364,88 +211,60 @@ async function swapHandler(
     return true;
   }
 
+  const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
+  const connection = new Connection(rpcUrl);
+  const { keypair } = await getWalletKey(runtime, true);
+  const walletPublicKey = keypair.publicKey;
+
+  const swapResult = await swapToken(
+    connection,
+    walletPublicKey,
+    response.inputTokenCA,
+    response.outputTokenCA,
+    response.inputTokenAmount,
+    runtime,
+    response.programId,
+  );
+
+  const transactionBuf = Buffer.from(swapResult.swapTransaction, 'base64');
+  const transaction = VersionedTransaction.deserialize(transactionBuf);
+  transaction.sign([keypair]);
+  elizaLogger.log('Sending transaction...');
+
+  let txid: string;
   try {
-    const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
-    const connection = new Connection(rpcUrl);
-    const { keypair } = await getWalletKey(runtime, true);
-    const walletPublicKey = keypair.publicKey;
-
-    elizaLogger.log('Wallet Public Key:', walletPublicKey);
-    elizaLogger.log('inputTokenSymbol:', response.inputTokenCA);
-    elizaLogger.log('outputTokenSymbol:', response.outputTokenCA);
-    elizaLogger.log('amount:', response.amount);
-
-    const swapResult = await swapToken(
-      connection,
-      walletPublicKey,
-      response.inputTokenCA,
-      response.outputTokenCA,
-      response.amount,
-      runtime,
-      response.programId,
-    );
-
-    elizaLogger.info('Deserializing transaction...');
-    const transactionBuf = Buffer.from(swapResult.swapTransaction, 'base64');
-    const transaction = VersionedTransaction.deserialize(transactionBuf);
-
-    elizaLogger.log('Preparing to sign transaction...');
-    elizaLogger.log(`Keypair created:, keypair.publicKey.toBase58()`);
-    // Verify the public key matches what we expect
-    if (keypair.publicKey.toBase58() !== walletPublicKey.toBase58()) {
-      throw new Error("Generated public key doesn't match expected public key");
-    }
-
-    elizaLogger.log('Signing transaction...');
-    transaction.sign([keypair]);
-    elizaLogger.log('Sending transaction...');
-
-    let txid: string;
-    try {
-      txid = await connection.sendTransaction(transaction, {
-        skipPreflight: false,
-        maxRetries: 3,
-        preflightCommitment: 'confirmed',
-      });
-    } catch (error) {
-      elizaLogger.warn('Error sending transaction:', error);
-      throw error;
-    }
-
-    elizaLogger.log('Transaction sent:', txid);
-
-    let confirmation: RpcResponseAndContext<SignatureStatus | null>;
-
-    // wait for 20s for the transaction to be processed
-    for (let i = 0; i < 12; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      confirmation = await connection.getSignatureStatus(txid, {
-        searchTransactionHistory: false,
-      });
-
-      if (confirmation.value) {
-        break;
-      }
-    }
-
-    elizaLogger.log('Swap completed successfully!');
-    elizaLogger.log(`Transaction ID: ${txid}`);
-
-    const responseMsg = {
-      text: `Swap completed successfully! Transaction ID: ${txid}`,
-    };
-
-    callback?.(responseMsg);
-
-    return true;
+    txid = await connection.sendTransaction(transaction, {
+      skipPreflight: false,
+      maxRetries: 3,
+      preflightCommitment: 'confirmed',
+    });
   } catch (error) {
-    elizaLogger.error(`Error during token swap:, ${error}`);
-    const responseMsg = {
-      text: `Error during token swap:, ${error}`,
-    };
-    callback?.(responseMsg);
-    return true;
+    elizaLogger.warn('Error sending transaction:', error);
+    throw error;
   }
+
+  elizaLogger.log('Transaction sent:', txid);
+
+  let confirmation: RpcResponseAndContext<SignatureStatus | null>;
+
+  for (let i = 0; i < 10; i++) {
+    await sleep(1000);
+    confirmation = await connection.getSignatureStatus(txid, {
+      searchTransactionHistory: false,
+    });
+
+    if (confirmation.value) {
+      break;
+    }
+  }
+
+  elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
+
+  const responseMsg = {
+    text: `Swap completed successfully! Transaction ID: ${txid}`,
+  };
+  callback?.(responseMsg);
+  return true;
 }
 
 async function checkResponse(
@@ -457,10 +276,9 @@ async function checkResponse(
 ): Promise<{
   inputTokenCA: string;
   outputTokenCA: string;
-  amount: number;
+  inputTokenAmount: number;
   programId: PublicKey;
 } | null> {
-  // check if the swap request is from agent owner or public chat
   const isAdmin = await isAgentAdmin(runtime, message);
   if (!isAdmin) {
     const responseMsg = {
@@ -476,153 +294,93 @@ async function checkResponse(
   });
 
   // generate formatted response from chat
-  let response = await generateObjectDeprecated({
+  let swapReq = await generateObjectDeprecated({
     runtime,
     context: swapContext,
     modelClass: ModelClass.LARGE,
-  });
-  response = convertNullStrings(response);
+  }) as SwapTokenRequest;
+  swapReq = convertNullStrings(swapReq);
+  swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
+  swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
+  swapReq.outputTokenAmount = Number(swapReq.outputTokenAmount);
 
-  elizaLogger.info(`Message: ${message?.content?.text}, Response:`, response);
+  elizaLogger.info(`Prompt: ${swapContext}, Response:`, swapReq);
 
-  // Add SOL handling logic
-  if (response.inputTokenSymbol?.toUpperCase() === 'SOL') {
-    response.inputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
+  if (swapReq.inputTokenSymbol?.toUpperCase() === 'SOL') {
+    swapReq.inputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
   }
-  if (response.outputTokenSymbol?.toUpperCase() === 'SOL') {
-    response.outputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
+  if (swapReq.outputTokenSymbol?.toUpperCase() === 'SOL') {
+    swapReq.outputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
+  }
+  swapReq.inputTokenCA = validateAndAssignCA(swapReq.inputTokenSymbol, swapReq.inputTokenCA);
+  swapReq.outputTokenCA = validateAndAssignCA(swapReq.outputTokenSymbol, swapReq.outputTokenCA);
+
+  if (!swapReq.inputTokenCA) {
+    swapReq.inputTokenCA = await getTokenCABySymbol(runtime, swapReq.inputTokenSymbol);
+    if (!swapReq.inputTokenCA){
+      const responseMsg = {
+        text: 'Please provide a valid inputToken CA you want to sell',
+      };
+      callback?.(responseMsg);
+      return null;
+    }
   }
 
-  // check if amount is a number
-  if (!response.amount || Number.isNaN(Number(response.amount))) {
+  if (!swapReq.outputTokenCA) {
+    swapReq.outputTokenCA = await getTokenCABySymbol(runtime, swapReq.outputTokenSymbol);
+    if (!swapReq.outputTokenCA){
+      const responseMsg = {
+        text: 'Please provide a valid outputToken CA you want to buy',
+      };
+      callback?.(responseMsg);
+      return null;
+    }
+  }
+
+  const client = await getSolanaClient(runtime);
+  const programId = await client.getTokenProgramId(swapReq.inputTokenCA);
+
+  if (Number.isFinite((swapReq.outputTokenAmount)) && swapReq.outputTokenAmount != 0){
+    callback?.({
+      text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
+    })
+  }
+
+  if (Number.isFinite(swapReq.inputTokenPercentage) && swapReq.inputTokenPercentage != 0){
+    const balance = await client.getBalance(swapReq.inputTokenCA);
+    swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
+  }
+
+  if (!Number.isFinite((swapReq.inputTokenAmount)) || swapReq.inputTokenAmount <= 0) {
     const responseMsg = {
-      text: `Please provide a valid ${response.inputTokenSymbol} input amount to perform the swap`,
+      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'EXECUTE_SWAP',
     };
     callback?.(responseMsg);
     return null;
   }
 
-  let validInputTokenCA = isValidSPLTokenAddress(response.inputTokenCA);
-  let validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
-  const validInputTokenSymbol = isValidSPLTokenAddress(
-    response.inputTokenSymbol,
-  );
-  const validOutputTokenSymbol = isValidSPLTokenAddress(
-    response.outputTokenSymbol,
-  );
-
-  // the CA maybe recognized as symbol, so we need to check if it is a valid CA
-  if (validInputTokenSymbol && !validInputTokenCA) {
-    response.inputTokenCA = response.inputTokenSymbol;
-  }
-  if (validOutputTokenSymbol && !validOutputTokenCA) {
-    response.outputTokenCA = response.outputTokenSymbol;
-  }
-
-  validInputTokenCA = isValidSPLTokenAddress(response.inputTokenCA);
-  validOutputTokenCA = isValidSPLTokenAddress(response.outputTokenCA);
-  if (!validInputTokenCA) {
-    const tokens = await getTokensBySymbol(runtime, response.inputTokenSymbol);
-    if (tokens?.[0]?.address) {
-      response.inputTokenCA = tokens[0].address;
-    } else {
-      elizaLogger.log(
-        `Invalid input contract address ${response.inputTokenCA}, skipping swap`,
-      );
-      const responseMsg = {
-        text: 'Please provide the inputToken CA you want to sell',
-      };
-      callback?.(responseMsg);
-      return null;
-    }
-  }
-
-  if (!validOutputTokenCA) {
-    const tokens = await getTokensBySymbol(runtime, response.outputTokenSymbol);
-    if (tokens?.[0]?.address) {
-      response.outputTokenCA = tokens[0].address;
-    } else {
-      elizaLogger.log(
-        `Invalid output contract address ${response.outputTokenCA}, skipping swap`,
-      );
-      const responseMsg = {
-        text: 'Please provide the outputToken CA you want to buy',
-      };
-      callback?.(responseMsg);
-      return null;
-    }
-  }
-
-  elizaLogger.log(
-    `start check token program, Response: ${JSON.stringify(response)}`,
-  );
-  // check the input token is a valid SPL token address
-  const client = await getSolanaClient(runtime);
-  let programId: PublicKey;
-  try {
-    programId = await client.getTokenProgramId(response.inputTokenCA);
-    await client.getTokenProgramId(response.outputTokenCA);
-  } catch (error) {
-    elizaLogger.error(
-      `Invalid input token contract address ${response.inputTokenCA}, ${error}`,
-    );
+  const balance = await client.getBalance(swapReq.inputTokenCA);
+  if (!balance){
     const responseMsg = {
-      text: 'Input Contract Address Is Not A Valid Token Address',
+      text: 'Your input balance is 0.',
+    };
+    callback?.(responseMsg);
+  }
+
+  if (balance < swapReq.inputTokenAmount) {
+    const responseMsg = {
+      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`
     };
     callback?.(responseMsg);
     return null;
   }
 
-  elizaLogger.log(
-    `start check input balance, Response: ${JSON.stringify(response)}`,
-  );
-  // check balance
-  try {
-    const balance = await client.getBalance(response.inputTokenCA);
-    if (balance < response.amount) {
-      elizaLogger.error(
-        `${response.inputTokenCA} Insufficient balance for swap`,
-      );
-      const responseMsg = {
-        text:
-          'Insufficient balance for swap, required: ' +
-          response.amount +
-          ' but only ' +
-          balance +
-          ' available.',
-      };
-      callback?.(responseMsg);
-      return null;
-    }
-  } catch (error) {
-    if (
-      error.message ===
-      'failed to get token account balance: Invalid param: could not find account'
-    ) {
-      elizaLogger.warn(
-        `${response.inputTokenCA} Insufficient balance for swap`,
-      );
-      const responseMsg = {
-        text:
-          'Insufficient balance for swap, required: ' +
-          response.amount +
-          ' but only 0 available.',
-      };
-      callback?.(responseMsg);
-      return null;
-    } else {
-      callback?.({
-        text: 'Check balance failed, please try again later',
-      });
-      return null;
-    }
-  }
-
   const WSOL_AMOUNT = await client.getBalance(NATIVE_MINT.toBase58());
-  const GAS_BANANCE = 0.001;
-  // require 0.001 SOL for gas fee
-  if (response.inputTokenCA !== NATIVE_MINT.toBase58()) {
+  const GAS_BANANCE = 0.001;   // require 0.001 SOL for gas fee
+
+  if (swapReq.inputTokenCA !== NATIVE_MINT.toBase58()) {
+    // buy with token
     const balance = await client.getBalance(NATIVE_MINT.toBase58());
     if (balance < GAS_BANANCE) {
       elizaLogger.error('Insufficient balance for swap gas fee');
@@ -634,8 +392,9 @@ async function checkResponse(
       callback?.(responseMsg);
       return null;
     }
-  } else if (WSOL_AMOUNT - response.amount < GAS_BANANCE) {
-    const requiredAmount = GAS_BANANCE + Number(response.amount);
+  } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BANANCE) {
+    // buy with SOL
+    const requiredAmount = GAS_BANANCE + Number(swapReq.inputTokenAmount);
     elizaLogger.error('Insufficient balance for swap gas fee');
     const responseMsg = {
       text:
@@ -670,11 +429,11 @@ async function checkResponse(
 
   if (confirmResponse.userAcked == 'pending') {
     const swapInfo = formatSwapInfo({
-      inputTokenSymbol: response.inputTokenSymbol,
-      inputTokenCA: response.inputTokenCA,
-      outputTokenSymbol: response.outputTokenSymbol,
-      outputTokenCA: response.outputTokenCA,
-      amount: response.amount,
+      inputTokenSymbol: swapReq.inputTokenSymbol,
+      inputTokenCA: swapReq.inputTokenCA,
+      outputTokenSymbol: swapReq.outputTokenSymbol,
+      outputTokenCA: swapReq.outputTokenCA,
+      inputTokenAmount: swapReq.inputTokenAmount,
     });
     const responseMsg = {
       text: `${swapInfo}
@@ -685,7 +444,7 @@ async function checkResponse(
     return null;
   }
 
-  return { ...response, programId };
+  return { ...swapReq, programId };
 }
 
 function formatSwapInfo(params: {
@@ -693,22 +452,16 @@ function formatSwapInfo(params: {
   inputTokenCA: string;
   outputTokenSymbol: string;
   outputTokenCA: string;
-  amount: number;
+  inputTokenAmount: number;
 }): string {
   return `
 💱 Swap Request
 ----------------------------
-🔹 Input: ${params.amount} ${params.inputTokenSymbol}  
+🔹 Input: ${params.inputTokenAmount} ${params.inputTokenSymbol}  
    📌 CA: ${params.inputTokenCA}
 
 🔸 Output: ${params.outputTokenSymbol}  
    📌 CA: ${params.outputTokenCA}
 ----------------------------
   `;
-}
-
-async function getSolanaClient(runtime: IAgentRuntime) {
-  const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
-  const { keypair } = await getWalletKey(runtime, true);
-  return new SolanaClient(rpcUrl, keypair);
 }
