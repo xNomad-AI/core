@@ -129,19 +129,27 @@ async function createAndBuyToken({
 import * as fs from 'fs';
 import { getWalletKey } from '../keypairUtils.js';
 import { getRuntimeKey } from '../environment.js';
+import { convertNullStrings } from './swapUtils.js';
+import * as path from 'path';
 
 const pumpfunTemplate = `
-You are an expert on solana token creation, It mainly refers to token launches on Pump.fun.
-Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated requests. 
-Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
+You are an expert on Solana token creation, mainly referring to token launches on Pump.fun.
 
-Example response:
+Carefully read and understand the above conversation. Pay attention to distinguishing between completed conversations and newly initiated requests.
+
+Extract the requested token creation information from the most recent user request, ensuring accuracy in all fields.
+
+**For the image URL**, always extract the **latest uploaded image's local file path or remote url ** from the user's attachments. If no image is uploaded, leave it empty.
+
+Respond with a JSON markdown block containing only the extracted values. Use \`null\` for any values that cannot be determined.
+
+### **Example Response Format:**
 \`\`\`json
 {
     "name": "GLITCHIZA",
     "symbol": "GLITCHIZA",
-    "imageUrl":  ""
-    "description": "A test token",
+    "imageUrl": null,
+    "description": null,
     "twitter": "https://x.com/elonmusk",
     "website": "https://x.com",
     "telegram": "https://t.me/+El39K_BrnIVhOWM1",
@@ -155,7 +163,7 @@ Given the recent messages, extract or generate (come up with if not included) th
 - Token name
 - Token symbol
 - Token image url, the image path user uploaded, if not provided, it will be empty
-- Token description
+- Token description, if not provided, it will be empty
 - Twitter URL
 - Website URL
 - Telegram URL
@@ -164,6 +172,52 @@ Given the recent messages, extract or generate (come up with if not included) th
 Respond with a JSON markdown block containing only the extracted values. Twitter URL, Website URL, Telegram URL is not must required, if not provided, it will be empty.
 Amount of SOL to buy is not required, if not provided, it will be 0.
 `;
+
+const userConfirmTemplate = `
+{{recentMessages}}
+
+Analyzing the user’s response to the create token confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
+Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
+Respond with a JSON:  
+\`\`\`json
+{
+    "userAcked": "confirmed" | "rejected" | "pending"
+}
+\`\`\`  
+
+**Decision Criteria:**  
+"confirmed" → The user has explicitly confirmed using words like “yes”, “confirm”, “okay”, “sure”, etc.
+"rejected" → The user has responded with anything other than a confirmation.
+"pending" → The user has provided a complete swap request, but User2 has not yet sent the confirmation prompt.
+
+**Additional Rules:**  
+•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
+•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
+•If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
+**Examples:**  
+
+✅ **Should return \`"confirmed"\`**  
+- User2: "Please confirm by replying with 'yes' or 'confirm'."  
+- User1: "yes"  
+
+- User2: "Please confirm."  
+- User1: "okay"  
+
+❌ **Should return \`"rejected"\`**  
+- User2: "Please confirm by replying with 'yes' or 'confirm'"  
+- User1: "no"  
+
+- User1: "i want to create a token called GLITCHIZA with symbol GLITCHIZA"  
+- User2: "Please confirm by replying with 'yes' or 'confirm'."  
+- User1: "cancel"  
+
+❓ **Should return \`"pending"\`**  
+- User1: "swap 0.0001 SOL for USDC"  
+
+- User1: "buy 0.1 SOL ELIZA"  
+
+Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
+
 
 export default {
   name: 'CREATE_TOKEN',
@@ -197,11 +251,12 @@ export default {
       template: pumpfunTemplate,
     });
 
-    const content = await generateObjectDeprecated({
+    let content = await generateObjectDeprecated({
       runtime,
       context: pumpContext,
       modelClass: ModelClass.LARGE,
     });
+    content = convertNullStrings(content);
 
     elizaLogger.info('Generated content:', content);
 
@@ -226,7 +281,7 @@ export default {
     elizaLogger.info(
       `Content for CREATE_AND_BUY_TOKEN action: ${JSON.stringify(content)}`,
     );
-    if (!imageUrl) {
+    if (!imageUrl || !fs.existsSync(imageUrl)) {
       callback({
         text:
           formatCreateTokenInfo(content) +
@@ -252,6 +307,45 @@ export default {
         Please provide a symbol for the token.`,
       });
       return false;
+    }
+
+    elizaLogger.info(`checking if user confirm to execute`);
+
+    const confirmContext = composeContext({
+      state,
+      template: userConfirmTemplate,
+    });
+
+    const confirmResponse = await generateObjectDeprecated({
+      runtime,
+      context: confirmContext,
+      modelClass: ModelClass.LARGE,
+    });
+    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+
+    if (confirmResponse.userAcked == 'rejected') {
+      const responseMsg = {
+        text: 'ok. I will cancel the task.',
+      };
+      callback?.(responseMsg);
+      return null;
+    }
+
+    if (confirmResponse.userAcked == 'pending') {
+      const confirmMessage = formatCreateTokenInfo(content);
+      const responseMsg = {
+        text: `${confirmMessage}
+✅ Please confirm by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
+        action: 'CREATE_TOKEN',
+        media: [
+          {
+            type: 'image',
+            url: getImageAccessUrl(imageUrl),
+          },
+        ]
+      };
+      callback?.(responseMsg);
+      return null;
     }
     const file = imageUrl ? await fs.openAsBlob(imageUrl) : null;
     const fullTokenMetadata: CreateTokenMetadata = {
@@ -475,4 +569,8 @@ function formatCreateTokenInfo(params: CreateTokenMetadata): string {
 🔸 Telegram: ${params.telegram}
 ----------------------------
   `;
+}
+
+function getImageAccessUrl(imageUrl: string): string {
+  return imageUrl.startsWith('http') ? imageUrl : `/media/uploads/${path.basename(imageUrl)}`;
 }
