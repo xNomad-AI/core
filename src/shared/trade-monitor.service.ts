@@ -60,8 +60,8 @@ export class TradeMonitorService {
       'TRADE_MONITOR_SERVICE_ENDPOINT',
     )!;
     this.apikey = this.appConfig.get<string>('TRADE_MONITOR_SERVICE_API_KEY')!;
-    this.limitOrderCallbackUrl = `${this.appConfig.get<string>('TRADE_MONITOR_CALLBACK_URL')}/limitOrder_callback`; // todo @everimbaq: add limit_order_callback route
-    this.copyTradeCallbackUrl = `${this.appConfig.get<string>('TRADE_MONITOR_CALLBACK_URL')}/copyTrade_callback`; // todo @everimbaq: add copy_trade_callback route
+    this.limitOrderCallbackUrl = `${this.appConfig.get<string>('TRADE_MONITOR_CALLBACK_URL')}/callbacks/limit-order`;
+    this.copyTradeCallbackUrl = `${this.appConfig.get<string>('TRADE_MONITOR_CALLBACK_URL')}/callbacks/copy-trade`;
   }
 
   async createLimitOrder(
