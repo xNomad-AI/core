@@ -10,6 +10,7 @@ import { LaunchpadModule } from './launchpad/launchpad.module.js';
 import { NftModule } from './nft/nft.module.js';
 import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
+import { MetricsModule } from './metrics/metrics.module.js';
 import { TokenModule } from './token/token.module.js';
 EventEmitter.defaultMaxListeners = 10;
 
@@ -31,6 +32,7 @@ EventEmitter.defaultMaxListeners = 10;
     TokenModule,
     NftModule,
     LaunchpadModule,
+    MetricsModule,
   ],
   controllers: [],
   providers: [],

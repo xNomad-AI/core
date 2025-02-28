@@ -139,3 +139,5 @@ temp.sh
 .pnpm-store
 .drone.jsonnet
 .drone.jsonnet.yml
+data
+debug
