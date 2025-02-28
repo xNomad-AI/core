@@ -96,7 +96,7 @@ export class CallbackController {
   }
 
   private validateApiKey(apiKey: string) {
-    if (apiKey !== process.env.API_KEY) {
+    if (apiKey !== this.apikey) {
       throw new UnauthorizedException('Invalid API key');
     }
   }
