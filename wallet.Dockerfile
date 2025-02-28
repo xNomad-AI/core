@@ -21,6 +21,5 @@ COPY . .
 RUN pnpm run build
 # remove devDependencies
 RUN pnpm prune --production
-RUN cd data/eliza pnpm clean
 
 CMD [ "node", "dist/main-wallet-service.js" ]
