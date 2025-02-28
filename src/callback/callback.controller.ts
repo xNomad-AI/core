@@ -24,10 +24,11 @@ class AddressCallbackDto extends BaseCallbackDto {
 
 @Controller('/callbacks')
 export class CallbackController {
+  private apikey: string;
+
   constructor(
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
-    private apikey: string,
   ) {
     this.apikey = this.appConfig.get<string>('TRADE_MONITOR_SERVICE_API_KEY')!;
   }
