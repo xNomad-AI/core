@@ -6,11 +6,12 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitter } from 'events';
 import { AddressModule } from './address/address.module.js';
 import { AgentModule } from './agent/agent.module.js';
+import { CallbackModule } from './callback/callback.module.js';
 import { LaunchpadModule } from './launchpad/launchpad.module.js';
+import { MetricsModule } from './metrics/metrics.module.js';
 import { NftModule } from './nft/nft.module.js';
 import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
-import { MetricsModule } from './metrics/metrics.module.js';
 import { TokenModule } from './token/token.module.js';
 EventEmitter.defaultMaxListeners = 10;
 
@@ -33,6 +34,7 @@ EventEmitter.defaultMaxListeners = 10;
     NftModule,
     LaunchpadModule,
     MetricsModule,
+    CallbackModule,
   ],
   controllers: [],
   providers: [],
