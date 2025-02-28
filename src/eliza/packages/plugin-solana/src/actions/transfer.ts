@@ -31,9 +31,9 @@ import {
   isAgentAdmin,
   NotAgentAdminMessage,
 } from '../providers/walletUtils.js';
-import { convertNullStrings } from './swapUtils.js';
+import { convertNullStrings } from '../providers/swapUtils.js';
 import { getRuntimeKey } from '../environment.js';
-import { SolanaClient } from './solana-client.js';
+import { SolanaClient } from '../providers/solana-client.js';
 
 export interface TransferContent extends Content {
   tokenAddress: string | null;
@@ -274,6 +274,12 @@ export const transfer: Action = {
       }
       const mintDecimals = (mintInfo.value?.data as any)?.parsed?.info
         ?.decimals;
+      if (!mintDecimals || isNaN(mintDecimals)) {
+        callback({
+          text: `Token ${content.tokenAddress} not found. Please provide a valid token address.`,
+        });
+        return false;
+      }
       const mintAmount = BigInt(
         Number(content.amount) * Math.pow(10, mintDecimals),
       );

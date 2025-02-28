@@ -1,5 +1,5 @@
-import { COLLECTIONS } from './configs.js';
 import { Character } from '@elizaos/core';
+import { COLLECTIONS } from './configs.js';
 
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
@@ -99,6 +99,29 @@ export interface NftPrologues {
   nftId: string;
   tokenId: string;
   prologue: string;
+  updatedAt: Date;
+  createdAt: Date;
+}
+
+export interface NftPrimaryCoin {
+  _id?: string;
+  chain: string;
+  nftId: string;
+  coinInfo: {
+    name: string;
+    symbol: string;
+    file: string; // image, base64 encoded
+    description: string;
+    twitter?: string;
+    telegram?: string;
+    website?: string;
+  };
+  metadataUri: string;
+  initialBuyAmountSol: number;
+  mintAddress: string;
+  mintSecretKey: string; // base58 encoded secret key
+  created: boolean;
+
   updatedAt: Date;
   createdAt: Date;
 }

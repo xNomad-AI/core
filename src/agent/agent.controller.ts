@@ -31,7 +31,6 @@ export class AgentController {
     private logger: TransientLoggerService,
     private mongo: MongoService,
     private readonly eventEmitter: EventEmitter2,
-    private readonly tokenInfo: TokenInfoService,
   ) {}
 
   @Post('/')
@@ -130,28 +129,5 @@ export class AgentController {
     return {
       prologue: prologue.prologue,
     };
-  }
-
-  @Get('/token/basic-info')
-  async getTokenBasicInfo(@Query('tokenAddress') tokenAddress: string) {
-    return await this.tokenInfo.getTokenBasicInfo(tokenAddress);
-  }
-
-  @Get('/token/info')
-  @CacheTTL(60)
-  async getTokenInfo(@Query('tokenAddress') tokenAddress: string) {
-    return await this.tokenInfo.getTokenInfo(tokenAddress);
-  }
-
-  @Get('/token/twitter-info')
-  @CacheTTL(3600)
-  async getTokenTwitterInfo(@Query('tokenAddress') tokenAddress: string) {
-    return await this.tokenInfo.getTokenTwitterInfo(tokenAddress);
-  }
-
-  @Get('/token/news')
-  @CacheTTL(60)
-  async getTokenNews(@Query('tokenAddress') tokenAddress: string) {
-    return await this.tokenInfo.getTokenNews(tokenAddress);
   }
 }

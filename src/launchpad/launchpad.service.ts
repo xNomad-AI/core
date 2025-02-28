@@ -5,6 +5,7 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  Connection,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
@@ -18,8 +19,15 @@ import { Signer } from '@web3-storage/w3up-client/principal/ed25519';
 import * as Proof from '@web3-storage/w3up-client/proof';
 import { StoreMemory } from '@web3-storage/w3up-client/stores/memory';
 import bs58 from 'bs58';
+import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+
+const MIN_BALANCE_FOR_RENT_EXEMPTION = 0.003;
+/**
+ * 0.02 SOL for creating a token on pump.fun
+ */
+const CREATE_TOKEN_COST = 0.02;
 
 @Injectable()
 export class LaunchpadService {
@@ -27,12 +35,19 @@ export class LaunchpadService {
     private readonly config: ConfigService,
     private readonly logger: TransientLoggerService,
     private readonly mongo: MongoService,
+    private readonly elizaManager: ElizaManagerService,
   ) {
     this.logger.setContext(LaunchpadService.name);
   }
 
-  async createCommonCollectionNft(
-    userAddress: string,
+  async createCommonCollectionNft({
+    chain,
+    userAddress,
+    nft,
+    createToken,
+  }: {
+    chain: string;
+    userAddress: string;
     nft: {
       name: string;
       image: string;
@@ -43,19 +58,28 @@ export class LaunchpadService {
       lore?: string[];
       style?: string[];
       adjectives?: string[];
-    },
-  ) {
+    };
+    createToken?: {
+      tokenInfo: {
+        name: string;
+        symbol: string;
+        file: string; // image, base64 encoded blob
+        description: string;
+        twitter?: string;
+        telegram?: string;
+        website?: string;
+      };
+      buyAmountSol: number;
+    };
+  }) {
     this.logger.log(
       `Creating common collection NFT for ${userAddress}, NFT: ${JSON.stringify(
         nft,
       )}`,
     );
 
-    const isXnomadOwner = await this.isXnomadOwner(userAddress);
-
-    const [fee, feeAfterDiscount, discountPercentage] = isXnomadOwner
-      ? [0.1, 0.03, 70]
-      : [0.1, 0.1, 0];
+    const { fee, feeAfterDiscount, discountPercentage, isXnomadOwner } =
+      await this.calculateMintFee(userAddress);
 
     this.logger.log(
       JSON.stringify({
@@ -65,8 +89,109 @@ export class LaunchpadService {
         discountPercentage,
       }),
     );
-    // construct metadata
-    const metadata = {
+
+    const metadata = this.constructNftMetadata(nft);
+    const uri = await this.uploadMetadataToWeb3Storage(
+      metadata,
+      `metadata.json`,
+    );
+    this.logger.log(`Uploaded metadata to Web3Storage: ${uri}`);
+
+    const { asset, signers, instructions } =
+      await this.constructMintCommonCollectionNftTx({
+        userAddress,
+        name: nft.name,
+        uri,
+        feeInSol: feeAfterDiscount,
+      });
+
+    if (createToken) {
+      const mintKeypair = Keypair.generate();
+      const nftId = `${chain}:${asset.publicKey.toBase58()}:${asset.publicKey.toBase58()}`;
+      const now = new Date();
+
+      await this.mongo.nftPrimaryCoins.insertOne({
+        chain,
+        nftId,
+        coinInfo: {
+          name: createToken.tokenInfo.name,
+          symbol: createToken.tokenInfo.symbol,
+          file: createToken.tokenInfo.file,
+          description: createToken.tokenInfo.description,
+          twitter: createToken.tokenInfo.twitter,
+          telegram: createToken.tokenInfo.telegram,
+          website: createToken.tokenInfo.website,
+        },
+        metadataUri: null,
+        initialBuyAmountSol: createToken.buyAmountSol,
+        mintAddress: mintKeypair.publicKey.toBase58(),
+        mintSecretKey: bs58.encode(mintKeypair.secretKey),
+        created: false,
+        updatedAt: now,
+        createdAt: now,
+      });
+
+      const { solanaKeypair: agentKeypair } =
+        await this.elizaManager.getAgentAccountKeypair(chain, nftId);
+
+      instructions.push(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(userAddress),
+          toPubkey: agentKeypair.publicKey,
+          lamports:
+            (createToken.buyAmountSol +
+              CREATE_TOKEN_COST +
+              MIN_BALANCE_FOR_RENT_EXEMPTION) *
+            LAMPORTS_PER_SOL,
+        }),
+      );
+    }
+
+    // construct tx
+    const connection = new Connection(
+      this.config.get<string>('SOLANA_RPC_URL')!,
+    );
+    const latestBlockhash = await connection.getLatestBlockhash();
+    const tx = new VersionedTransaction(
+      new TransactionMessage({
+        payerKey: new PublicKey(userAddress),
+        recentBlockhash: latestBlockhash.blockhash,
+        instructions,
+      }).compileToV0Message(),
+    );
+    tx.sign(signers);
+    const serializedTx = tx.serialize();
+
+    return {
+      tx: Buffer.from(serializedTx).toString('hex'),
+      fee,
+      feeAfterDiscount,
+      discountPercentage,
+    };
+  }
+
+  async calculateMintFee(userAddress: string) {
+    const isXnomadOwner = await this.isXnomadOwner(userAddress);
+
+    const [fee, feeAfterDiscount, discountPercentage] = isXnomadOwner
+      ? [0.1, 0.03, 70]
+      : [0.1, 0.1, 0];
+
+    return { fee, feeAfterDiscount, discountPercentage, isXnomadOwner };
+  }
+
+  private constructNftMetadata(nft: {
+    name: string;
+    image: string;
+    description: string;
+    knowledge: string[];
+    personality?: string[];
+    greeting?: string;
+    lore?: string[];
+    style?: string[];
+    adjectives?: string[];
+  }) {
+    return {
       name: nft.name,
       description: nft.description,
       image: nft.image,
@@ -99,26 +224,6 @@ export class LaunchpadService {
           adjectives: [].concat(nft.adjectives || [], nft.personality || []),
         },
       },
-    };
-
-    const uri = await this.uploadMetadataToWeb3Storage(
-      metadata,
-      `metadata.json`,
-    );
-    this.logger.log(`Uploaded metadata to Web3Storage: ${uri}`);
-
-    const serializedTx = await this.constructMintCommonCollectionNftTx({
-      userAddress,
-      name: nft.name,
-      uri,
-      feeInSol: feeAfterDiscount,
-    });
-
-    return {
-      tx: Buffer.from(serializedTx).toString('hex'),
-      fee,
-      feeAfterDiscount,
-      discountPercentage,
     };
   }
 
@@ -183,39 +288,32 @@ export class LaunchpadService {
       owner: publicKey(userAddress),
     });
 
-    const latestBlockhash = await umi.rpc.getLatestBlockhash();
-
-    const versionedTransaction = new VersionedTransaction(
-      new TransactionMessage({
-        payerKey: new PublicKey(userAddress),
-        recentBlockhash: latestBlockhash.blockhash,
-        instructions: [
-          ...txBuilder.getInstructions().map(
-            (i) =>
-              new TransactionInstruction({
-                programId: new PublicKey(i.programId),
-                keys: i.keys.map((k) => ({
-                  pubkey: new PublicKey(k.pubkey),
-                  isSigner: k.isSigner,
-                  isWritable: k.isWritable,
-                })),
-                data: Buffer.from(i.data),
-              }),
+    return {
+      asset,
+      signers: [asset, authority],
+      instructions: [
+        ...txBuilder.getInstructions().map(
+          (i) =>
+            new TransactionInstruction({
+              programId: new PublicKey(i.programId),
+              keys: i.keys.map((k) => ({
+                pubkey: new PublicKey(k.pubkey),
+                isSigner: k.isSigner,
+                isWritable: k.isWritable,
+              })),
+              data: Buffer.from(i.data),
+            }),
+        ),
+        // launchpad fee
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(userAddress),
+          toPubkey: new PublicKey(
+            this.config.get<string>('SOLANA_LAUNCHPAD_FEE_RECIPIENT_ADDRESS'),
           ),
-          // launchpad fee
-          SystemProgram.transfer({
-            fromPubkey: new PublicKey(userAddress),
-            toPubkey: new PublicKey(
-              this.config.get<string>('SOLANA_LAUNCHPAD_FEE_RECIPIENT_ADDRESS'),
-            ),
-            lamports: feeInSol * LAMPORTS_PER_SOL,
-          }),
-        ],
-      }).compileToV0Message(),
-    );
-
-    versionedTransaction.sign([asset, authority]);
-    return versionedTransaction.serialize();
+          lamports: feeInSol * LAMPORTS_PER_SOL,
+        }),
+      ],
+    };
   }
 
   async isXnomadOwner(userAddress: string) {

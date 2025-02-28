@@ -6,7 +6,7 @@ export class LaunchpadController {
   constructor(private readonly launchpadService: LaunchpadService) {}
 
   @Post('/:chain/create-common-collection-nft')
-  createCommonCollectionNft(
+  async createCommonCollectionNft(
     @Param('chain') chain: string,
     @Body()
     body: {
@@ -22,12 +22,26 @@ export class LaunchpadController {
         style?: string[];
         adjectives?: string[];
       };
+      createToken?: {
+        tokenInfo: {
+          name: string;
+          symbol: string;
+          file: string; // image, base64 encoded blob
+          description: string;
+          twitter?: string;
+          telegram?: string;
+          website?: string;
+        };
+        buyAmountSol: number;
+      };
     },
   ) {
-    return this.launchpadService.createCommonCollectionNft(
-      body.userAddress,
-      body.nft,
-    );
+    return this.launchpadService.createCommonCollectionNft({
+      chain,
+      userAddress: body.userAddress,
+      nft: body.nft,
+      createToken: body.createToken,
+    });
   }
 
   @Post('create-w3s-delegate')

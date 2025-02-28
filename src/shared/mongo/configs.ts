@@ -105,4 +105,14 @@ export const COLLECTIONS = [
       },
     ],
   },
+  {
+    db: DB_NAME,
+    name: 'nftPrimaryCoins',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        nftId: 1,
+      },
+    ],
+  },
 ] as const;

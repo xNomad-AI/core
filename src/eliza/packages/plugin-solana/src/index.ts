@@ -5,11 +5,13 @@ import { autoTask } from './actions/autoSwap.js';
 import pumpfun from './actions/pumpfun.js';
 import { airdrop } from './actions/airdrop.js';
 import { transfer } from './actions/transfer.js';
+import {analyze} from './actions/analyze.js';
+import { walletPortfolio } from './actions/wallet.js';
 export { getTokenBalance, getTokenBalances };
 export const solanaPlugin: Plugin = {
   name: 'solana',
   description: 'Solana Plugin for Eliza',
-  actions: [transfer, executeSwap, pumpfun, autoTask, airdrop],
+  actions: [walletPortfolio, analyze, transfer, executeSwap, pumpfun, autoTask, airdrop],
   evaluators: [],
   providers: [],
 };

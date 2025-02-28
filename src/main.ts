@@ -1,6 +1,7 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module.js';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import * as bodyParser from 'body-parser';
+import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,6 +16,8 @@ async function bootstrap() {
     allowedHeaders: '*',
     credentials: true,
   });
+  app.use(bodyParser.default.json({ limit: '5mb' }));
+
   const port = process.env.CORE_SERVER_PORT || 8080;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
