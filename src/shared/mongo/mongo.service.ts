@@ -15,6 +15,7 @@ import {
   NftConfig,
   NftPrimaryCoin,
   NftPrologues,
+  CoreSettings,
 } from './types.js';
 
 @Injectable()
@@ -112,6 +113,10 @@ export class MongoService implements OnModuleInit {
 
   get nftConfigs() {
     return this.getCollection<NftConfig>('nftConfigs');
+  }
+
+  get coreSettings() {
+    return this.getCollection<CoreSettings>('coreSettings');
   }
 
   get nftPrologues() {

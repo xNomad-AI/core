@@ -2,7 +2,7 @@ import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { NftgoService } from '../shared/nftgo.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { CharacterConfig, AICollection, AINft } from '../shared/mongo/types.js';
+import { CharacterConfig, AICollection, AINft, NftConfig } from '../shared/mongo/types.js';
 import {
   AssetsByCollection,
   NEW_AI_NFT_EVENT,
@@ -13,6 +13,7 @@ import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { AddressService } from '../address/address.service.js';
 import { stringToUuid } from '@elizaos/core';
 import { deepMerge, sleep } from '../shared/utils.service.js';
+import { ObjectId, WithId } from 'mongodb';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -80,6 +81,50 @@ export class NftService implements OnApplicationBootstrap {
     }
   }
 
+  async increaseHttpProxyCount(_id: ObjectId) {
+    await this.mongo.coreSettings.updateOne(
+      { _id },
+      {
+        $inc: {
+          'value.count': 1,
+        },
+      },
+    );
+  }
+
+  async decreaseHttpProxyCount(httpProxy: string) {
+    await this.mongo.coreSettings.updateOne(
+      { "value.httpProxy": httpProxy },
+      {
+        $inc: {
+          'value.count': -1,
+        },
+      },
+    );
+  }
+
+  // TODO fix transaction
+  async getNftHttpProxy(nftConfig: WithId<NftConfig>, action: "delete" | "update"): Promise<string | undefined> {
+    const dbProxy = nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
+
+    if (!dbProxy) {
+      const proxies = await this.mongo.coreSettings.find(
+        { category: "httpProxy", "value.product": "datacenterProxies", "value.count": { $lt: 5 } },
+      ).toArray();
+      // sort by p.value.count
+      const sortedProxies = proxies.sort((a, b) => a.value.count - b.value.count);
+      if (sortedProxies.length === 0) return undefined;
+
+      await this.increaseHttpProxyCount(sortedProxies[0]._id);
+      return sortedProxies[0].value.httpProxy;
+      // characterConfig.settings.secrets.TWITTER_HTTP_PROXY = proxy;
+    } else {
+      if (action === "delete") await this.decreaseHttpProxyCount(dbProxy);
+
+      return dbProxy;
+    }
+  }
+
   async updateNftConfig({
     nftId,
     characterConfig,
@@ -91,6 +136,18 @@ export class NftService implements OnApplicationBootstrap {
       nftId,
     });
     characterConfig = deepMerge(nftConfig?.characterConfig, characterConfig);
+
+    // add proxy to agent
+    const dbProxy = nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
+    let action: "delete" | "update" = "update";
+    if (dbProxy && !characterConfig.settings?.secrets?.TWITTER_HTTP_PROXY) {
+      action = "delete";
+    }
+    const proxy = await this.getNftHttpProxy(nftConfig, action);
+    if (proxy) {
+      if (characterConfig.settings?.secrets) characterConfig.settings.secrets.TWITTER_HTTP_PROXY = proxy;
+    }
+
     await this.mongo.nftConfigs.updateOne(
       { nftId },
       {
@@ -118,6 +175,8 @@ export class NftService implements OnApplicationBootstrap {
     await this.mongo.nftConfigs.deleteOne({ nftId });
     const nft = await this.mongo.nfts.findOne({ nftId });
     void this.handleNewAINfts([nft], true);
+
+    // TODO await decreaseHttpProxyCount()
   }
 
   async getAgentOwner(agentId: string) {

@@ -93,6 +93,24 @@ export interface NftConfig {
   characterConfig: CharacterConfig;
 }
 
+export interface CoreSettings {
+  category: "httpProxy",
+  value: {
+    product: "datacenterProxies",
+    username: string,
+    password: string,
+    // dc.oxylabs.io
+    entryPoint: string;
+    // 8001
+    port: string;
+    country: string;
+    assignedIP: string;
+    httpProxy: string;
+    // how many agent using this proxy
+    count: number;
+  };
+}
+
 export interface NftPrologues {
   _id?: string;
   chain: string;
