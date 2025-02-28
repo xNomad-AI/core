@@ -265,10 +265,11 @@ export async function executeAutoTokenSwapTask(
     await runtime.databaseAdapter.removeMemory(id, 'AUTO_TOKEN_SWAP_TASK');
   }
 
-  if (task.startAt && new Date(task.expireAt).getTime() > Date.now()) {
+  if (task.startAt && new Date(task.startAt).getTime() > Date.now()) {
     elizaLogger.info('Task is not ready to start yet');
     return;
   }
+
 
   if (
     task.priceTarget &&
@@ -276,8 +277,7 @@ export async function executeAutoTokenSwapTask(
     task.priceCondition !== 'null' &&
     task.priceTarget !== 'null'
   ) {
-    const tokenCA =
-      task.priceCondition === 'below' ? task.outputTokenCA : task.inputTokenCA;
+    const tokenCA = task.tokenTarget || (task.priceCondition === 'below' ? task.outputTokenCA : task.inputTokenCA);
     const tokenPrice = await getSwapTokenPrice(runtime, tokenCA);
     const tokenPriceMatched =
       task.priceCondition === 'below'
