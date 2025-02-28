@@ -8,7 +8,7 @@ RUN apt-get update && \
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY scripts/ ./scripts/
-COPY src/ ./src/
+COPY src/eliza/packages ./src/eliza/packages
 
 RUN pnpm preinstall
 
