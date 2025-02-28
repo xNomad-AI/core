@@ -111,8 +111,25 @@ Respond with a JSON markdown block containing only the extracted values. Use nul
 }
 \`\`\`
 
-Examples: 
-1. Create an automatic task to buy ai16z with 0.0001 SOL when the token price is below $1.
+# Examples: 
+1. Create an automatic task to buy 74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump with 0.0001 SOL when the token price is below 0.1
+The response should be
+{
+  "inputTokenSymbol": "SOL",
+  "inputTokenCA": null,
+  "outputTokenCA": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
+  "outputTokenSymbol": null,
+  "inputTokenAmount": 0.0001,
+  "inputTokenPercentage": null,
+  "outputTokenAmount": null,
+  "delay": null,
+  "startAt": null,
+  "expireAt": null,
+  "priceCondition": "below",
+  "priceTarget": 0.1,
+  "tokenTarget": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump"
+}
+2. Create an automatic task to buy ai16z with 0.0001 SOL when the token price is below $1.
 The response should be 
 {
   "priceTarget": "1"
@@ -127,7 +144,7 @@ The response should be
   "outputTokenSymbol": "ai16z",
   "inputTokenSymbol": "SOL",
 } 
-2. auto sell 1000 ai16z to SOL when the token price is above $1.
+3. auto sell 1000 ai16z to SOL when the token price is above $1.
 The response should be 
 {
   "priceTarget": "1"
@@ -142,7 +159,7 @@ The response should be
   "outputTokenSymbol": "SOL",
   "inputTokenSymbol": "ai16z",
 } 
-3. auto sell 20% of ai16z to SOL when the token price is above $1.
+4. auto sell 20% of ai16z to SOL when the token price is above $1.
 The response should be 
 {
   "priceTarget": "1"
@@ -248,10 +265,11 @@ export async function executeAutoTokenSwapTask(
     await runtime.databaseAdapter.removeMemory(id, 'AUTO_TOKEN_SWAP_TASK');
   }
 
-  if (task.startAt && new Date(task.expireAt).getTime() > Date.now()) {
+  if (task.startAt && new Date(task.startAt).getTime() > Date.now()) {
     elizaLogger.info('Task is not ready to start yet');
     return;
   }
+
 
   if (
     task.priceTarget &&
@@ -259,8 +277,7 @@ export async function executeAutoTokenSwapTask(
     task.priceCondition !== 'null' &&
     task.priceTarget !== 'null'
   ) {
-    const tokenCA =
-      task.priceCondition === 'below' ? task.outputTokenCA : task.inputTokenCA;
+    const tokenCA = task.tokenTarget || (task.priceCondition === 'below' ? task.outputTokenCA : task.inputTokenCA);
     const tokenPrice = await getSwapTokenPrice(runtime, tokenCA);
     const tokenPriceMatched =
       task.priceCondition === 'below'
