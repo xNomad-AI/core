@@ -9,7 +9,7 @@ export async function initializeClients(
   character: Character,
   runtime: IAgentRuntime,
 ) {
-  const clients = [];
+  const clients: Record<string, any> = [];
   const clientTypes = character.clients?.map((str) => str.toLowerCase()) || [];
 
   // if (clientTypes.includes('auto')) {
@@ -30,7 +30,7 @@ export async function initializeClients(
     try {
       console.log(`Starting Telegram client for ${character.name}`);
       const telegramClient = await TelegramClientInterface.start(runtime);
-      if (telegramClient) clients.push(telegramClient);
+      if (telegramClient) clients['client-telegram'] = telegramClient;
     } catch (e) {
       console.error(
         `Failed to start ${character.name} Telegram client: ${e.message}`,
@@ -51,8 +51,9 @@ export async function initializeClients(
         console.log(`Suspended Twitter client for ${character.name}`);
       } else {
         console.log(`Starting Twitter client for ${character.name}`);
+        // if proxy not exists, get one
         const twitterClients = await TwitterClientInterface.start(runtime);
-        clients.push(twitterClients);
+        clients['client-twitter'] = twitterClients;
       }
     } catch (e) {
       console.error(
@@ -65,7 +66,8 @@ export async function initializeClients(
     for (const plugin of character.plugins) {
       if (plugin.clients) {
         for (const client of plugin.clients) {
-          clients.push(await client.start(runtime));
+          const _client = await client.start(runtime);
+          clients[client.toString()] = _client;
         }
       }
     }
