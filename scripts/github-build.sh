@@ -7,9 +7,11 @@ VERSION=$1
 TARGET_DIR="data/eliza"
 # check if dir exists
 if [ -d "$TARGET_DIR" ]; then
+  git fetch --all
+  git checkout $VERSION
   echo "exists"
 else
-  git clone -b $VERSION https://github.com/benny-personal/eliza.git $TARGET_DIR
+  git clone -b $VERSION https://github.com/xNomad-AI/eliza.git $TARGET_DIR
 fi
 
 cd $TARGET_DIR
