@@ -29,6 +29,7 @@ import {
   getSwapTokenPrice,
   validateAndAssignCA,
   getTokenCABySymbol,
+  isValidSPLTokenAddress,
 } from '../providers/tokenUtils.js';
 import { getSolanaClient, sleep, SolanaClient } from '../providers/solana-client.js';
 import { getRuntimeKey } from '../environment.js';
@@ -278,6 +279,7 @@ export async function executeAutoTokenSwapTask(
     task.priceTarget !== 'null'
   ) {
     const tokenCA = task.tokenTarget || (task.priceCondition === 'below' ? task.outputTokenCA : task.inputTokenCA);
+
     const tokenPrice = await getSwapTokenPrice(runtime, tokenCA);
     const tokenPriceMatched =
       task.priceCondition === 'below'
@@ -591,6 +593,9 @@ async function checkResponse(
     return null;
   }
 
+  if (!isValidSPLTokenAddress(swapReq.tokenTarget)){
+    swapReq.tokenTarget = swapReq.tokenTarget === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : swapReq.outputTokenCA;
+  }
   return swapReq;
 }
 
