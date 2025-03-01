@@ -9,14 +9,12 @@ TARGET_DIR="data/eliza"
 if [ -d "$TARGET_DIR" ]; then
   echo "exists"
 else
-  git clone -b develop https://github.com/xNomad-AI/eliza.git $TARGET_DIR
+  git clone -b $VERSION https://github.com/xNomad-AI/eliza.git $TARGET_DIR
 fi
 
 cd $TARGET_DIR
-git fetch --all
-git checkout $VERSION
-
-# pnpm run clean || true
+git pull
+pnpm run clean || true
 
 node --version
 pnpm install --no-frozen-lockfile
