@@ -60,7 +60,7 @@ export class AgentController {
     @Query('roomId') roomId: string,
     @Query('userId') userId: string,
   ) {
-    await this.elizaManager.deleteAgentMemory(agentId, { roomId, userId });
+    await this.elizaManager.deleteAgentMemory(agentId, { roomId });
   }
 
   @UseGuards(AuthGuard)
