@@ -23,7 +23,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "preinstall": "/bin/bash ./scripts/github-build.sh eafa12943ee527081f311190e0764a3fbf805367"
+    "preinstall": "/bin/bash ./scripts/github-build.sh develop"
   },
   "dependencies": {
     "@bloxroute/solana-trader-client-ts": "^2.2.2",
