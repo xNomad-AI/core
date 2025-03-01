@@ -269,7 +269,6 @@ export class ElizaManagerService {
       !character.settings['modelConfig']
     ) {
       character.settings['modelConfig'] = {
-        temperature: 0.2,
         max_response_length: 4096,
         maxInputTokens: 64000,
       };
