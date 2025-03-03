@@ -23,6 +23,21 @@ You are an expert on crypto currency, and have a wallet on solana. Extract the q
 {{recentMessages}}
 `
 export const walletPortfolio: Action = {
+  functionCallSpec: {
+    name: 'WALLET_PORTFOLIO',
+    strict: true,
+    additionalProperties: false,
+    description: 'Get the wallet total balance or specific token balance in agent wallet',
+    parameters: {
+      type: 'object',
+      properties: {
+        queryType: { type: ['string', 'null'], description: 'The type of query, should be "walletBalance" or "tokenBalance", default is walletBalance' },
+        tokenSymbol: { type: ['string', 'null'], description: 'The token symbol to query, at lease one of tokenSymbol or tokenAddress should be provided when queryType is "tokenBalance"' },
+        tokenAddress: { type: ['string', 'null'], description: 'The token contract address to query, at lease one of tokenSymbol or tokenAddress should be provided when queryType is "tokenBalance"' },
+      },
+      required: ['queryType', 'tokenSymbol', 'tokenAddress'],
+    },
+  },
   name: 'WALLET_PORTFOLIO',
   suppressInitialMessage: true,
   similes: ['WALLET_INFO'],
