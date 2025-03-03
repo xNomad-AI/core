@@ -218,8 +218,27 @@ Respond with a JSON:
 
 Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
 
-
 export default {
+  functionCallSpec: {
+    name: 'CREATE_TOKEN',
+    strict: true,
+    additionalProperties: false,
+    description: 'Create a new token on pumpfun and buy a specified amount using SOL. Requires the token name, symbol and image url, buy amount after create in SOL.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Name of the token to create' },
+        symbol: { type: 'string', description: 'Symbol of the token to create' },
+        imageUrl: { type: ['string', 'null'], description: 'Image URL or attachment file of the token to create' },
+        description: { type: ['string', 'null'], description: 'Description of the token to create' },
+        twitter: { type: ['string', 'null'], description: 'Twitter URL of the token to create' },
+        website: { type: ['string', 'null'], description: 'Website URL of the token to create' },
+        telegram: { type: ['string', 'null'] , description: 'Telegram URL of the token to create' },
+        buyAmountSol: { type: ['number', 'null'], description: 'Amount of SOL to buy after token creation' },
+      },
+      required: ['name', 'symbol', 'imageUrl', 'description', 'twitter', 'website', 'telegram', 'buyAmountSol'],
+    },
+  },
   name: 'CREATE_TOKEN',
   similes: ['CREATE_PUMPFUN_TOKEN'],
   suppressInitialMessage: true,

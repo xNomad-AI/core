@@ -9,23 +9,22 @@ import {
 } from '@elizaos/core';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getTokensBySymbol } from '../providers/tokenUtils.js';
-
-const analyzeTokenTemplate = `
-#Task
-You are an expert on crypto currency, extract the token symbol or contract address from recent messages below that user want to analyze.
-Respond a json object of the analyze token symbol or contract, if field not found, set field value to null.
-- tokenSymbol: The token symbol to analyze, at least one of tokenSymbol or tokenAddress should be provided.
-- tokenAddress: The token contract address to analyze, should be a 44 character string, at least one of tokenSymbol or tokenAddress should be provided.
-- analyze: The types of analysis to perform, shoule be an array, items can be "info", "news", "twitter", default to ["info", "twitter", "news"].
-{
-    "tokenSymbol": string | null,
-    "tokenAddress": string | null,
-    "analyze": ["info" | "news" | "twitter"]
-}
-
-{{recentMessages}}
-`
 export const analyze: Action = {
+  functionCallSpec: {
+    name: 'ANALYZE_TOKEN',
+    strict: true,
+    additionalProperties: false,
+    description: 'Analyze the token trade info, twitter binding and news about the token by given symbol or contract address',
+    parameters: {
+      type: 'object',
+      properties: {
+        tokenSymbol: { type: ['string', 'null'], description: 'The token symbol to analyze, at least one of tokenSymbol or tokenAddress should be provided' },
+        tokenAddress: { type: ['string', 'null'], description: 'The token contract address to analyze, should be a 44 character string, at least one of tokenSymbol or tokenAddress should be provided' },
+        analyze: { type: ['array', 'null'], description: 'The types of analysis to perform, shoule be an array, items can be "info", "news", "twitter", default to ["info", "twitter", "news"]' },
+      },
+      required: ['tokenSymbol', 'tokenAddress', 'analyze'],
+    },
+  },
   name: 'ANALYZE_TOKEN',
   suppressInitialMessage: true,
   similes: ['ANALYZE_TOKEN_INFO', 'TOKEN_REPORT'],
@@ -40,21 +39,12 @@ export const analyze: Action = {
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
   ): Promise<boolean> => {
-    const context = composeContext({
-      state,
-      template: analyzeTokenTemplate,
-    });
-    let response = await generateObjectDeprecated({
-      runtime,
-      context: context,
-      modelClass: ModelClass.LARGE,
-    });
-    response = convertNullStrings(response);
+    let response = convertNullStrings(state.actionParameters) as any;
     elizaLogger.log('ANALYZE_TOKEN Response:', response);
 
     if (response.tokenSymbol && !response.tokenAddress){
       const tokens = await getTokensBySymbol(runtime, response.tokenSymbol);
-      response.tokenAddress = tokens[0]?.address;
+      response.tokenAddress = tokens?.[0]?.address;
     }
 
     if (!response.tokenAddress) {

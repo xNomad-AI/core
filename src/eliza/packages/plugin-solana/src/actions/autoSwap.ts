@@ -308,6 +308,29 @@ export async function executeAutoTokenSwapTask(
 }
 
 export const autoTask: Action = {
+  functionCallSpec: {
+    name: 'AUTO_TASK',
+    strict: true,
+    additionalProperties: false,
+    description: 'Perform auto token swap. Enables the agent to automatically execute trades when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers, optimizing trading strategies without manual intervention.',
+    parameters: {
+      type: 'object',
+      properties: {
+        inputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
+        inputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
+        outputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
+        outputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
+        inputTokenAmount: { type: ['number', 'null'], description: 'Amount of inputToken to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
+        inputTokenPercentage: { type: ['number', 'null'], description: 'Percentage of inputToken balance to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
+        outputTokenAmount: { type: ['number', 'null'], description: 'Amount of outputToken to swap' },
+        priceCondition: { type: ['string', 'null'], description: 'Price condition for the swap, enum "below" or "above", at lease one of delay or priceTarget is provided' },
+        priceTarget: { type: ['number', 'null'], description: 'Price target for the swap' },
+        tokenTarget: { type: ['string', 'null'], description: 'Token address or symbol of the trigger and price targets to' },
+        delay: { type: ['string', 'null'], description: 'Delay for the swap, e.g., "after 5 minutes" or "below 0.00169", at lease one of delay or priceTarget is provided' },
+      },
+      required: ['inputTokenSymbol', 'outputTokenSymbol', 'inputTokenCA', 'outputTokenCA', 'inputTokenAmount', 'inputTokenPercentage', 'outputTokenAmount', 'priceCondition', 'priceTarget', 'delay'],
+    },
+  },
   name: 'AUTO_TASK',
   similes: [
     'AUTO_BUY_TOKEN_TASK',
@@ -424,17 +447,8 @@ async function checkResponse(
     return null;
   }
 
-  const swapContext = composeContext({
-    state,
-    template: autoSwapTemplate,
-  });
-
   // generate formatted response from chat
-  let swapReq = await generateObjectDeprecated({
-    runtime,
-    context: swapContext,
-    modelClass: ModelClass.LARGE,
-  }) as AutoSwapTask;
+  let swapReq = state.actionParameters as AutoSwapTask;
   swapReq = convertNullStrings(swapReq);
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);

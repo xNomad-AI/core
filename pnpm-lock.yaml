@@ -20,25 +20,25 @@ importers:
         version: 0.30.1(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
       '@elizaos/adapter-mongodb':
         specifier: file:data/eliza/packages/adapter-mongodb
-        version: file:data/eliza/packages/adapter-mongodb(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: file:data/eliza/packages/adapter-mongodb(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/client-direct':
         specifier: file:data/eliza/packages/client-direct
-        version: file:data/eliza/packages/client-direct(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)
+        version: file:data/eliza/packages/client-direct(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)
       '@elizaos/client-telegram':
         specifier: file:data/eliza/packages/client-telegram
-        version: file:data/eliza/packages/client-telegram(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: file:data/eliza/packages/client-telegram(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/client-twitter':
-        specifier: github:jinbangyi/client-twitter#ebcd34b9385fc77e90312dea8ea2a365716d590e
-        version: https://codeload.github.com/jinbangyi/client-twitter/tar.gz/ebcd34b9385fc77e90312dea8ea2a365716d590e(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        specifier: file:data/eliza/packages/client-twitter
+        version: file:data/eliza/packages/client-twitter(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/core':
         specifier: file:data/eliza/packages/core
-        version: file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/plugin-solana':
         specifier: workspace:*
         version: link:src/eliza/packages/plugin-solana
       '@elizaos/plugin-tee':
         specifier: file:data/eliza/packages/plugin-tee
-        version: file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(postcss@8.5.3)(react@19.0.0)(rollup@4.34.8)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)
+        version: file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(postcss@8.5.3)(react@19.0.0)(rollup@4.34.8)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)
       '@ipld/dag-ucan':
         specifier: 3.4.5
         version: 3.4.5
@@ -979,9 +979,8 @@ packages:
   '@elizaos/client-telegram@file:data/eliza/packages/client-telegram':
     resolution: {directory: data/eliza/packages/client-telegram, type: directory}
 
-  '@elizaos/client-twitter@https://codeload.github.com/jinbangyi/client-twitter/tar.gz/ebcd34b9385fc77e90312dea8ea2a365716d590e':
-    resolution: {tarball: https://codeload.github.com/jinbangyi/client-twitter/tar.gz/ebcd34b9385fc77e90312dea8ea2a365716d590e}
-    version: 0.25.6-alpha.1
+  '@elizaos/client-twitter@file:data/eliza/packages/client-twitter':
+    resolution: {directory: data/eliza/packages/client-twitter, type: directory}
     peerDependencies:
       whatwg-url: 7.1.0
 
@@ -3467,6 +3466,10 @@ packages:
   '@tensor-oss/tensorswap-sdk@4.5.0':
     resolution: {integrity: sha512-eNM6k1DT5V/GadxSHm8//z2wlLl8/EcA0KFQXKaxRba/2MirNySsoVGxDXO2UdOI4eZMse8f+8Et3P63WWjsIw==}
 
+  '@the-convocation/twitter-scraper@0.15.1':
+    resolution: {integrity: sha512-m/wagEV+rEgJoyCB3lVwlugTDvQb2O7d0LX8q3onJuDNoz5BGZlWkqgMNJW/+RBZ0hWKs5EqitGsOkMLl4VOFg==}
+    engines: {node: '>=16'}
+
   '@tiplink/api@0.3.1':
     resolution: {integrity: sha512-HjnXethjKOHTYT0IP1BewlMS7wZJ+hsoDgRa6jA1cNvxvwQjE1WHOyvOUPpAi+DJDw4P4/omFtyHr7dwLfnB/g==}
 
@@ -4030,10 +4033,6 @@ packages:
 
   agent-twitter-client@0.0.18:
     resolution: {integrity: sha512-HncH5mlFcGYLEl5wNEkwtdolcmdxqEMIsqO4kTqiTp5P19O25Zr4P6LNJZz1UTjPRyXDxj+BLmmk/Ou7O0QzEg==}
-
-  agent-twitter-client@https://codeload.github.com/jinbangyi/agent-twitter-client/tar.gz/96e29a1b4de23b3dc59f38276c4176879ca5ae9e:
-    resolution: {tarball: https://codeload.github.com/jinbangyi/agent-twitter-client/tar.gz/96e29a1b4de23b3dc59f38276c4176879ca5ae9e}
-    version: 0.0.18
 
   agentkeepalive@4.6.0:
     resolution: {integrity: sha512-kja8j7PjmncONqaTsB8fQ+wE2mSU2DJ9D4XKoJ5PFWIdRMa6SLSN1ff4mOr4jCbfRSsxR4keIiySJU0N9T5hIQ==}
@@ -4936,6 +4935,9 @@ packages:
 
   cross-fetch@3.2.0:
     resolution: {integrity: sha512-Q+xVJLoGOeIMXZmbUK4HYk+69cQH6LudR0Vu/pRm2YlU/hDV9CiS0gKUMaWY5f2NeUH9C1nV3bsTlCo0FsTV1Q==}
+
+  cross-fetch@4.1.0:
+    resolution: {integrity: sha512-uKm5PU+MHTootlWEY+mZ4vvXoCn4fLQxT9dSc1sXVMSFkINTJVN8cAQROpwcKm8bJ/c7rgZVIBWzH5T78sNZZw==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -9094,9 +9096,6 @@ packages:
   undici-types@6.20.0:
     resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
 
-  undici-types@7.3.0:
-    resolution: {integrity: sha512-z2pHpkN2BEJl3QlQo0GtfGCyuhuBbWX60vzGwyn7ex/seM2UkvyGEfEV0Qb9pXc5StNfcJpsstgaf2YTEJa63Q==}
-
   undici@6.19.8:
     resolution: {integrity: sha512-U8uCCl2x9TK3WANvmBavymRzxbfFYG+tAu+fgx3zxQy3qdagQqBLwJVrdyO1TBfUXvfKveMKJZhpvUYoOjM+4g==}
     engines: {node: '>=18.17'}
@@ -9562,9 +9561,6 @@ packages:
 
   zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
-
-  zod@3.24.1:
-    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
 
   zod@3.24.2:
     resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
@@ -10848,9 +10844,9 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@elizaos/adapter-mongodb@file:data/eliza/packages/adapter-mongodb(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@elizaos/adapter-mongodb@file:data/eliza/packages/adapter-mongodb(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       mongodb: 6.13.1
       uuid: 9.0.1
     transitivePeerDependencies:
@@ -10886,9 +10882,9 @@ snapshots:
       - vue
       - ws
 
-  '@elizaos/client-direct@file:data/eliza/packages/client-direct(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)':
+  '@elizaos/client-direct@file:data/eliza/packages/client-direct(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@types/body-parser': 1.19.5
       '@types/cors': 2.8.17
       '@types/express': 5.0.0
@@ -10897,7 +10893,7 @@ snapshots:
       discord.js: 14.16.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       express: 4.21.1
       multer: 1.4.5-lts.1
-      openai: 4.73.0(encoding@0.1.13)(zod@3.24.2)
+      openai: 4.73.0(encoding@0.1.13)(zod@3.23.8)
       whatwg-url: 14.1.1
     transitivePeerDependencies:
       - '@google-cloud/vertexai'
@@ -10928,9 +10924,9 @@ snapshots:
       - ws
       - zod
 
-  '@elizaos/client-telegram@file:data/eliza/packages/client-telegram(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@elizaos/client-telegram@file:data/eliza/packages/client-telegram(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@telegraf/types': 7.1.0
       telegraf: 4.16.3(encoding@0.1.13)
       zod: 3.23.8
@@ -10960,19 +10956,15 @@ snapshots:
       - vue
       - ws
 
-  '@elizaos/client-twitter@https://codeload.github.com/jinbangyi/client-twitter/tar.gz/ebcd34b9385fc77e90312dea8ea2a365716d590e(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@elizaos/client-twitter@file:data/eliza/packages/client-twitter(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      agent-twitter-client: https://codeload.github.com/jinbangyi/agent-twitter-client/tar.gz/96e29a1b4de23b3dc59f38276c4176879ca5ae9e(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      axios: 1.8.1
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@the-convocation/twitter-scraper': 0.15.1(encoding@0.1.13)
+      agent-twitter-client: 0.0.18(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       discord.js: 14.16.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       glob: 11.0.0
-      https-proxy-agent: 7.0.6
-      pino: 9.6.0
-      prom-client: 15.1.3
-      sharp: 0.33.5
       whatwg-url: 14.1.1
-      zod: 3.24.1
+      zod: 3.23.8
     transitivePeerDependencies:
       - '@google-cloud/vertexai'
       - '@langchain/anthropic'
@@ -10985,6 +10977,7 @@ snapshots:
       - '@langchain/mistralai'
       - '@langchain/ollama'
       - aws-crt
+      - axios
       - bufferutil
       - cheerio
       - debug
@@ -10997,6 +10990,65 @@ snapshots:
       - svelte
       - typeorm
       - utf-8-validate
+      - vue
+      - ws
+
+  '@elizaos/core@file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@ai-sdk/amazon-bedrock': 1.1.0(zod@3.23.8)
+      '@ai-sdk/anthropic': 0.0.56(zod@3.23.8)
+      '@ai-sdk/google': 0.0.55(zod@3.23.8)
+      '@ai-sdk/google-vertex': 0.0.43(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(zod@3.23.8)
+      '@ai-sdk/groq': 0.0.3(zod@3.23.8)
+      '@ai-sdk/mistral': 1.0.9(zod@3.23.8)
+      '@ai-sdk/openai': 1.0.5(zod@3.23.8)
+      '@fal-ai/client': 1.2.0
+      '@huggingface/transformers': 3.3.3
+      '@tavily/core': 0.0.2
+      '@types/uuid': 10.0.0
+      ai: 3.4.33(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(zod@3.23.8)
+      anthropic-vertex-ai: 1.0.2(encoding@0.1.13)(zod@3.23.8)
+      dotenv: 16.4.5
+      fastembed: 1.14.1
+      fastestsmallesttextencoderdecoder: 1.0.22
+      gaxios: 6.7.1(encoding@0.1.13)
+      glob: 11.0.0
+      handlebars: 4.7.8
+      js-sha1: 0.7.0
+      js-tiktoken: 1.0.15
+      langchain: 0.3.6(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(handlebars@4.7.8)(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      ollama-ai-provider: 0.16.1(zod@3.23.8)
+      openai: 4.73.0(encoding@0.1.13)(zod@3.23.8)
+      pino: 9.6.0
+      pino-pretty: 13.0.0
+      tinyld: 1.3.4
+      together-ai: 0.7.0(encoding@0.1.13)
+      unique-names-generator: 4.7.1
+      uuid: 11.0.3
+      zod: 3.23.8
+    transitivePeerDependencies:
+      - '@google-cloud/vertexai'
+      - '@langchain/anthropic'
+      - '@langchain/aws'
+      - '@langchain/cohere'
+      - '@langchain/core'
+      - '@langchain/google-genai'
+      - '@langchain/google-vertexai'
+      - '@langchain/groq'
+      - '@langchain/mistralai'
+      - '@langchain/ollama'
+      - aws-crt
+      - axios
+      - cheerio
+      - debug
+      - encoding
+      - peggy
+      - react
+      - solid-js
+      - sswr
+      - supports-color
+      - svelte
+      - typeorm
       - vue
       - ws
 
@@ -11059,77 +11111,18 @@ snapshots:
       - vue
       - ws
 
-  '@elizaos/core@file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@elizaos/plugin-tee@file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(postcss@8.5.3)(react@19.0.0)(rollup@4.34.8)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)':
     dependencies:
-      '@ai-sdk/amazon-bedrock': 1.1.0(zod@3.23.8)
-      '@ai-sdk/anthropic': 0.0.56(zod@3.23.8)
-      '@ai-sdk/google': 0.0.55(zod@3.23.8)
-      '@ai-sdk/google-vertex': 0.0.43(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(zod@3.23.8)
-      '@ai-sdk/groq': 0.0.3(zod@3.23.8)
-      '@ai-sdk/mistral': 1.0.9(zod@3.23.8)
-      '@ai-sdk/openai': 1.0.5(zod@3.23.8)
-      '@fal-ai/client': 1.2.0
-      '@huggingface/transformers': 3.3.3
-      '@tavily/core': 0.0.2
-      '@types/uuid': 10.0.0
-      ai: 3.4.33(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(zod@3.23.8)
-      anthropic-vertex-ai: 1.0.2(encoding@0.1.13)(zod@3.23.8)
-      dotenv: 16.4.5
-      fastembed: 1.14.1
-      fastestsmallesttextencoderdecoder: 1.0.22
-      gaxios: 6.7.1(encoding@0.1.13)
-      glob: 11.0.0
-      handlebars: 4.7.8
-      js-sha1: 0.7.0
-      js-tiktoken: 1.0.15
-      langchain: 0.3.6(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(handlebars@4.7.8)(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      ollama-ai-provider: 0.16.1(zod@3.23.8)
-      openai: 4.73.0(encoding@0.1.13)(zod@3.23.8)
-      pino: 9.6.0
-      pino-pretty: 13.0.0
-      tinyld: 1.3.4
-      together-ai: 0.7.0(encoding@0.1.13)
-      unique-names-generator: 4.7.1
-      uuid: 11.0.3
-      zod: 3.23.8
-    transitivePeerDependencies:
-      - '@google-cloud/vertexai'
-      - '@langchain/anthropic'
-      - '@langchain/aws'
-      - '@langchain/cohere'
-      - '@langchain/core'
-      - '@langchain/google-genai'
-      - '@langchain/google-vertexai'
-      - '@langchain/groq'
-      - '@langchain/mistralai'
-      - '@langchain/ollama'
-      - aws-crt
-      - axios
-      - cheerio
-      - debug
-      - encoding
-      - peggy
-      - react
-      - solid-js
-      - sswr
-      - supports-color
-      - svelte
-      - typeorm
-      - vue
-      - ws
-
-  '@elizaos/plugin-tee@file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(postcss@8.5.3)(react@19.0.0)(rollup@4.34.8)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.6.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.6.3))(whatwg-url@7.1.0)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.23.8)':
-    dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.6.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@phala/dstack-sdk': 0.1.7(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.23.8)
-      '@solana/spl-token': 0.4.9(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.6.3)(utf-8-validate@5.0.10)
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@phala/dstack-sdk': 0.1.7(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.23.8)
+      '@solana/spl-token': 0.4.9(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@5.0.10)
       '@solana/web3.js': 1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
       bignumber.js: 9.1.2
       bs58: 6.0.0
       node-cache: 5.1.2
-      pumpdotfun-sdk: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.8)(typescript@5.6.3)(utf-8-validate@5.0.10)
-      tsup: 8.3.5(postcss@8.5.3)(typescript@5.6.3)(yaml@2.7.0)
-      whatwg-url: 7.1.0
+      pumpdotfun-sdk: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.8)(typescript@5.7.3)(utf-8-validate@5.0.10)
+      tsup: 8.3.5(postcss@8.5.3)(typescript@5.7.3)
+      whatwg-url: 14.1.1
     transitivePeerDependencies:
       - '@google-cloud/vertexai'
       - '@langchain/anthropic'
@@ -11168,18 +11161,18 @@ snapshots:
       - yaml
       - zod
 
-  '@elizaos/plugin-tee@file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(postcss@8.5.3)(react@19.0.0)(rollup@4.34.8)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)':
+  '@elizaos/plugin-tee@file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(postcss@8.5.3)(react@19.0.0)(rollup@4.34.8)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.6.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.6.3))(whatwg-url@7.1.0)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.23.8)':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@phala/dstack-sdk': 0.1.7(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.24.2)
-      '@solana/spl-token': 0.4.9(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@5.0.10)
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.6.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@phala/dstack-sdk': 0.1.7(bufferutil@4.0.9)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.23.8)
+      '@solana/spl-token': 0.4.9(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.6.3)(utf-8-validate@5.0.10)
       '@solana/web3.js': 1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
       bignumber.js: 9.1.2
       bs58: 6.0.0
       node-cache: 5.1.2
-      pumpdotfun-sdk: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.8)(typescript@5.7.3)(utf-8-validate@5.0.10)
-      tsup: 8.3.5(postcss@8.5.3)(typescript@5.7.3)
-      whatwg-url: 14.1.1
+      pumpdotfun-sdk: 1.3.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.8)(typescript@5.6.3)(utf-8-validate@5.0.10)
+      tsup: 8.3.5(postcss@8.5.3)(typescript@5.6.3)(yaml@2.7.0)
+      whatwg-url: 7.1.0
     transitivePeerDependencies:
       - '@google-cloud/vertexai'
       - '@langchain/anthropic'
@@ -12537,6 +12530,23 @@ snapshots:
     dependencies:
       buffer: 6.0.3
 
+  '@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))':
+    dependencies:
+      '@cfworker/json-schema': 4.1.1
+      ansi-styles: 5.2.0
+      camelcase: 6.3.0
+      decamelize: 1.2.0
+      js-tiktoken: 1.0.19
+      langsmith: 0.3.11(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))
+      mustache: 4.2.0
+      p-queue: 6.6.2
+      p-retry: 4.6.2
+      uuid: 10.0.0
+      zod: 3.23.8
+      zod-to-json-schema: 3.24.3(zod@3.23.8)
+    transitivePeerDependencies:
+      - openai
+
   '@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2))':
     dependencies:
       '@cfworker/json-schema': 4.1.1
@@ -12553,6 +12563,18 @@ snapshots:
       zod-to-json-schema: 3.24.3(zod@3.23.8)
     transitivePeerDependencies:
       - openai
+
+  '@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@langchain/core': 0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))
+      '@langchain/openai': 0.3.17(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      groq-sdk: 0.5.0(encoding@0.1.13)
+      zod: 3.23.8
+      zod-to-json-schema: 3.24.3(zod@3.23.8)
+    transitivePeerDependencies:
+      - encoding
+      - ws
+    optional: true
 
   '@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
@@ -12590,6 +12612,17 @@ snapshots:
     transitivePeerDependencies:
       - react
 
+  '@langchain/openai@0.3.17(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@langchain/core': 0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))
+      js-tiktoken: 1.0.19
+      openai: 4.85.4(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)
+      zod: 3.23.8
+      zod-to-json-schema: 3.24.3(zod@3.23.8)
+    transitivePeerDependencies:
+      - encoding
+      - ws
+
   '@langchain/openai@0.3.17(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
       '@langchain/core': 0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2))
@@ -12600,6 +12633,11 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - ws
+
+  '@langchain/textsplitters@0.1.0(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))':
+    dependencies:
+      '@langchain/core': 0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))
+      js-tiktoken: 1.0.15
 
   '@langchain/textsplitters@0.1.0(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))':
     dependencies:
@@ -13767,9 +13805,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@phala/dstack-sdk@0.1.7(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.24.2)':
+  '@phala/dstack-sdk@0.1.7(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.23.8)':
     optionalDependencies:
-      viem: 2.23.5(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.24.2)
+      viem: 2.23.5(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.23.8)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -15455,6 +15493,19 @@ snapshots:
       - typescript
       - utf-8-validate
 
+  '@the-convocation/twitter-scraper@0.15.1(encoding@0.1.13)':
+    dependencies:
+      '@sinclair/typebox': 0.32.35
+      cross-fetch: 4.1.0(encoding@0.1.13)
+      headers-polyfill: 3.3.0
+      json-stable-stringify: 1.2.1
+      otpauth: 9.3.6
+      set-cookie-parser: 2.7.1
+      tough-cookie: 4.1.4
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - encoding
+
   '@tiplink/api@0.3.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(sodium-native@3.4.1)(utf-8-validate@5.0.10)':
     dependencies:
       '@coral-xyz/anchor': 0.29.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
@@ -16231,10 +16282,10 @@ snapshots:
       zod: 3.23.8
     optional: true
 
-  abitype@1.0.8(typescript@5.7.3)(zod@3.24.2):
+  abitype@1.0.8(typescript@5.7.3)(zod@3.23.8):
     optionalDependencies:
       typescript: 5.7.3
-      zod: 3.24.2
+      zod: 3.23.8
     optional: true
 
   abort-controller@3.0.0:
@@ -16286,23 +16337,6 @@ snapshots:
       tslib: 2.8.1
       twitter-api-v2: 1.20.2
       undici: 7.3.0
-      ws: 8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  agent-twitter-client@https://codeload.github.com/jinbangyi/agent-twitter-client/tar.gz/96e29a1b4de23b3dc59f38276c4176879ca5ae9e(bufferutil@4.0.9)(utf-8-validate@5.0.10):
-    dependencies:
-      '@roamhq/wrtc': 0.8.0
-      '@sinclair/typebox': 0.32.35
-      headers-polyfill: 3.3.0
-      json-stable-stringify: 1.2.1
-      otpauth: 9.3.6
-      set-cookie-parser: 2.7.1
-      tough-cookie: 4.1.4
-      twitter-api-v2: 1.20.2
-      undici: 7.3.0
-      undici-types: 7.3.0
       ws: 8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
@@ -17401,6 +17435,12 @@ snapshots:
       node-fetch: 2.6.1
 
   cross-fetch@3.2.0(encoding@0.1.13):
+    dependencies:
+      node-fetch: 2.7.0(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+
+  cross-fetch@4.1.0(encoding@0.1.13):
     dependencies:
       node-fetch: 2.7.0(encoding@0.1.13)
     transitivePeerDependencies:
@@ -19730,6 +19770,30 @@ snapshots:
       - openai
       - ws
 
+  langchain@0.3.6(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(handlebars@4.7.8)(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)):
+    dependencies:
+      '@langchain/core': 0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))
+      '@langchain/openai': 0.3.17(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@langchain/textsplitters': 0.1.0(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))
+      js-tiktoken: 1.0.19
+      js-yaml: 4.1.0
+      jsonpointer: 5.0.1
+      langsmith: 0.2.15(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))
+      openapi-types: 12.1.3
+      p-retry: 4.6.2
+      uuid: 10.0.0
+      yaml: 2.7.0
+      zod: 3.23.8
+      zod-to-json-schema: 3.24.3(zod@3.23.8)
+    optionalDependencies:
+      '@langchain/groq': 0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      axios: 1.8.1
+      handlebars: 4.7.8
+    transitivePeerDependencies:
+      - encoding
+      - openai
+      - ws
+
   langchain@0.3.6(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(handlebars@4.7.8)(openai@4.73.0(encoding@0.1.13)(zod@3.23.8))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)):
     dependencies:
       '@langchain/core': 0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2))
@@ -19765,6 +19829,18 @@ snapshots:
     optionalDependencies:
       openai: 4.73.0(encoding@0.1.13)(zod@3.23.8)
 
+  langsmith@0.3.11(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)):
+    dependencies:
+      '@types/uuid': 10.0.0
+      chalk: 4.1.2
+      console-table-printer: 2.12.1
+      p-queue: 6.6.2
+      p-retry: 4.6.2
+      semver: 7.7.1
+      uuid: 10.0.0
+    optionalDependencies:
+      openai: 4.73.0(encoding@0.1.13)(zod@3.23.8)
+
   langsmith@0.3.11(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)):
     dependencies:
       '@types/uuid': 10.0.0
@@ -19775,7 +19851,7 @@ snapshots:
       semver: 7.7.1
       uuid: 10.0.0
     optionalDependencies:
-      openai: 4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)
+      openai: 4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)
 
   latest-version@9.0.0:
     dependencies:
@@ -20488,7 +20564,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  openai@4.73.0(encoding@0.1.13)(zod@3.24.2):
+  openai@4.85.4(encoding@0.1.13)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8):
     dependencies:
       '@types/node': 18.19.76
       '@types/node-fetch': 2.6.12
@@ -20498,7 +20574,8 @@ snapshots:
       formdata-node: 4.4.1
       node-fetch: 2.7.0(encoding@0.1.13)
     optionalDependencies:
-      zod: 3.24.2
+      ws: 7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      zod: 3.23.8
     transitivePeerDependencies:
       - encoding
 
@@ -20516,22 +20593,6 @@ snapshots:
       zod: 3.23.8
     transitivePeerDependencies:
       - encoding
-
-  openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2):
-    dependencies:
-      '@types/node': 18.19.76
-      '@types/node-fetch': 2.6.12
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0(encoding@0.1.13)
-    optionalDependencies:
-      ws: 8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      zod: 3.24.2
-    transitivePeerDependencies:
-      - encoding
-    optional: true
 
   openapi-types@12.1.3: {}
 
@@ -20579,14 +20640,14 @@ snapshots:
       - zod
     optional: true
 
-  ox@0.6.7(typescript@5.7.3)(zod@3.24.2):
+  ox@0.6.7(typescript@5.7.3)(zod@3.23.8):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/curves': 1.8.1
       '@noble/hashes': 1.7.1
       '@scure/bip32': 1.6.2
       '@scure/bip39': 1.5.4
-      abitype: 1.0.8(typescript@5.7.3)(zod@3.24.2)
+      abitype: 1.0.8(typescript@5.7.3)(zod@3.23.8)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.7.3
@@ -22381,8 +22442,6 @@ snapshots:
 
   undici-types@6.20.0: {}
 
-  undici-types@7.3.0: {}
-
   undici@6.19.8: {}
 
   undici@6.21.1: {}
@@ -22545,15 +22604,15 @@ snapshots:
       - zod
     optional: true
 
-  viem@2.23.5(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.24.2):
+  viem@2.23.5(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.23.8):
     dependencies:
       '@noble/curves': 1.8.1
       '@noble/hashes': 1.7.1
       '@scure/bip32': 1.6.2
       '@scure/bip39': 1.5.4
-      abitype: 1.0.8(typescript@5.7.3)(zod@3.24.2)
+      abitype: 1.0.8(typescript@5.7.3)(zod@3.23.8)
       isows: 1.0.6(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      ox: 0.6.7(typescript@5.7.3)(zod@3.24.2)
+      ox: 0.6.7(typescript@5.7.3)(zod@3.23.8)
       ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     optionalDependencies:
       typescript: 5.7.3
@@ -22878,8 +22937,6 @@ snapshots:
       zod: 3.24.2
 
   zod@3.23.8: {}
-
-  zod@3.24.1: {}
 
   zod@3.24.2: {}
 
