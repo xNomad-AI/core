@@ -257,7 +257,12 @@ export default {
       modelClass: ModelClass.LARGE,
     });
     content = convertNullStrings(content);
-
+    if (content.symbol?.startsWith('$')) {
+      content.symbol = content.symbol.slice(1);
+    }
+    if (content.name?.startsWith('$')) {
+      content.name = content.name.slice(1);
+    }
     elizaLogger.info('Generated content:', content);
 
     const {
