@@ -1,5 +1,33 @@
 import { Type } from 'class-transformer';
-import { ValidateNested, IsEmail, IsString, IsNotEmpty, Matches, MinLength, IsOptional, IsInt, Min, Max } from 'class-validator';
+import { ValidateNested, IsEmail, IsString, IsNotEmpty, Matches, MinLength, IsOptional, IsInt, Min, Max, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, registerDecorator, IsNotIn } from 'class-validator';
+
+// Custom validation constraint
+@ValidatorConstraint({ async: false })
+class IsGreaterThanConstraint implements ValidatorConstraintInterface {
+  validate(value: any, args: ValidationArguments) {
+    const relatedField = args.object[args.constraints[0]];
+    return value > relatedField;
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    return `${args.property} must be greater than ${args.constraints[0]}`;
+  }
+}
+
+// Custom decorator using the constraint
+function IsGreaterThan(property: string) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      target: object.constructor,
+      propertyName: propertyName,
+      options: {
+        message: `${propertyName} must be greater than ${property}`,
+      },
+      constraints: [property],
+      validator: IsGreaterThanConstraint,
+    });
+  };
+}
 
 class UpdateTwitterConfigDtoSecrets {
   @IsString()
@@ -41,12 +69,13 @@ class UpdateTwitterConfigDtoSecrets {
   TELEGRAM_BOT_TOKEN?: string;
 
   @IsInt()
-  @Min(5)
+  @Min(4)
   @IsOptional()
   // in minutes
   POST_INTERVAL_MIN?: number
 
   @IsInt()
+  @IsGreaterThan('POST_INTERVAL_MIN')
   @IsOptional()
   // in minutes
   POST_INTERVAL_MAX?: number
@@ -85,7 +114,7 @@ class UpdateTwitterConfigDtoCharacterConfig {
 }
 
 export class UpdateTwitterConfigDto {
-  @IsNotEmpty()
+  @IsNotIn([undefined, null])
   testContent: string;
 
   @IsNotEmpty()
