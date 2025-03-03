@@ -33,7 +33,7 @@ import {
 } from '../providers/walletUtils.js';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getRuntimeKey } from '../environment.js';
-import { SolanaClient } from '../providers/solana-client.js';
+import { SolanaClient, STANDARD_SOL_ADDRESS } from '../providers/solana-client.js';
 
 export interface TransferContent extends Content {
   tokenAddress: string | null;
@@ -202,7 +202,7 @@ export const transfer: Action = {
     }
 
     if (!content.tokenAddress && content.tokenSymbol?.toUpperCase() === 'SOL') {
-      content.tokenAddress = getRuntimeKey(runtime, 'SOL_ADDRESS');
+      content.tokenAddress = STANDARD_SOL_ADDRESS;
     }
 
     const { keypair: senderKeypair } = await getWalletKey(runtime, true);
@@ -262,12 +262,11 @@ export const transfer: Action = {
         getRuntimeKey(runtime, 'SOLANA_RPC_URL'),
         'confirmed',
       );
+      const solanaClient = new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair);
       const mintPubkey = new PublicKey(content.tokenAddress);
       const recipientPubkey = new PublicKey(content.recipient);
 
-      const mintInfo = await connection.getParsedAccountInfo(mintPubkey);
-      const mintDecimals = (mintInfo.value?.data as any)?.parsed?.info
-        ?.decimals;
+      const mintDecimals = await solanaClient.getMintDecimals(content.tokenAddress);
       if (!mintDecimals || isNaN(mintDecimals)) {
         callback({
           text: `Token ${content.tokenAddress} not found. Please provide a valid token address.`,
@@ -279,17 +278,10 @@ export const transfer: Action = {
       );
 
       const solBalance = await connection.getBalance(senderKeypair.publicKey);
-      let solTransferOut =
-        content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS')
-          ? Number(mintAmount)
-          : 0;
-      const programId = await new SolanaClient(
-        getRuntimeKey(runtime, 'SOLANA_RPC_URL'),
-        senderKeypair,
-      ).getTokenProgramId(content.tokenAddress);
+      let solTransferOut = content.tokenAddress === STANDARD_SOL_ADDRESS  ? Number(mintAmount) : 0;
 
       const transaction = new Transaction();
-      if (content.tokenAddress === getRuntimeKey(runtime, 'SOL_ADDRESS')) {
+      if (content.tokenAddress === STANDARD_SOL_ADDRESS) {
         if (solBalance < solTransferOut) {
           callback({
             text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
@@ -304,6 +296,7 @@ export const transfer: Action = {
           }),
         );
       } else {
+        const programId = await solanaClient.getTokenProgramId(content.tokenAddress);
         const senderATA = getAssociatedTokenAddressSync(
           mintPubkey,
           senderKeypair.publicKey,
