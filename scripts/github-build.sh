@@ -9,7 +9,7 @@ TARGET_DIR="data/eliza"
 if [ -d "$TARGET_DIR" ]; then
   echo "exists"
 else
-  git clone -b develop https://github.com/xNomad-AI/eliza.git $TARGET_DIR
+  git clone -b feat/function-call https://github.com/xNomad-AI/eliza.git $TARGET_DIR
 fi
 
 cd $TARGET_DIR

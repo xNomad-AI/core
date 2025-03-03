@@ -38,64 +38,6 @@ interface SwapTokenRequest {
   outputTokenAmount: number | null;
 }
 
-const swapTemplate = `
-Example response:
-\`\`\`json
-{
-    "inputTokenSymbol": "SOL",
-    "outputTokenSymbol": "USDC",
-    "inputTokenCA": "So11111111111111111111111111111111111111112",
-    "outputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    "inputTokenAmount": 0.02,
-    "inputTokenPercentage": "100%",
-    "outputTokenAmount": null
-}
-\`\`\`
-
-{{recentMessages}}
-
-You are an expert on solana token swaps. Given the recent messages above:
-
-Extract the following information about the requested token swap:
-- Input token symbol (the token being sold)
-- Output token symbol (the token being bought)
-- Input token contract address if provided
-- Output token contract address if provided
-- Input token amount
-- Input token percentage, sell all means percentage is 1
-- Output token amount
-
-Ensure you only extract the current swap request from the user, and avoid extracting any historical swap messages.
-
-**Special Rules:**
-- If the user says "buy [token]", it means swapping SOL for that token.
-- If the user says "sell [token]", it means swapping that token for SOL.
-
-The Token contract address (aka CA) should be a 44 character string, for example: [EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v], [7Xu2oddJ3DMQ1UdgoC8ewK6Kq73kcXUcYCcnfzxqpump]
-Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined. The result should be a valid JSON object with the following schema:
-\`\`\`json
-{
-    "inputTokenSymbol": string | null,
-    "outputTokenSymbol": string | null,
-    "inputTokenCA": string | null,
-    "outputTokenCA": string | null,
-    "inputTokenAmount": number | string,
-    "inputTokenPercentage": number | null,
-    "outputTokenAmount": number | null
-}
-\`\`\`
-
-Examples:
--  buy 100 ai16z should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "ai16z", "inputTokenCA": null, "outputTokenCA": null, "outputTokenAmount": 100}\`;
--  buy 0.1 SOL ELIZA should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "ELIZA", "inputTokenCA": null, "outputTokenCA": null, "amount": 0.1}\`;
--  buy ai16z with 0.001 SOL should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "ai16z", "inputTokenCA": null, "outputTokenCA": null, "amount": 0.001}\`;
--  sell 1 USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v should return \`{"inputTokenSymbol": "USDC", "outputTokenSymbol": "SOL", "inputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "outputTokenCA": null, "inputTokenAmount": 1}\`;
--  swap 0.1 SOL for USDC should return \`{"inputTokenSymbol": "SOL", "outputTokenSymbol": "USDC", "inputTokenCA": null, "outputTokenCA": null, "amount": 0.1}\`;
--  swap 20 ai16z for USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v should return \`{"inputTokenSymbol": "ai16z", "outputTokenSymbol": "USDC", "inputTokenCA": null, "outputTokenCA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "inputTokenAmount": 20}\`;
--  sell all ELIZA should return \`{"inputTokenSymbol": "ELIZA", "outputTokenSymbol": "SOL", "inputTokenCA": null, "outputTokenCA": null, "inputTokenPercentage": 1}\`;
--  sell 50% ELIZA should return \`{"inputTokenSymbol": "ELIZA", "outputTokenSymbol": "SOL", "inputTokenCA": null, "outputTokenCA": null, "inputTokenPercentage": 0.5}\`;
-`;
-
 const userConfirmTemplate = `
 {{recentMessages}}
 
@@ -142,6 +84,25 @@ Respond with a JSON:
 Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
 
 export const executeSwap: Action = {
+  functionCallSpec: {
+    name: 'swap_token',
+    strict: true,
+    additionalProperties: false,
+    description: 'Swap tokens on Solana blockchain, set default token symbol to SOL when user want to buy or sell tokens',
+    parameters: {
+      type: 'object',
+      properties: {
+        inputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
+        inputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
+        outputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
+        outputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
+        inputTokenAmount: { type: ['number', 'null'], description: 'Amount of inputToken to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
+        inputTokenPercentage: { type: ['number', 'null'], description: 'Percentage of inputToken balance to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
+        outputTokenAmount: { type: ['number', 'null'], description: 'Amount of outputToken to swap' },
+      },
+      required: ['inputTokenSymbol', 'outputTokenSymbol', 'inputTokenCA', 'outputTokenCA', 'inputTokenAmount', 'inputTokenPercentage', 'outputTokenAmount'],
+    },
+  },
   name: 'EXECUTE_SWAP',
   suppressInitialMessage: true,
   similes: [
@@ -288,23 +249,12 @@ async function checkResponse(
     return null;
   }
 
-  const swapContext = composeContext({
-    state,
-    template: swapTemplate,
-  });
-
   // generate formatted response from chat
-  let swapReq = await generateObjectDeprecated({
-    runtime,
-    context: swapContext,
-    modelClass: ModelClass.LARGE,
-  }) as SwapTokenRequest;
+  let swapReq = state.actionParameters as SwapTokenRequest;
   swapReq = convertNullStrings(swapReq);
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
   swapReq.outputTokenAmount = Number(swapReq.outputTokenAmount);
-
-  elizaLogger.info(`Prompt: ${swapContext}, Response:`, swapReq);
 
   if (swapReq.inputTokenSymbol?.toUpperCase() === 'SOL') {
     swapReq.inputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');

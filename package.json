@@ -23,8 +23,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "preinstall": "/bin/bash ./scripts/github-build.sh d7dc7cd6bc05b597ebc27da6e2a20239f4cc2362",
-    "debug1": "test-class-validator.ts"
+    "preinstall": "/bin/bash ./scripts/github-build.sh feat/function-call"
   },
   "dependencies": {
     "@bloxroute/solana-trader-client-ts": "^2.2.2",
@@ -33,7 +32,7 @@
     "@elizaos/adapter-mongodb": "file:data/eliza/packages/adapter-mongodb",
     "@elizaos/client-direct": "file:data/eliza/packages/client-direct",
     "@elizaos/client-telegram": "file:data/eliza/packages/client-telegram",
-    "@elizaos/client-twitter": "github:jinbangyi/client-twitter#1a0cee50e3c62c1e39d8c2d8028afda4fe7d4231",
+    "@elizaos/client-twitter": "file:data/eliza/packages/client-twitter",
     "@elizaos/plugin-tee": "file:data/eliza/packages/plugin-tee",
     "@elizaos/plugin-solana": "workspace:*",
     "@ipld/dag-ucan": "3.4.5",

@@ -148,6 +148,22 @@ Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\
 export const transfer: Action = {
   name: 'SEND_TOKEN',
   suppressInitialMessage: true,
+  functionCallSpec: {
+    name: 'SEND_TOKEN',
+    strict: true,
+    additionalProperties: false,
+    description: 'Transfer SPL tokens or SOL from agent wallet to another address',
+    parameters: {
+      type: 'object',
+      properties: {
+        tokenSymbol: { type: ['string', 'null'], description: 'The token symbol to transfer' },
+        tokenAddress: { type: ['string', 'null'], description: 'The token contract address to transfer' },
+        recipient: { type: 'string', description: 'The recipient wallet address' },
+        amount: { type: 'number', description: 'The amount of tokens to transfer' },
+      },
+      required: ['tokenSymbol', 'tokenAddress', 'recipient', 'amount'],
+    },
+  },
   similes: ['TRANSFER_TOKEN', 'TRANSFER', 'WITHDRAW_TOKEN', 'WITHDRAW'],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return await isAgentAdmin(runtime, message);
@@ -169,23 +185,7 @@ export const transfer: Action = {
       callback?.(responseMsg);
       return null;
     }
-    elizaLogger.log('Starting SEND_TOKEN handler...');
-
-    const transferContext = composeContext({
-      state,
-      template: transferTemplate,
-    });
-
-    let content = await generateObjectDeprecated({
-      runtime,
-      context: transferContext,
-      modelClass: ModelClass.LARGE,
-    });
-
-    content = convertNullStrings(content) as TransferContent;
-    elizaLogger.log(
-      `Transfer Context ${transferContext} Generated Response: ${JSON.stringify(content)}`,
-    );
+    const content = convertNullStrings(state.actionParameters) as TransferContent;
 
     if (!content.amount || isNaN(content.amount as number)) {
       callback({
