@@ -23,7 +23,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "preinstall": "/bin/bash ./scripts/github-build.sh develop",
+    "preinstall": "/bin/bash ./scripts/github-build.sh d7dc7cd6bc05b597ebc27da6e2a20239f4cc2362",
     "debug1": "test-class-validator.ts"
   },
   "dependencies": {
