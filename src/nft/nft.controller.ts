@@ -9,14 +9,16 @@ import {
   Query,
   UnauthorizedException,
   UseGuards,
-  BadRequestException,
 } from '@nestjs/common';
+import { instanceToPlain } from 'class-transformer';
+
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
 import { CharacterConfig } from '../shared/mongo/types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { CacheTTL } from '@nestjs/cache-manager';
 import { testTwitterConfig } from '../shared/twitter.service.js';
+import { UpdateTwitterConfigDto } from './nft.dto.js';
 
 @Controller('/nft')
 export class NftController {
@@ -91,11 +93,7 @@ export class NftController {
     @Request() request,
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
-    @Body()
-    {
-      testContent,
-      characterConfig,
-    }: { testContent: string; characterConfig: CharacterConfig },
+    @Body() updateTwitterConfigDto: UpdateTwitterConfigDto,
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
@@ -103,38 +101,25 @@ export class NftController {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
 
-    const username = characterConfig?.settings?.secrets?.TWITTER_USERNAME;
-    const password = characterConfig.settings?.secrets?.TWITTER_PASSWORD;
-    const email = characterConfig.settings?.secrets?.TWITTER_EMAIL;
+    const username = updateTwitterConfigDto.characterConfig.settings.secrets.TWITTER_USERNAME;
+    const password = updateTwitterConfigDto.characterConfig.settings.secrets.TWITTER_PASSWORD;
+    const email = updateTwitterConfigDto.characterConfig.settings.secrets.TWITTER_EMAIL;
     const twitter2faSecret =
-      characterConfig?.settings?.secrets?.TWITTER_2FA_SECRET;
+      updateTwitterConfigDto.characterConfig.settings.secrets.TWITTER_2FA_SECRET;
 
-    // convert to string to be compatiable with env
-    if (characterConfig?.settings?.secrets) {
-      characterConfig.settings.secrets.POST_IMMEDIATELY = String(
-        characterConfig.settings.secrets.POST_IMMEDIATELY || false,
-      );
-      characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND = String(
-        characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND || false,
-      );
-    }
-
-    if (!username || !password || !email) {
-      throw new BadRequestException(
-        'twitter config is not complete, please provide username, password and email',
-      );
-    }
     const result = await testTwitterConfig(
       username,
       password,
       email,
       twitter2faSecret,
-      testContent,
+      updateTwitterConfigDto.testContent,
     );
     if (!result.isLogin) {
       return result;
     }
-    await this.nftService.updateNftConfig({ nftId, characterConfig });
+    await this.nftService.updateNftConfig(
+      { nftId, characterConfig: instanceToPlain(updateTwitterConfigDto.characterConfig) }
+    );
     return result;
   }
 
