@@ -184,7 +184,7 @@ export class ElizaManagerService {
       secrectSalt,
       agentId,
       this.appConfig.get<string>('TEE_MODE') as TEEMode,
-      false,
+      true,
     );
 
     return {
