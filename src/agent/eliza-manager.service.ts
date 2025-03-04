@@ -308,14 +308,21 @@ export class ElizaManagerService {
      - Unrelated queries: "what's the weather"
    - Then immediately **reset** \`action = "none"\` and generate a normal conversational reply.
 
-2. **If the user's intent matches a registered action**:
+2. **Error Recovery Protocol**:
+   - If previous messages contain errors marked with \`isError\`: true:
+     - Check if the user's new message indicates they have resolved the issue (e.g., "I've added funds", "I'm logged in now", "try again")
+     - If so, IGNORE the previous error message and RE-ATTEMPT the original action with the same parameters
+     - Consider these messages as requests to retry the previous failed action
+
+3. **If the user's intent matches a registered action**:
    - Ensure that all necessary parameters are collected.
    - If any parameters are missing, ask the user for clarification.
    - Once all parameters are gathered, return a **valid JSON function call**.
 
-3. **If the user has an incomplete previous action**:
+4. **If the user has an incomplete previous action**:
    - If the new message **continues** the previous action, proceed.
    - **If the new message is unrelated (e.g., general conversation), reset \`action = "none"\`**.
+
 **Format** 
     { 
     "user": "{{agentName}}", 
