@@ -224,7 +224,7 @@ export class NftController {
     if (!adminAPIKey) {
       throw new UnauthorizedException('Admin API key is not set');
     }
-    if (request.headers['X-ADMIN-API-KEY'] !== adminAPIKey) {
+    if (request.headers['X-ADMIN-API-KEY'.toLowerCase()] !== adminAPIKey) {
       throw new UnauthorizedException('Invalid admin API key');
     }
 
