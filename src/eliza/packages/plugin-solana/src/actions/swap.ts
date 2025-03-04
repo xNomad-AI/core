@@ -20,7 +20,7 @@ import {
 import { getWalletKey } from '../keypairUtils.js';
 import {
   isAgentAdmin,
-  NotAgentAdminMessage,
+  NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 import { convertNullStrings, swapToken } from '../providers/swapUtils.js';
 import { NATIVE_MINT } from '@solana/spl-token';
@@ -114,7 +114,7 @@ export const executeSwap: Action = {
     'SELL_TOKENS',
   ],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    return await isAgentAdmin(runtime, message);
+    return true;
   },
   description:
     'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
@@ -242,10 +242,7 @@ async function checkResponse(
 } | null> {
   const isAdmin = await isAgentAdmin(runtime, message);
   if (!isAdmin) {
-    const responseMsg = {
-      text: NotAgentAdminMessage,
-    };
-    callback?.(responseMsg);
+    callback?.(NotAgentAdminResponse);
     return null;
   }
 

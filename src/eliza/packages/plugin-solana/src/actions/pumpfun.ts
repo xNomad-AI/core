@@ -32,8 +32,7 @@ import {
 } from '@elizaos/core';
 
 import {
-  isAgentAdmin,
-  NotAgentAdminMessage,
+  isAgentAdmin, NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 
 async function createAndBuyToken({
@@ -243,7 +242,7 @@ export default {
   similes: ['CREATE_PUMPFUN_TOKEN'],
   suppressInitialMessage: true,
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    return await isAgentAdmin(runtime, message);
+    return true;
   },
   description:
     'Create a new token on pumpfun and buy a specified amount using SOL. Requires the token name, symbol and image url, buy amount after create in SOL.',
@@ -257,11 +256,8 @@ export default {
     elizaLogger.log('Starting CREATE_TOKEN handler...');
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
-      const responseMsg = {
-        text: NotAgentAdminMessage,
-      };
-      callback?.(responseMsg);
-      return true;
+      callback?.(NotAgentAdminResponse);
+      return false;
     }
 
     // Generate structured content from natural language
