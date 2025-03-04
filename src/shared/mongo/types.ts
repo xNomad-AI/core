@@ -99,7 +99,7 @@ export interface CoreSettings {
     product: "datacenterProxies",
     username: string,
     password: string,
-    // dc.oxylabs.io
+    // example.com
     entryPoint: string;
     // 8001
     port: string;

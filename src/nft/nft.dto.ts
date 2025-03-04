@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { ValidateNested, IsEmail, IsString, IsNotEmpty, Matches, MinLength, IsOptional, IsInt, Min, Max, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, registerDecorator, IsNotIn } from 'class-validator';
+import { ValidateNested, IsEmail, IsString, IsNotEmpty, Matches, MinLength, IsOptional, IsInt, Min, Max, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, registerDecorator, IsNotIn, IsIP, IsFQDN } from 'class-validator';
 
 // Custom validation constraint
 @ValidatorConstraint({ async: false })
@@ -127,4 +127,39 @@ export class UpdateTwitterConfigDto {
   @ValidateNested()
   @Type(() => UpdateTwitterConfigDtoCharacterConfig)
   characterConfig: UpdateTwitterConfigDtoCharacterConfig;
+}
+
+
+export class UpdateCoreSettingsDto {
+  // {
+  //   "entryPoint": "example.com",
+  //   "ip": "127.0.1.40",
+  //   "port": 8001,
+  //   "countryCode": "US"
+  // }
+  @IsFQDN()
+  @IsNotEmpty()
+  entryPoint: string;
+
+  @IsIP(4)
+  @IsNotEmpty()
+  ip: string;
+
+  @IsInt()
+  @Min(0)
+  @Max(65535)
+  @IsNotEmpty()
+  port: number;
+
+  @IsString()
+  @IsNotEmpty()
+  countryCode: string;
+
+  @IsString()
+  @IsNotEmpty()
+  username: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
 }
