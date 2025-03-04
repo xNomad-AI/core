@@ -16,6 +16,7 @@ import { calculateWithSlippageBuy, PumpFunSDK } from 'pumpdotfun-sdk';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { NftPrimaryCoin } from '../shared/mongo/types.js';
+import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 
 @Injectable()
@@ -27,6 +28,7 @@ export class LaunchCoinService {
     private readonly config: ConfigService,
     private readonly elizaManager: ElizaManagerService,
     private readonly logger: TransientLoggerService,
+    private readonly tradeMonitorService: TradeMonitorService,
   ) {
     this.logger.setContext(LaunchCoinService.name);
     this.connection = new Connection(
@@ -125,6 +127,13 @@ export class LaunchCoinService {
     );
 
     transaction.sign([agentKeypair, mintKeypair]);
+
+    // register token in indexer to track token data
+    await this.tradeMonitorService.registerAgentCreatedToken({
+      chain: 'solana',
+      address: mintKeypair.publicKey.toBase58(),
+      creatorAddress: agentKeypair.publicKey.toBase58(),
+    });
 
     this.logger.log('Sending transaction');
     const txid = await this.connection.sendTransaction(transaction);
