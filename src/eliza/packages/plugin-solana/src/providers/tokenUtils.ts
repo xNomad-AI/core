@@ -90,8 +90,14 @@ function getTokenName(mintAddress: PublicKey): string {
 
 
 export async function getTokenCABySymbol(runtime: IAgentRuntime, keyword: string): Promise<string|undefined>{
-  const tokens = await getTokensBySymbol(runtime, keyword);
-  return tokens?.[0]?.address;
+  let tokens = await getTokensBySymbol(runtime, keyword);
+  if (tokens?.[0].address){
+    return tokens[0].address;
+  }
+  if(keyword.startsWith('$')){
+    tokens = await getTokensBySymbol(runtime, keyword.slice(1));
+  }
+  return tokens?.[0].address;
 }
 
 export async function getTokensBySymbol(
