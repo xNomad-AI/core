@@ -18,11 +18,12 @@ import { CharacterConfig } from '../shared/mongo/types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { CacheTTL } from '@nestjs/cache-manager';
 import { testTwitterConfig } from '../shared/twitter.service.js';
-import { UpdateTwitterConfigDto } from './nft.dto.js';
+import { UpdateCoreSettingsDto, UpdateTwitterConfigDto } from './nft.dto.js';
+import { SettingsService } from './settings.service.js';
 
 @Controller('/nft')
 export class NftController {
-  constructor(private readonly nftService: NftService) {}
+  constructor(private readonly nftService: NftService, private settingsService: SettingsService) {}
 
   @Get('/:chain/collections')
   async getCollections(@Param('chain') chain: string) {
@@ -211,5 +212,24 @@ export class NftController {
     return {
       isAdmin: owner?.ownerAddress === address,
     };
+  }
+
+  @Post('/settings')
+  async updateNftGlobalSettings(
+    @Request() request,
+    @Body() body: UpdateCoreSettingsDto[],
+  ) {
+    const adminAPIKey = process.env.CORE_ADMIN_API_KEY;
+    if (!adminAPIKey) {
+      throw new UnauthorizedException('Admin API key is not set');
+    }
+    if (request['X-ADMIN-API-KEY'] !== adminAPIKey) {
+      throw new UnauthorizedException('Invalid admin API key');
+    }
+
+    const inserted = await this.settingsService.upsertCoreSettings(body);
+    return {
+      inserted,
+    }
   }
 }

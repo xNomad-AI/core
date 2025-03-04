@@ -27,7 +27,7 @@ async function initTwitterHttpProxySettings() {
           product: "datacenterProxies",
           username,
           password,
-          // dc.oxylabs.io
+          // example.com
           entryPoint: proxy.entryPoint,
           // 8001
           port: proxy.port.toString(),
