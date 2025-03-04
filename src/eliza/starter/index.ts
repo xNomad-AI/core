@@ -92,6 +92,7 @@ export async function newTradeAgentRuntime(
   character: Character,
   mongoClient: MongoClient,
 ) {
+  character.knowledge = [];
   const token = getTokenForProvider(character.modelProvider, character);
   const db = await initializeDatabase(mongoClient, `agent`);
   const cache = initializeDbCache(character, db);
