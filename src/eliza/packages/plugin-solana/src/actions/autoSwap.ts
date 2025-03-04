@@ -52,148 +52,6 @@ export interface AutoSwapTask {
   tokenTarget: string | null;
 }
 
-const autoSwapTemplate = `Respond with a JSON markdown block containing only the extracted values. Use \`null\` for any values that cannot be determined.
-
-Example response:
-\`\`\`json
-{
-    "inputTokenSymbol": "SOL",
-    "outputTokenSymbol": "ELIZA",
-    "inputTokenCA": "So11111111111111111111111111111111111111112",
-    "outputTokenCA": "5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM",
-    "inputTokenAmount": 0.1,
-    "inputTokenPercentage": 0.1,
-    "outputTokenAmount": null,
-    "delay": "300s",
-    "priceCondition": "below",
-    "priceTarget": 0.016543,
-    "tokenTarget": "5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM"
-}
-
-{{recentMessages}}
-
-You are an expert on solana token swap. Given the recent messages and wallet information below:
-
-{{walletInfo}}
-
-Extract the following information about the requested token swap:
-Input token symbol (the token being sold)
-Output token symbol (the token being bought)
-Input token contract address (if provided)
-Output token contract address (if provided)
-Input Amount to swap (number or string)
-Input Amount Percentage to swap (number or null)
-Output Amount to swap (number or string or null)
-Delay (if provided, e.g., “after 5 minutes” → "300s")
-Price trigger condition ("below" or "above" or null)
-Price target (if provided, should be number or null)
-Token target, which token address or symbol of the trigger and price targets to (if provided, should be string or null, default to input token symbol)
-
-**Special Rules:**
-- If the user says "buy [token]", it means swapping SOL for that token.
-- If the user says "sell [token]", it means swapping that token for SOL.
-
-Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined. The result should be a valid JSON object with the following schema:
-\`\`\`json
-{
-    inputTokenSymbol: string | null;
-    outputTokenSymbol: string | null;
-    inputTokenCA: string | null;
-    outputTokenCA: string | null;
-    inputTokenAmount: number | string | null;
-    inputTokenPercentage: number | null;
-    outputTokenAmount: number | string | null;
-    delay: string | null;
-    startAt: Date | null;
-    expireAt: Date;
-    priceCondition: 'below' | 'above' | null;
-    priceTarget: number  | null;
-    tokenTarget: string | null;
-}
-\`\`\`
-
-# Examples: 
-1. Create an automatic task to buy 74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump with 0.0001 SOL when the token price is below 0.1
-The response should be
-{
-  "inputTokenSymbol": "SOL",
-  "inputTokenCA": null,
-  "outputTokenCA": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
-  "outputTokenSymbol": null,
-  "inputTokenAmount": 0.0001,
-  "inputTokenPercentage": null,
-  "outputTokenAmount": null,
-  "delay": null,
-  "startAt": null,
-  "expireAt": null,
-  "priceCondition": "below",
-  "priceTarget": 0.1,
-  "tokenTarget": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump"
-}
-2. Create an automatic task to buy ai16z with 0.0001 SOL when the token price is below $1.
-The response should be 
-{
-  "priceTarget": "1"
-  "priceCondition": "below",
-  "tokenTarget": "ai16z",
-  "expireAt": null,
-  "startAt": null,
-  "delay": null,
-  "inputTokenAmount": "0.01",
-  "outputTokenCA": null,
-  "inputTokenCA": null,
-  "outputTokenSymbol": "ai16z",
-  "inputTokenSymbol": "SOL",
-} 
-3. auto sell 1000 ai16z to SOL when the token price is above $1.
-The response should be 
-{
-  "priceTarget": "1"
-  "priceCondition": "above",
-  "tokenTarget": ai16z,
-  "expireAt": null,
-  "startAt": null,
-  "delay": null,
-  "inputTokenAmount": 1000,
-  "outputTokenCA": null,
-  "inputTokenCA": null,
-  "outputTokenSymbol": "SOL",
-  "inputTokenSymbol": "ai16z",
-} 
-4. auto sell 20% of ai16z to SOL when the token price is above $1.
-The response should be 
-{
-  "priceTarget": "1"
-  "priceCondition": "above",
-  "tokenTarget": "ai16z",
-  "expireAt": null,
-  "startAt": null,
-  "delay": null,
-  "inputTokenAmount": null,
-  "inputTokenPercentage": 0.2,
-  "outputTokenCA": null,
-  "inputTokenCA": null,
-  "outputTokenSymbol": "SOL",
-  "inputTokenSymbol": "ai16z",
-}
-4. auto sell 100% of ai16z when SOL price is under $135.
-The response should be
-{
-  "priceTarget": "135"
-  "priceCondition": "below",
-  "tokenTarget": "SOL",
-  "expireAt": null,
-  "startAt": null,
-  "delay": null,
-  "inputTokenAmount": null,
-  "inputTokenPercentage": 1,
-  "outputTokenCA": null,
-  "inputTokenCA": null,
-  "outputTokenSymbol": "SOL",
-  "inputTokenSymbol": "ai16z",
-}
-`;
-
 const userConfirmAutoTaskTemplate = `
 {{recentMessages}}
 
@@ -259,7 +117,7 @@ export async function executeAutoTokenSwapTask(
   }
 
   const task = content.task as AutoSwapTask;
-  elizaLogger.log('executeAutoTokenSwapTask', content, id);
+  elizaLogger.log('executeAutoTokenSwapTask', id);
 
   if (task.expireAt && new Date(task.expireAt).getTime() <= Date.now()) {
     elizaLogger.info(`Task has expired ${id}`);
@@ -267,7 +125,7 @@ export async function executeAutoTokenSwapTask(
   }
 
   if (task.startAt && new Date(task.startAt).getTime() > Date.now()) {
-    elizaLogger.info('Task is not ready to start yet');
+    elizaLogger.info(`Task is not ready to start yet ${id}`);
     return;
   }
 
