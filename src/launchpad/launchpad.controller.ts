@@ -1,9 +1,19 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { LaunchpadService } from './launchpad.service.js';
 
 @Controller('/launchpad')
 export class LaunchpadController {
   constructor(private readonly launchpadService: LaunchpadService) {}
+
+  @Get('/:chain/common-collection-nft-fee')
+  async getCreateCommonCollectionNftFee(
+    @Param('chain') chain: string,
+    @Query('userAddress') userAddress: string,
+  ) {
+    const { fee, feeAfterDiscount, discountPercentage } =
+      await this.launchpadService.calculateMintFee(userAddress);
+    return { fee, feeAfterDiscount, discountPercentage };
+  }
 
   @Post('/:chain/create-common-collection-nft')
   async createCommonCollectionNft(
