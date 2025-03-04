@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { instanceToPlain } from 'class-transformer';
 
 import { NftService } from './nft.service.js';
@@ -216,14 +217,14 @@ export class NftController {
 
   @Post('/settings')
   async updateNftGlobalSettings(
-    @Request() request: Request,
+    @Request() request: ExpressRequest,
     @Body() body: UpdateCoreSettingsDto[],
   ) {
     const adminAPIKey = process.env.CORE_ADMIN_API_KEY;
     if (!adminAPIKey) {
       throw new UnauthorizedException('Admin API key is not set');
     }
-    if (request.headers.get('X-ADMIN-API-KEY') !== adminAPIKey) {
+    if (request.headers['X-ADMIN-API-KEY'] !== adminAPIKey) {
       throw new UnauthorizedException('Invalid admin API key');
     }
 
