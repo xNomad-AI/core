@@ -173,13 +173,14 @@ export class LaunchpadService {
   async calculateMintFee(userAddress: string) {
     const isXnomadOwner = await this.isXnomadOwner(userAddress);
 
-    let [fee, feeAfterDiscount, discountPercentage] = this.config.get('IS_DEV')
-      ? isXnomadOwner
-        ? [0.001, 0.0003, 70]
-        : [0.001, 0.001, 0]
-      : isXnomadOwner
-        ? [0.1, 0.03, 70]
-        : [0.1, 0.1, 0];
+    let [fee, feeAfterDiscount, discountPercentage] =
+      process.env.RUN_ENV === 'dev'
+        ? isXnomadOwner
+          ? [0.001, 0.0003, 70]
+          : [0.001, 0.001, 0]
+        : isXnomadOwner
+          ? [0.1, 0.03, 70]
+          : [0.1, 0.1, 0];
 
     return { fee, feeAfterDiscount, discountPercentage, isXnomadOwner };
   }
