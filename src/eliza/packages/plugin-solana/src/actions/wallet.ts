@@ -11,17 +11,6 @@ import { convertNullStrings } from '../providers/swapUtils.js';
 import { getWalletPortfolio } from '../providers/walletUtils.js';
 import { getWalletKey } from '../keypairUtils.js';
 
-const analyzeTokenTemplate = `
-#Task
-You are an expert on crypto currency, and have a wallet on solana. Extract the query type from recent messages below that user want to know about his wallet.
-{
-    "queryType": "walletBalance" | "tokenBalance",
-    "tokenSymbol": string | null,
-    "tokenAddress": string | null,
-}
-
-{{recentMessages}}
-`
 export const walletPortfolio: Action = {
   functionCallSpec: {
     name: 'WALLET_PORTFOLIO',
@@ -52,16 +41,7 @@ export const walletPortfolio: Action = {
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
   ): Promise<boolean> => {
-    const context = composeContext({
-      state,
-      template: analyzeTokenTemplate,
-    });
-    let response = await generateObjectDeprecated({
-      runtime,
-      context: context,
-      modelClass: ModelClass.LARGE,
-    });
-    response = convertNullStrings(response);
+    const response = convertNullStrings(state.actionParameters) as any;
     elizaLogger.log('WALLET_PORTFOLIO Response:', response);
 
     const {publicKey} = await getWalletKey(runtime, false);
