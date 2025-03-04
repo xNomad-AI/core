@@ -24,9 +24,6 @@ export interface Item {
   valueSol?: string;
 }
 
-export const NotAgentAdminMessage =
-  'Access denied: Only the Agent Owner has permission to perform this action. Please sign in with the correct account.';
-
 export async function isAgentAdmin(runtime: IAgentRuntime, message: Memory) {
   if (process.env?.DISABLE_ADMIN_CHECK == 'true') {
     elizaLogger.warn('Admin check is disabled');
@@ -56,6 +53,11 @@ export async function isAgentAdmin(runtime: IAgentRuntime, message: Memory) {
     elizaLogger.error('Admin check failed', error);
     return false;
   }
+}
+
+export const NotAgentAdminResponse = {
+  text: 'Access denied: Only the Agent Owner has permission to perform this action. Please sign in with the correct account.',
+  isError: true,
 }
 
 export async function getWalletTokenBySymbol(
