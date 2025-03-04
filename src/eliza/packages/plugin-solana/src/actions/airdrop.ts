@@ -18,25 +18,22 @@ import {
 import { Keypair } from '@solana/web3.js';
 import axios from 'axios';
 import { getRuntimeKey } from '../environment.js';
-
-const claimAirdropTemplate = `
-{{recentMessages}}
-
-Given the recent messages, Extract the airdrop information from the message, Use null for any values that cannot be determined. The result should be a valid json object with the following fields:
-{
-    programName: string | null
-}
-
-for example:
-claim airdrop of [Xnomad AI Initial funds]
-
-The result should be a valid json object with the following fields:
-{
-    programName: "Xnomad AI Initial funds"
-}
-`;
+import { convertNullStrings } from '../providers/swapUtils';
 
 export const airdrop: Action = {
+  functionCallSpec: {
+    name: 'CLAIM_AIRDROP',
+    strict: true,
+    additionalProperties: false,
+    description: 'Perform claim airdrop for the user agent account',
+    parameters: {
+      type: 'object',
+      properties: {
+        programName: { type: ['string', 'null'], description: 'The program name of the airdrop' },
+      },
+      required: ['programName'],
+    },
+  },
   name: 'CLAIM_AIRDROP',
   similes: [],
   suppressInitialMessage: true,
@@ -59,24 +56,7 @@ export const airdrop: Action = {
       callback?.(responseMsg);
       return true;
     }
-    // composeState
-    if (!state) {
-      state = (await runtime.composeState(message)) as State;
-    } else {
-      state = await runtime.updateRecentMessageState(state);
-    }
-
-    const context = composeContext({
-      state,
-      template: claimAirdropTemplate,
-    });
-
-    const response = await generateObjectDeprecated({
-      runtime,
-      context: context,
-      modelClass: ModelClass.LARGE,
-    });
-
+    const response = convertNullStrings(state.actionParameters);
     elizaLogger.log('Response:', response);
     if (!response.programName) {
       const responseMsg = {
@@ -155,37 +135,6 @@ export const airdrop: Action = {
         },
       },
     ],
-    [
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'claim airdrop',
-          action: 'CLAIM_AIRDROP',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'please provoide the project name you want to claim airdrop',
-          action: 'CLAIM_AIRDROP',
-        },
-      },
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'Xnomad AI Initial funds',
-          action: 'CLAIM_AIRDROP',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: '[Xnomad AI Initial funds] Airdrop claimed successfully. 0.01 SOL will be transferred to your wallet.',
-          action: 'CLAIM_AIRDROP',
-        },
-      },
-    ],
-    // Add more examples as needed
   ] as ActionExample[][],
 } as Action;
 
@@ -278,7 +227,6 @@ async function claimAirdrop(
     });
     elizaLogger.log(`Claiming airdrop request:, ${body}`);
     const response = await axios.post(url, body, {
-      // method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
 
