@@ -1,15 +1,12 @@
-import { HttpService } from '@nestjs/axios';
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
+import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { LaunchpadService } from './launchpad.service.js';
 
 @Controller('/launchpad')
 export class LaunchpadController {
   constructor(
     private readonly launchpadService: LaunchpadService,
-    private readonly httpService: HttpService,
-    private readonly config: ConfigService,
+    private readonly tradeMonitorService: TradeMonitorService,
   ) {}
 
   @Get('/:chain/common-collection-nft-fee')
@@ -76,20 +73,12 @@ export class LaunchpadController {
     @Query('limit') limit: number,
     @Query('creatorAddress') creatorAddress?: string,
   ) {
-    const response = await firstValueFrom(
-      this.httpService.get(
-        `${this.config.get('AI_AGENT_COIN_SERVICE_ENDPOINT')}/ai-agent-coin/coins`,
-        {
-          params: {
-            sortBy: sortBy as any,
-            sortOrder: sortOrder as any,
-            offset: Number(offset),
-            limit: Number(limit),
-            creatorAddress,
-          },
-        },
-      ),
-    );
-    return response.data;
+    return this.tradeMonitorService.getAgentCreatedTokens({
+      sortBy,
+      sortOrder,
+      offset,
+      limit,
+      creatorAddress,
+    });
   }
 }
