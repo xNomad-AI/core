@@ -68,17 +68,23 @@ class UpdateTwitterConfigDtoSecrets {
   @IsOptional()
   TELEGRAM_BOT_TOKEN?: string;
 
-  @IsInt()
-  @Min(4)
-  @IsOptional()
-  // in minutes
-  POST_INTERVAL_MIN?: number
+  // @IsInt()
+  // @Min(4)
+  // @IsOptional()
+  // // in minutes
+  // POST_INTERVAL_MIN?: number
 
-  @IsInt()
-  @IsGreaterThan('POST_INTERVAL_MIN')
+  // @IsInt()
+  // @IsGreaterThan('POST_INTERVAL_MIN')
+  // @IsOptional()
+  // // in minutes
+  // POST_INTERVAL_MAX?: number
+
+  // waiting for frontend to fix string to number
   @IsOptional()
-  // in minutes
-  POST_INTERVAL_MAX?: number
+  POST_INTERVAL_MIN?: string
+  @IsOptional()
+  POST_INTERVAL_MAX?: string
 
   @IsInt()
   @Max(200)
@@ -94,7 +100,7 @@ class UpdateTwitterConfigDtoSettings {
 }
 
 class UpdateTwitterConfigDtoTemplates {
-  @IsNotEmpty()
+  @IsNotIn([undefined, null])
   twitterPostTemplate: string;
 }
 
