@@ -46,8 +46,8 @@ export class LaunchCoinService {
         .find({
           chain: 'solana',
           created: false,
-          // we assume that if coin is not created in the last 7 days, the NFT is not created
-          createdAt: { $gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+          // we assume that if coin is not created in the last 1 day, the NFT is not created
+          createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
         })
         .toArray();
 
