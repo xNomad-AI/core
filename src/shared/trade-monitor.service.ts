@@ -174,6 +174,36 @@ export class TradeMonitorService {
     }
   }
 
+  async registerAgentCreatedToken(params: {
+    chain: string;
+    address: string;
+    creatorAddress: string;
+  }) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.endpoint}/ai-agent-coin/register`,
+          {
+            chain: params.chain,
+            address: params.address,
+            creatorAddress: params.creatorAddress,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'API-KEY': this.apikey,
+            },
+          },
+        ),
+      );
+
+      return response.data;
+    } catch (e) {
+      this.logger.error(`Failed to register agent created token: ${e}`);
+      throw e;
+    }
+  }
+
   async getAgentCreatedTokens(params: {
     sortBy: string;
     sortOrder: string;
