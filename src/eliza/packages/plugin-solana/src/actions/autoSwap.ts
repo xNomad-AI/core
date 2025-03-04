@@ -21,8 +21,7 @@ import {
 } from '@solana/web3.js';
 import { getWalletKey } from '../keypairUtils.js';
 import {
-  isAgentAdmin,
-  NotAgentAdminMessage,
+  isAgentAdmin, NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 import { convertNullStrings, md5sum, swapToken } from '../providers/swapUtils.js';
 import {
@@ -197,7 +196,7 @@ export const autoTask: Action = {
   ],
   suppressInitialMessage: true,
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    return await isAgentAdmin(runtime, message);
+    return true;
   },
   description:
     'Perform auto token swap. Enables the agent to automatically execute trades when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers, optimizing trading strategies without manual intervention.',
@@ -298,10 +297,7 @@ async function checkResponse(
   // check if the swap request is from agent owner or public chat
   const isAdmin = await isAgentAdmin(runtime, message);
   if (!isAdmin) {
-    const responseMsg = {
-      text: NotAgentAdminMessage,
-    };
-    callback?.(responseMsg);
+    callback?.(NotAgentAdminResponse);
     return null;
   }
 

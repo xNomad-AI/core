@@ -29,7 +29,7 @@ import { generateObjectDeprecated } from '@elizaos/core';
 import {
   getWalletTokenBySymbol,
   isAgentAdmin,
-  NotAgentAdminMessage,
+  NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getRuntimeKey } from '../environment.js';
@@ -106,7 +106,7 @@ export const transfer: Action = {
   },
   similes: ['TRANSFER_TOKEN', 'TRANSFER', 'WITHDRAW_TOKEN', 'WITHDRAW'],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    return await isAgentAdmin(runtime, message);
+    return true;
   },
   description:
     "Transfer SPL tokens or SOL from agent's wallet to another address, aka [send |withdraw|transfer] [amount] [tokenSymbol] [tokenCA] to [address] ",
@@ -119,11 +119,8 @@ export const transfer: Action = {
   ): Promise<boolean> => {
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
-      const responseMsg = {
-        text: NotAgentAdminMessage,
-      };
-      callback?.(responseMsg);
-      return null;
+      callback?.(NotAgentAdminResponse);
+      return false;
     }
     const content = convertNullStrings(state.actionParameters) as TransferContent;
 
