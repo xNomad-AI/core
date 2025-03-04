@@ -185,6 +185,10 @@ export class TradeMonitorService {
       const response = await firstValueFrom(
         this.httpService.get(`${this.endpoint}/ai-agent-coin/coins`, {
           params,
+          headers: {
+            'Content-Type': 'application/json',
+            'API-KEY': this.apikey,
+          },
         }),
       );
       return response.data;
