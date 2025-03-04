@@ -14,9 +14,13 @@ import { AddressService } from '../address/address.service.js';
 import { stringToUuid } from '@elizaos/core';
 import { deepMerge, sleep } from '../shared/utils.service.js';
 import { ObjectId, WithId } from 'mongodb';
+import PQueue from 'p-queue';
+
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
+  private queue: PQueue;
+
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly nftgo: NftgoService,
@@ -26,6 +30,7 @@ export class NftService implements OnApplicationBootstrap {
     private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(NftService.name);
+    this.queue = new PQueue({ concurrency: 3 });
   }
 
   onApplicationBootstrap() {
@@ -53,30 +58,29 @@ export class NftService implements OnApplicationBootstrap {
   async handleNewAINfts(nfts: AINft[], restart?: boolean): Promise<void> {
     for (const nft of nfts) {
       if (nft?.aiAgent?.engine !== 'eliza') {
-        return;
+        continue;
       }
-      const isAgentRunning = await this.elizaManager.isAgentRunning(
-        nft.agentId,
-      );
-      if (isAgentRunning && !restart) {
-        this.logger.log(`Agent for NFT ${nft.nftId} is already running`);
-        return;
-      }
-      if (isAgentRunning && restart) {
-        this.logger.log(`Restarting agent for NFT ${nft.nftId}`);
-        await this.elizaManager.stopAgent(nft.agentId);
-      }
-      this.logger.log(
-        `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
-      );
-      const nftConfig = await this.mongo.nftConfigs.findOne({
-        nftId: nft.nftId,
-      });
-      await this.elizaManager.startAgentLocal({
-        chain: nft.chain,
-        nftId: nft.nftId,
-        character: nft.aiAgent.character,
-        characterConfig: nftConfig?.characterConfig,
+
+      await this.queue.add(async () => {
+        const isAgentRunning = await this.elizaManager.isAgentRunning(nft.agentId);
+        if (isAgentRunning && !restart) {
+          this.logger.log(`Agent for NFT ${nft.nftId} is already running`);
+          return;
+        }
+        if (isAgentRunning && restart) {
+          this.logger.log(`Restarting agent for NFT ${nft.nftId}`);
+          await this.elizaManager.stopAgent(nft.agentId);
+        }
+
+        this.logger.log(`Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`);
+        const nftConfig = await this.mongo.nftConfigs.findOne({ nftId: nft.nftId });
+
+        await this.elizaManager.startAgentLocal({
+          chain: nft.chain,
+          nftId: nft.nftId,
+          character: nft.aiAgent.character,
+          characterConfig: nftConfig?.characterConfig,
+        });
       });
     }
   }
