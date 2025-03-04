@@ -109,7 +109,7 @@ export class NftService implements OnApplicationBootstrap {
 
     if (!dbProxy) {
       const proxies = await this.mongo.coreSettings.find(
-        { category: "httpProxy", "value.product": "datacenterProxies", "value.count": { $lt: 5 } },
+        { category: "httpProxy", "value.product": "datacenterProxies", "value.count": { $lt: 2 } },
       ).toArray();
       // sort by p.value.count
       const sortedProxies = proxies.sort((a, b) => a.value.count - b.value.count);
