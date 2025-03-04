@@ -173,4 +173,24 @@ export class TradeMonitorService {
       throw e;
     }
   }
+
+  async getAgentCreatedTokens(params: {
+    sortBy: string;
+    sortOrder: string;
+    offset: number;
+    limit: number;
+    creatorAddress?: string;
+  }) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.endpoint}/ai-agent-coin/coins`, {
+          params,
+        }),
+      );
+      return response.data;
+    } catch (e) {
+      this.logger.error(`Failed to get agent created tokens: ${e}`);
+      throw e;
+    }
+  }
 }
