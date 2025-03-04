@@ -216,20 +216,20 @@ export class NftController {
 
   @Post('/settings')
   async updateNftGlobalSettings(
-    @Request() request,
+    @Request() request: Request,
     @Body() body: UpdateCoreSettingsDto[],
   ) {
     const adminAPIKey = process.env.CORE_ADMIN_API_KEY;
     if (!adminAPIKey) {
       throw new UnauthorizedException('Admin API key is not set');
     }
-    if (request['X-ADMIN-API-KEY'] !== adminAPIKey) {
+    if (request.headers.get('X-ADMIN-API-KEY') !== adminAPIKey) {
       throw new UnauthorizedException('Invalid admin API key');
     }
 
     const inserted = await this.settingsService.upsertCoreSettings(body);
     return {
       inserted,
-    }
+    };
   }
 }
