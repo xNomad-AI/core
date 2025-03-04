@@ -34,6 +34,7 @@ import {
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getRuntimeKey } from '../environment.js';
 import { SolanaClient, STANDARD_SOL_ADDRESS } from '../providers/solana-client.js';
+import { BigNumber } from 'bignumber.js';
 
 export interface TransferContent extends Content {
   tokenAddress: string | null;
@@ -41,67 +42,6 @@ export interface TransferContent extends Content {
   recipient: string;
   amount: number | null;
 }
-
-const transferTemplate = `
-You are an expert on solana token transfers.
-Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
-
-# Example response:
-\`\`\`json
-{
-    "tokenSymbol":  "ELIZA",
-    "tokenAddress": "5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM",
-    "recipient": "FVg6p4nBWNWgFgJmJHdygWuiQY4g7PyXmzXxcshf128a",
-    "amount": 1000
-}
-\`\`\`
-
-{{recentMessages}}
-
-# Task
-Extract the latest token transfer request from the recent conversation history.
-
-Focus on the most recent message that mentions a token transfer. Ignore transactions that have already been confirmed as “successfully sent.”
-
-Extract the following information:
-•Token symbol
-•Token contract address (44 characters long, if available)
-•Recipient wallet address (44 characters long)
-•Amount to transfer (Convert values like 1M to 1000000, 5.1K to 5100, 0.154 to 0.154, etc.)
-
-# Requirements:
-•Only extract the latest unconfirmed transfer request. If multiple transfers are mentioned, choose the most recent one.
-•Exclude any transfer requests that are followed by a confirmation message (e.g., “Successfully sent”).
-•If the token contract address is not explicitly mentioned, leave it blank.
-•Use the most recent mention of the amount, token symbol, and recipient address.
-
-If no token address is mentioned, respond with null.
-## Response Example:
-Given the following example transfer request:
-"Transfer 0.27 SOL So11111111111111111111111111111111111111111 to EwH7gvicP4BjURMjpKPNf5hCGbjQg3RxVK2HCgkTuGRc"
-
-The extracted result should be:
-{
-  "tokenSymbol": "SOL",
-  "tokenAddress": "So11111111111111111111111111111111111111111",
-  "recipient": "EwH7gvicP4BjURMjpKPNf5hCGbjQg3RxVK2HCgkTuGRc",
-  "amount": 0.27
-}
-
-## Conversation Example:
-Given the following conversation:
-- User: send 1 ELIZA to FVg6p4nBWNWgFgJmJHdygWuiQY4g7PyXmzXxcshf128a  
-- Bot: Failed to send 1 ELIZA to FVg6p4nBWNWgFgJmJHdygWuiQY4g7PyXmzXxcshf128a.  
-- User: send 1 ai16z to FVg6p4nBWNWgFgJmJHdygWuiQY4g7PyXmzXxcshf128a  
-- Bot: Successfully sent 1 ai16z to FVg6p4nBWNWgFgJmJHdygWuiQY4g7PyXmzXxcshf128a.  
-- User: send 0.000001 SOL to FVg6p4nBWNWgFgJmJHdygWuiQY4g7PyXmzXxcshf128a  
-The extracted result should be:
-- Token symbol: SOL  
-- Token contract address: (leave blank)  
-- Recipient wallet address: FVg6p4nBWNWgFgJmJHdygWuiQY4g7PyXmzXxcshf128a
-- Amount to transfer: 0.000001  
-Ensure that the extraction is precise and accurate, focusing on the latest unfinished transfer request.
-`;
 
 const userConfirmTemplate = `
 {{recentMessages}}
@@ -156,10 +96,10 @@ export const transfer: Action = {
     parameters: {
       type: 'object',
       properties: {
-        tokenSymbol: { type: ['string', 'null'], description: 'The token symbol to transfer' },
-        tokenAddress: { type: ['string', 'null'], description: 'The token contract address to transfer' },
+        tokenSymbol: { type: ['string', 'null'], description: 'The token symbol to transfer, at lease one of tokenSymbol or tokenAddress is provided' },
+        tokenAddress: { type: ['string', 'null'], description: 'The token contract address to transfer, at lease one of tokenSymbol or tokenAddress is provided' },
         recipient: { type: 'string', description: 'The recipient wallet address' },
-        amount: { type: 'number', description: 'The amount of tokens to transfer' },
+        amount: { type: 'string', description: 'The number amount of tokens to transfer' },
       },
       required: ['tokenSymbol', 'tokenAddress', 'recipient', 'amount'],
     },
@@ -274,7 +214,7 @@ export const transfer: Action = {
         return false;
       }
       const mintAmount = BigInt(
-        Number(content.amount) * Math.pow(10, mintDecimals),
+        new BigNumber(content.amount).multipliedBy(new BigNumber(10).pow(mintDecimals)).toFixed(0)
       );
 
       const solBalance = await connection.getBalance(senderKeypair.publicKey);
