@@ -1,0 +1,26 @@
+version: '3.8'
+
+name: core_$USERNAME
+
+services:
+
+  core-$USERNAME: 
+    build:
+      context: ..
+      dockerfile: ./.devcontainer/Dockerfile
+    volumes:
+      - core_data:/app/node_modules
+    environment:
+      - WALLET_SERVICE_ENDPOINT=http://wallet:8080
+      - WALLET_SERVICE_SECRET_TOKEN="EDIT THIS"
+    networks: 
+    - core_devcontainer_core_local
+    command: ["sleep", "10000000"]
+
+networks:
+  core_devcontainer_core_local:
+    external: true
+
+volumes:
+  core_data:
+    driver: local
