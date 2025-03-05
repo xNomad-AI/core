@@ -21,7 +21,7 @@ import { CacheTTL } from '@nestjs/cache-manager';
 import { testTwitterConfig } from '../shared/twitter.service.js';
 import { UpdateCoreSettingsDto, UpdateTwitterConfigDto } from './nft.dto.js';
 import { SettingsService } from './settings.service.js';
-import { CORE_ADMIN_API_KEY, DELEGATION_MODE } from 'src/static-settings.js';
+import { CORE_ADMIN_API_KEY, DELEGATION_MODE } from '../static-settings.js';
 
 @Controller('/nft')
 export class NftController {
