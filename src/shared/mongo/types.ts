@@ -128,7 +128,7 @@ export interface NftPrimaryCoin {
   coinInfo: {
     name: string;
     symbol: string;
-    file: string; // image, base64 encoded
+    image: string;
     description: string;
     twitter?: string;
     telegram?: string;

@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { LaunchpadService } from './launchpad.service.js';
 
@@ -7,6 +8,7 @@ export class LaunchpadController {
   constructor(
     private readonly launchpadService: LaunchpadService,
     private readonly tradeMonitorService: TradeMonitorService,
+    private readonly mongo: MongoService,
   ) {}
 
   @Get('/:chain/common-collection-nft-fee')
@@ -40,7 +42,7 @@ export class LaunchpadController {
         tokenInfo: {
           name: string;
           symbol: string;
-          file: string; // image, base64 encoded blob
+          image: string;
           description: string;
           twitter?: string;
           telegram?: string;
@@ -73,12 +75,24 @@ export class LaunchpadController {
     @Query('limit') limit: number,
     @Query('creatorAddress') creatorAddress?: string,
   ) {
-    return this.tradeMonitorService.getAgentCreatedTokens({
-      sortBy,
-      sortOrder,
+    const response = await this.tradeMonitorService.getAgentCreatedTokens({
+      sortBy: sortBy as any,
+      sortOrder: sortOrder as any,
       offset,
       limit,
       creatorAddress,
     });
+
+    response.list.forEach((item) => {
+      if (item.override) {
+        item.description = item.override.description;
+        item.twitter = item.override.twitter;
+        item.telegram = item.override.telegram;
+        item.website = item.override.website;
+      }
+      delete item.override;
+    });
+
+    return response;
   }
 }
