@@ -93,17 +93,25 @@ export class SolanaClient {
   }
 
   private async getSPLBalance(mintTokenAddress: string) {
-    const programId = await this.getTokenProgramId(mintTokenAddress);
-    const associatedAccount = getAssociatedTokenAddressSync(
-      new PublicKey(mintTokenAddress),
-      this.keypair.publicKey,
-      false,
-      programId,
-    );
+    try {
+      const programId = await this.getTokenProgramId(mintTokenAddress);
+      const associatedAccount = getAssociatedTokenAddressSync(
+        new PublicKey(mintTokenAddress),
+        this.keypair.publicKey,
+        false,
+        programId,
+      );
 
-    const balance =
-      await this.connection.getTokenAccountBalance(associatedAccount);
-    return balance.value.uiAmount;
+      const balance =
+        await this.connection.getTokenAccountBalance(associatedAccount);
+      return balance.value.uiAmount;
+    }catch (e){
+      if (e.message?.includes('Invalid param: could not find account')){
+        return 0;
+      }else{
+        throw e
+      }
+    }
   }
 
   private async isBlockhashExpired(lastValidBlockHeight: number) {
