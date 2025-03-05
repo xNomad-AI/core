@@ -85,23 +85,44 @@ Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\
 
 export const executeSwap: Action = {
   functionCallSpec: {
-    name: 'swap_token',
-    strict: true,
-    additionalProperties: false,
-    description: 'Swap tokens on Solana blockchain, set default token symbol to SOL when user want to buy or sell tokens',
-    parameters: {
-      type: 'object',
+  name: "swap_token",
+  strict: true,
+  additionalProperties: false,
+  description: "Swap tokens on the Solana blockchain. When the user specifies 'buy <token>', the default input token is SOL. When the user specifies 'sell <token>', the default output token is SOL.",
+  parameters: {
+  type: "object",
       properties: {
-        inputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
-        inputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
-        outputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
-        outputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
-        inputTokenAmount: { type: ['number', 'null'], description: 'Amount of inputToken to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
-        inputTokenPercentage: { type: ['number', 'null'], description: 'Percentage of inputToken balance to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
-        outputTokenAmount: { type: ['number', 'null'], description: 'Amount of outputToken to swap' },
+      "inputTokenSymbol": {
+        "type": ["string", "null"],
+          "description": "Symbol of the token to sell. Defaults to 'SOL' when buying another token. Either inputTokenSymbol or inputTokenCA must be provided."
       },
-      required: ['inputTokenSymbol', 'outputTokenSymbol', 'inputTokenCA', 'outputTokenCA', 'inputTokenAmount', 'inputTokenPercentage', 'outputTokenAmount'],
+      "inputTokenCA": {
+        "type": ["string", "null"],
+          "description": "Contract address of the token to sell. Either inputTokenSymbol or inputTokenCA must be provided."
+      },
+      "outputTokenSymbol": {
+        "type": ["string", "null"],
+          "description": "Symbol of the token to buy. Defaults to 'SOL' when selling another token. Either outputTokenSymbol or outputTokenCA must be provided."
+      },
+      "outputTokenCA": {
+        "type": ["string", "null"],
+          "description": "Contract address of the token to buy. Either outputTokenSymbol or outputTokenCA must be provided."
+      },
+      "inputTokenAmount": {
+        "type": ["number", "null"],
+          "description": "Exact amount of the input token to swap. Required if inputTokenPercentage is not provided."
+      },
+      "inputTokenPercentage": {
+        "type": ["number", "null"],
+          "description": "Percentage of the input token balance to swap. Required if inputTokenAmount is not provided."
+      },
+      "outputTokenAmount": {
+        "type": ["number", "null"],
+          "description": "Expected amount of the output token to receive."
+      }
     },
+    required: ['inputTokenSymbol', 'outputTokenSymbol', 'inputTokenCA', 'outputTokenCA', 'inputTokenAmount', 'inputTokenPercentage']
+  },
   },
   name: 'EXECUTE_SWAP',
   suppressInitialMessage: true,
@@ -247,8 +268,8 @@ async function checkResponse(
   }
 
   // generate formatted response from chat
-  let swapReq = state.actionParameters as SwapTokenRequest;
-  swapReq = convertNullStrings(swapReq);
+  let swapReq = convertNullStrings(state.actionParameters) as SwapTokenRequest;
+  elizaLogger.log('Swap request:', swapReq);
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
   swapReq.outputTokenAmount = Number(swapReq.outputTokenAmount);
