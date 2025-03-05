@@ -7,9 +7,6 @@ import {
 import { type Connection, PublicKey } from '@solana/web3.js';
 import { elizaLogger, IAgentRuntime } from '@elizaos/core';
 import { getRuntimeKey } from '../environment.js';
-import { BigNumber } from 'bignumber.js';
-import { getTokenDecimals } from './swapUtils.js';
-import { getWalletKey } from '../keypairUtils.js';
 
 const tokenNameMap: { [mintAddress: string]: string } = {
   EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
@@ -112,14 +109,14 @@ export async function getTokensBySymbol(
     return [{ address: tokenSymbolMap[keyword] }];
   }
   try {
-    const url = `https://public-api.birdeye.so/defi/v3/search?chain=solana&keyword=${keyword}&target=token&sort_by=volume_24h_usd&sort_type=desc&verify_token=true&offset=0&limit=20`;
+    const url = `https://public-api.birdeye.so/defi/v3/search?chain=solana&keyword=${keyword}&target=token&sort_by=volume_24h_usd&sort_type=desc&verify_token=true&offset=0&limit=10`;
     const headers = {
       'X-API-KEY': birdeypeApikey,
       accept: 'application/json',
     };
     const response = await fetch(url, { headers });
     const result = await response.json();
-    return result?.data?.items?.result as { address: string }[];
+    return result?.data?.items?.[0]?.result as { name: string, symbol:string, address: string, decimals: string|number }[];
   } catch (error) {
     elizaLogger.error(`Error getting token CA: ${error}`);
     return [];
