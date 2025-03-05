@@ -18,6 +18,7 @@ import { MongoService } from '../shared/mongo/mongo.service.js';
 import { NftPrimaryCoin } from '../shared/mongo/types.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { LaunchpadService } from './launchpad.service.js';
 
 @Injectable()
 export class LaunchCoinService {
@@ -28,6 +29,7 @@ export class LaunchCoinService {
     private readonly config: ConfigService,
     private readonly elizaManager: ElizaManagerService,
     private readonly logger: TransientLoggerService,
+    private readonly launchpadService: LaunchpadService,
     private readonly tradeMonitorService: TradeMonitorService,
   ) {
     this.logger.setContext(LaunchCoinService.name);
@@ -103,7 +105,7 @@ export class LaunchCoinService {
           name: coin.coinInfo.name,
           symbol: coin.coinInfo.symbol,
           description: coin.coinInfo.description,
-          file: new Blob([Buffer.from(coin.coinInfo.file, 'base64')]),
+          image: coin.coinInfo.image,
           twitter: coin.coinInfo.twitter,
           telegram: coin.coinInfo.telegram,
           website: coin.coinInfo.website,
@@ -165,7 +167,7 @@ export class LaunchCoinService {
       name: string;
       symbol: string;
       description: string;
-      file: Blob;
+      image: string;
       twitter?: string;
       telegram?: string;
       website?: string;
@@ -187,19 +189,20 @@ export class LaunchCoinService {
       this.logger.log(`token metadata uri is provided: ${metadataUri}`);
     } else {
       this.logger.log('create token metadata');
-      const tokenMetadata = await pumpfun.createTokenMetadata({
-        name: token.name,
-        symbol: token.symbol,
-        description: token.description,
-        file: token.file,
-        twitter: token.twitter,
-        telegram: token.telegram,
-        website: token.website,
-      });
-      metadataUri = tokenMetadata.metadataUri;
-      this.logger.log(
-        'create token metadata success: ' + JSON.stringify(tokenMetadata),
+      metadataUri = await this.launchpadService.createTokenMetadata(
+        'solana',
+        mint.publicKey.toBase58(),
+        {
+          name: token.name,
+          symbol: token.symbol,
+          description: token.description,
+          image: token.image,
+          twitter: token.twitter,
+          telegram: token.telegram,
+          website: token.website,
+        },
       );
+      this.logger.log(`create token metadata success: ${metadataUri}`);
     }
 
     const instructions: TransactionInstruction[] = [];

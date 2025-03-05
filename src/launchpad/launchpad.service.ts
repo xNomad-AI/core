@@ -20,6 +20,7 @@ import * as Proof from '@web3-storage/w3up-client/proof';
 import { StoreMemory } from '@web3-storage/w3up-client/stores/memory';
 import bs58 from 'bs58';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
+import { AmazonS3 } from '../shared/amazon-s3.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 
@@ -63,7 +64,7 @@ export class LaunchpadService {
       tokenInfo: {
         name: string;
         symbol: string;
-        file: string; // image, base64 encoded blob
+        image: string;
         description: string;
         twitter?: string;
         telegram?: string;
@@ -116,7 +117,7 @@ export class LaunchpadService {
         coinInfo: {
           name: createToken.tokenInfo.name,
           symbol: createToken.tokenInfo.symbol,
-          file: createToken.tokenInfo.file,
+          image: createToken.tokenInfo.image,
           description: createToken.tokenInfo.description,
           twitter: createToken.tokenInfo.twitter,
           telegram: createToken.tokenInfo.telegram,
@@ -366,5 +367,50 @@ export class LaunchpadService {
     await client.setCurrentSpace(space.did());
 
     return client;
+  }
+
+  async createTokenMetadata(
+    chain: string,
+    address: string,
+    metadata: {
+      name: string;
+      symbol: string;
+      description: string;
+      image: string;
+      twitter?: string;
+      telegram?: string;
+      website?: string;
+    },
+  ): Promise<string> {
+    const s3 = new AmazonS3(
+      this.config.get('S3_BUCKET'),
+      this.config.get('S3_ACCESS_KEY'),
+      this.config.get('S3_SECRET_KEY'),
+      this.config.get('S3_REGION'),
+    );
+
+    const metadataJson = {
+      name: metadata.name,
+      symbol: metadata.symbol,
+      description: metadata.description,
+      image: metadata.image,
+      showName: true,
+      createdOn: 'https://pump.fun',
+      ...(metadata.twitter && { twitter: metadata.twitter }),
+      ...(metadata.telegram && { telegram: metadata.telegram }),
+      ...(metadata.website && { website: metadata.website }),
+    };
+
+    const path = `metadata/${chain}/${address}.json`;
+
+    await s3.addFileFromBuffer(
+      Buffer.from(JSON.stringify(metadataJson, null, 2), 'utf-8'),
+      path,
+      'application/json',
+    );
+
+    let s3Url = this.config.get<string>('S3_URL');
+    if (s3Url.endsWith('/')) s3Url = s3Url.slice(0, -1);
+    return s3Url + '/' + path;
   }
 }

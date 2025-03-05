@@ -45,6 +45,39 @@ interface CreateCopyTradeParams {
   expiredAt: number;
 }
 
+export interface AgentCreatedToken {
+  chain: string;
+  address: string;
+  creatorAddress: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  logo: string;
+  description: string;
+  twitter: string;
+  telegram: string;
+  website: string;
+  liquidity: number;
+  marketCap: number;
+  price: number;
+  priceChange24h: number;
+  volume24h: number;
+  holdersCount: number;
+  deployedTime: string;
+  override?: {
+    description: string;
+    twitter: string;
+    telegram: string;
+    website: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetAgentCreatedTokensResponse {
+  list: AgentCreatedToken[];
+}
+
 @Injectable()
 export class TradeMonitorService {
   private endpoint: string;
@@ -205,12 +238,12 @@ export class TradeMonitorService {
   }
 
   async getAgentCreatedTokens(params: {
-    sortBy: string;
-    sortOrder: string;
+    sortBy: 'deployedTime' | 'volume24h' | 'marketCap';
+    sortOrder: 'desc' | 'asc';
     offset: number;
     limit: number;
     creatorAddress?: string;
-  }) {
+  }): Promise<GetAgentCreatedTokensResponse> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.endpoint}/ai-agent-coin/coins`, {
@@ -224,6 +257,73 @@ export class TradeMonitorService {
       return response.data;
     } catch (e) {
       this.logger.error(`Failed to get agent created tokens: ${e}`);
+      throw e;
+    }
+  }
+
+  async getAgentCreateToken(
+    address: string,
+  ): Promise<AgentCreatedToken | null> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.endpoint}/ai-agent-coin/coin`, {
+          params: {
+            address,
+          },
+          headers: {
+            'Content-Type': 'application/json',
+            'API-KEY': this.apikey,
+          },
+        }),
+      );
+      return response.data;
+    } catch (e) {
+      this.logger.error(`Failed to get agent created token: ${e}`);
+      throw e;
+    }
+  }
+
+  async refreshAgentCreatedToken(address: string) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(`${this.endpoint}/ai-agent-coin/refresh-coin`, {
+          address,
+        }),
+      );
+      return response.data;
+    } catch (e) {
+      this.logger.error(`Failed to refresh agent created token: ${e}`);
+      throw e;
+    }
+  }
+
+  async setOverrideMetadataForAgentCreatedToken(params: {
+    address: string;
+    metadata: {
+      description: string;
+      twitter: string;
+      telegram: string;
+      website: string;
+    };
+  }) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.endpoint}/ai-agent-coin/set-override-metadata`,
+          params,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'API-KEY': this.apikey,
+            },
+          },
+        ),
+      );
+      return response.data;
+    } catch (e) {
+      this.logger.error(
+        `Failed to set override metadata for agent created token: ${e}`,
+      );
       throw e;
     }
   }

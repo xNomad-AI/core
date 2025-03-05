@@ -1,21 +1,26 @@
+import { stringToUuid } from '@elizaos/core';
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { NftgoService } from '../shared/nftgo.service.js';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { ObjectId, WithId } from 'mongodb';
+import PQueue from 'p-queue';
+import { AddressService } from '../address/address.service.js';
+import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { CharacterConfig, AICollection, AINft, NftConfig } from '../shared/mongo/types.js';
+import {
+  AICollection,
+  AINft,
+  CharacterConfig,
+  NftConfig,
+} from '../shared/mongo/types.js';
+import { NftgoService } from '../shared/nftgo.service.js';
+import { TradeMonitorService } from '../shared/trade-monitor.service.js';
+import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { deepMerge } from '../shared/utils.service.js';
 import {
   AssetsByCollection,
   NEW_AI_NFT_EVENT,
   NftSearchOptions,
 } from './nft.types.js';
-import { ElizaManagerService } from '../agent/eliza-manager.service.js';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { AddressService } from '../address/address.service.js';
-import { stringToUuid } from '@elizaos/core';
-import { deepMerge, sleep } from '../shared/utils.service.js';
-import { ObjectId, WithId } from 'mongodb';
-import PQueue from 'p-queue';
-
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -28,6 +33,7 @@ export class NftService implements OnApplicationBootstrap {
     private readonly elizaManager: ElizaManagerService,
     private readonly addressService: AddressService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tradeMonitorService: TradeMonitorService,
   ) {
     this.logger.setContext(NftService.name);
     this.queue = new PQueue({ concurrency: 3 });
@@ -61,7 +67,9 @@ export class NftService implements OnApplicationBootstrap {
       }
 
       await this.queue.add(async () => {
-        const isAgentRunning = await this.elizaManager.isAgentRunning(nft.agentId);
+        const isAgentRunning = await this.elizaManager.isAgentRunning(
+          nft.agentId,
+        );
         if (isAgentRunning && !restart) {
           this.logger.log(`Agent for NFT ${nft.nftId} is already running`);
           return;
@@ -71,8 +79,12 @@ export class NftService implements OnApplicationBootstrap {
           await this.elizaManager.stopAgent(nft.agentId);
         }
 
-        this.logger.log(`Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`);
-        const nftConfig = await this.mongo.nftConfigs.findOne({ nftId: nft.nftId });
+        this.logger.log(
+          `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
+        );
+        const nftConfig = await this.mongo.nftConfigs.findOne({
+          nftId: nft.nftId,
+        });
 
         await this.elizaManager.startAgentLocal({
           chain: nft.chain,
@@ -97,7 +109,7 @@ export class NftService implements OnApplicationBootstrap {
 
   async decreaseHttpProxyCount(httpProxy: string) {
     await this.mongo.coreSettings.updateOne(
-      { "value.httpProxy": httpProxy },
+      { 'value.httpProxy': httpProxy },
       {
         $inc: {
           'value.count': -1,
@@ -107,22 +119,32 @@ export class NftService implements OnApplicationBootstrap {
   }
 
   // TODO fix transaction
-  async getNftHttpProxy(nftConfig: WithId<NftConfig>, action: "delete" | "update"): Promise<string | undefined> {
-    const dbProxy = nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
+  async getNftHttpProxy(
+    nftConfig: WithId<NftConfig>,
+    action: 'delete' | 'update',
+  ): Promise<string | undefined> {
+    const dbProxy =
+      nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
 
     if (!dbProxy) {
-      const proxies = await this.mongo.coreSettings.find(
-        { category: "httpProxy", "value.product": "datacenterProxies", "value.count": { $lt: 2 } },
-      ).toArray();
+      const proxies = await this.mongo.coreSettings
+        .find({
+          category: 'httpProxy',
+          'value.product': 'datacenterProxies',
+          'value.count': { $lt: 2 },
+        })
+        .toArray();
       // sort by p.value.count
-      const sortedProxies = proxies.sort((a, b) => a.value.count - b.value.count);
+      const sortedProxies = proxies.sort(
+        (a, b) => a.value.count - b.value.count,
+      );
       if (sortedProxies.length === 0) return undefined;
 
       await this.increaseHttpProxyCount(sortedProxies[0]._id);
       return sortedProxies[0].value.httpProxy;
       // characterConfig.settings.secrets.TWITTER_HTTP_PROXY = proxy;
     } else {
-      if (action === "delete") await this.decreaseHttpProxyCount(dbProxy);
+      if (action === 'delete') await this.decreaseHttpProxyCount(dbProxy);
 
       return dbProxy;
     }
@@ -141,14 +163,16 @@ export class NftService implements OnApplicationBootstrap {
     characterConfig = deepMerge(nftConfig?.characterConfig, characterConfig);
 
     // add proxy to agent
-    const dbProxy = nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
-    let action: "delete" | "update" = "update";
+    const dbProxy =
+      nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
+    let action: 'delete' | 'update' = 'update';
     if (dbProxy && !characterConfig.settings?.secrets?.TWITTER_HTTP_PROXY) {
-      action = "delete";
+      action = 'delete';
     }
     const proxy = await this.getNftHttpProxy(nftConfig, action);
     if (proxy) {
-      if (characterConfig.settings?.secrets) characterConfig.settings.secrets.TWITTER_HTTP_PROXY = proxy;
+      if (characterConfig.settings?.secrets)
+        characterConfig.settings.secrets.TWITTER_HTTP_PROXY = proxy;
     }
 
     await this.mongo.nftConfigs.updateOne(
@@ -268,13 +292,21 @@ export class NftService implements OnApplicationBootstrap {
           contractAddress: nft.contractAddress,
           tokenId: nft.tokenId,
         });
+        const primaryCoin = await this.getPrimaryCoin(nft.nftId);
         return {
           ...nft,
           agentId: stringToUuid(nft.nftId),
           owner: owner?.ownerAddress,
+          primaryCoin: primaryCoin
+            ? {
+                symbol: primaryCoin.coinInfo.symbol,
+                image: primaryCoin.coinInfo.image,
+              }
+            : undefined,
         };
       }),
     );
+
     return nftDetails;
   }
 
@@ -433,12 +465,69 @@ export class NftService implements OnApplicationBootstrap {
         nft.agentAccount ??
         (await this.elizaManager.getAgentAccount(chain, nft.nftId));
       const agentId = nft.agentId ?? stringToUuid(nft.nftId);
+      const primaryCoin = await this.getPrimaryCoin(nft.nftId);
       assets[nft.collectionId].nfts.push({
         ...nft,
         agentId,
         agentAccount,
+        primaryCoin: primaryCoin
+          ? {
+              symbol: primaryCoin.coinInfo.symbol,
+              image: primaryCoin.coinInfo.image,
+            }
+          : undefined,
       });
     }
     return assets;
+  }
+
+  async bindPrimaryCoin(chain: string, nftId: string, address: string) {
+    const primaryCoin = await this.getPrimaryCoin(nftId);
+    if (primaryCoin) {
+      throw new Error('Agent has already bound primary coin');
+    }
+
+    const { solana: agentWallet } = await this.elizaManager.getAgentAccount(
+      chain,
+      nftId,
+    );
+
+    const token = await this.tradeMonitorService.getAgentCreateToken(address);
+    if (!token) {
+      throw new Error('token not indexed');
+    }
+    if (token.creatorAddress !== agentWallet) {
+      throw new Error('agent is not the creator of the token');
+    }
+
+    await this.mongo.nftPrimaryCoins.insertOne({
+      chain,
+      nftId,
+      coinInfo: {
+        name: token.name,
+        symbol: token.symbol,
+        image: token.logo,
+        description: token.description,
+        twitter: token.twitter,
+        telegram: token.telegram,
+        website: token.website,
+      } as any,
+      metadataUri: '',
+      mintAddress: address,
+      mintSecretKey: '',
+      initialBuyAmountSol: 0,
+      created: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await this.tradeMonitorService.refreshAgentCreatedToken(address);
+  }
+
+  async getPrimaryCoin(nftId: string) {
+    const coin = await this.mongo.nftPrimaryCoins.findOne({
+      nftId,
+    });
+    return coin;
   }
 }
