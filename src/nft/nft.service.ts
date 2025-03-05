@@ -299,6 +299,7 @@ export class NftService implements OnApplicationBootstrap {
           owner: owner?.ownerAddress,
           primaryCoin: primaryCoin
             ? {
+                address: primaryCoin.mintAddress,
                 symbol: primaryCoin.coinInfo.symbol,
                 image: primaryCoin.coinInfo.image,
               }
@@ -472,6 +473,7 @@ export class NftService implements OnApplicationBootstrap {
         agentAccount,
         primaryCoin: primaryCoin
           ? {
+              address: primaryCoin.mintAddress,
               symbol: primaryCoin.coinInfo.symbol,
               image: primaryCoin.coinInfo.image,
             }
