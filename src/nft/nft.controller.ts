@@ -21,6 +21,7 @@ import { CacheTTL } from '@nestjs/cache-manager';
 import { testTwitterConfig } from '../shared/twitter.service.js';
 import { UpdateCoreSettingsDto, UpdateTwitterConfigDto } from './nft.dto.js';
 import { SettingsService } from './settings.service.js';
+import { CORE_ADMIN_API_KEY, DELEGATION_MODE } from 'src/static-settings.js';
 
 @Controller('/nft')
 export class NftController {
@@ -92,14 +93,14 @@ export class NftController {
   @UseGuards(AuthGuard)
   @Post('/:chain/:nftId/config/twitter')
   async updateTwitterConfig(
-    @Request() request,
+    @Request() request: ExpressRequest,
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
     @Body() updateTwitterConfigDto: UpdateTwitterConfigDto,
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
+    if (!DELEGATION_MODE && !(await this.nftService.isNftAdmin(chain, address, nftId))) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
 
@@ -128,13 +129,13 @@ export class NftController {
   @UseGuards(AuthGuard)
   @Delete('/:chain/:nftId/config/twitter')
   async deleteTwitterConfig(
-    @Request() request,
+    @Request() request: ExpressRequest,
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
+    if (!DELEGATION_MODE && !(await this.nftService.isNftAdmin(chain, address, nftId))) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
     await this.nftService.updateNftConfig({
@@ -155,7 +156,7 @@ export class NftController {
   @UseGuards(AuthGuard)
   @Post('/:chain/:nftId/config')
   async setNftConfig(
-    @Request() request,
+    @Request() request: ExpressRequest,
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
     @Body() { characterConfig }: { characterConfig: CharacterConfig },
@@ -174,13 +175,13 @@ export class NftController {
   @UseGuards(AuthGuard)
   @Get('/:chain/:nftId/config')
   async getNftConfig(
-    @Request() request,
+    @Request() request: ExpressRequest,
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
+    if (!DELEGATION_MODE && !(await this.nftService.isNftAdmin(chain, address, nftId))) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
     return await this.nftService.getNftConfig(nftId);
@@ -189,7 +190,7 @@ export class NftController {
   @UseGuards(AuthGuard)
   @Delete('/:chain/:nftId/config')
   async deleteNftConfig(
-    @Request() request,
+    @Request() request: ExpressRequest,
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
   ) {
@@ -220,11 +221,10 @@ export class NftController {
     @Request() request: ExpressRequest,
     @Body() body: UpdateCoreSettingsDto[],
   ) {
-    const adminAPIKey = process.env.CORE_ADMIN_API_KEY;
-    if (!adminAPIKey) {
+    if (!CORE_ADMIN_API_KEY) {
       throw new UnauthorizedException('Admin API key is not set');
     }
-    if (request.headers['X-ADMIN-API-KEY'.toLowerCase()] !== adminAPIKey) {
+    if (request.headers['X-ADMIN-API-KEY'.toLowerCase()] !== CORE_ADMIN_API_KEY) {
       throw new UnauthorizedException('Invalid admin API key');
     }
 

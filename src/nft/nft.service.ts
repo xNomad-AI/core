@@ -162,6 +162,11 @@ export class NftService implements OnApplicationBootstrap {
     );
     const nft = await this.mongo.nfts.findOne({ nftId });
     void this.handleNewAINfts([nft], true);
+
+    // hiden the http proxy
+    if (characterConfig.settings?.secrets?.TWITTER_HTTP_PROXY) {
+      characterConfig.settings.secrets.TWITTER_HTTP_PROXY = '';
+    }
     return {
       characterConfig,
     };
@@ -171,6 +176,11 @@ export class NftService implements OnApplicationBootstrap {
     const nftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
+
+    // hiden the http proxy
+    if (nftConfig.characterConfig.settings?.secrets?.TWITTER_HTTP_PROXY) {
+      nftConfig.characterConfig.settings.secrets.TWITTER_HTTP_PROXY = '';
+    }
     return nftConfig;
   }
 
@@ -200,6 +210,7 @@ export class NftService implements OnApplicationBootstrap {
     if (!nft) {
       return false;
     }
+
     const owner = await this.mongo.nftOwners.findOne({
       chain: nft.chain,
       contractAddress: nft.contractAddress,
