@@ -34,7 +34,7 @@ export class LaunchCoinService {
     );
   }
 
-  @Interval(60 * 1000)
+  // @Interval(60 * 1000)
   async launchCoins() {
     if (this.isProcessing) {
       return;

@@ -192,7 +192,7 @@ export class ElizaManagerService {
     };
   }
 
-  @Timeout(5000)
+  // @Timeout(5000)
   async startAutoSwapTask() {
     while (true) {
       try {

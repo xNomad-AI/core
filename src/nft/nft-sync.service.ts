@@ -31,9 +31,9 @@ export class NftSyncService implements OnApplicationBootstrap {
   }
 
   onApplicationBootstrap() {
-    this.subscribeAINfts().catch((e) => {
-      this.logger.error(e);
-    });
+    // this.subscribeAINfts().catch((e) => {
+    //   this.logger.error(e);
+    // });
   }
 
   // subscribe AI Nft txs

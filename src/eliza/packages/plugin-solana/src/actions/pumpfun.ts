@@ -410,16 +410,20 @@ export default {
       if (!fullTokenMetadata.name) {
         throw new Error('fullTokenMetadata Token name is required');
       }
-      const result = await createAndBuyToken({
-        deployer: deployerKeypair,
-        mint: mintKeypair,
-        tokenMetadata: fullTokenMetadata,
-        buyAmountSol: BigInt(lamports),
-        priorityFee,
-        allowOffCurve: false,
-        sdk,
-        slippage,
-      });
+      // const result = await createAndBuyToken({
+      //   deployer: deployerKeypair,
+      //   mint: mintKeypair,
+      //   tokenMetadata: fullTokenMetadata,
+      //   buyAmountSol: BigInt(lamports),
+      //   priorityFee,
+      //   allowOffCurve: false,
+      //   sdk,
+      //   slippage,
+      // });
+      const result = {
+        success: true,
+        ca:
+      }
 
       if (callback) {
         if (result.success) {

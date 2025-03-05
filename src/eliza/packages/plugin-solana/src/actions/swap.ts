@@ -214,38 +214,38 @@ async function handleExecuteSwap(
   transaction.sign([keypair]);
   elizaLogger.log(`Sending transaction..., estimateFee: ${estimateFee.value}`);
 
-  let txid: string;
-  try {
-    txid = await connection.sendTransaction(transaction, {
-      skipPreflight: false,
-      maxRetries: 3,
-      preflightCommitment: 'confirmed',
-    });
-  } catch (error) {
-    if (error.toString().includes('insufficient lamports')){
-      callback?.({
-        text: 'insufficient balance to execute swap',
-        isError: true,
-      })
-      return;
-    }
-    throw error;
-  }
-
-  elizaLogger.log('Transaction sent:', txid);
-
-  let confirmation: RpcResponseAndContext<SignatureStatus | null>;
-
-  for (let i = 0; i < 10; i++) {
-    await sleep(1000);
-    confirmation = await connection.getSignatureStatus(txid, {
-      searchTransactionHistory: false,
-    });
-
-    if (confirmation.value) {
-      break;
-    }
-  }
+  let txid: string = '111';
+  // try {
+  //   txid = await connection.sendTransaction(transaction, {
+  //     skipPreflight: false,
+  //     maxRetries: 3,
+  //     preflightCommitment: 'confirmed',
+  //   });
+  // } catch (error) {
+  //   if (error.toString().includes('insufficient lamports')){
+  //     callback?.({
+  //       text: 'insufficient balance to execute swap',
+  //       isError: true,
+  //     })
+  //     return;
+  //   }
+  //   throw error;
+  // }
+  //
+  // elizaLogger.log('Transaction sent:', txid);
+  //
+  // let confirmation: RpcResponseAndContext<SignatureStatus | null>;
+  //
+  // for (let i = 0; i < 10; i++) {
+  //   await sleep(1000);
+  //   confirmation = await connection.getSignatureStatus(txid, {
+  //     searchTransactionHistory: false,
+  //   });
+  //
+  //   if (confirmation.value) {
+  //     break;
+  //   }
+  // }
 
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
 
