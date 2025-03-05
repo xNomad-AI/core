@@ -149,6 +149,7 @@ export async function executeAutoTokenSwapTask(
       return;
     }
   }
+  elizaLogger.log(`AUTO_TASK started successfully, ${id}, task: ${JSON.stringify(task)}`);
 
   await runtime.databaseAdapter.removeMemory(id, AutoSwapTaskTable);
   const { keypair } = await getWalletKey(runtime, true);
@@ -160,7 +161,7 @@ export async function executeAutoTokenSwapTask(
     Number(task.inputTokenAmount),
   );
   elizaLogger.info(
-    `AUTO_TOKEN_SWAP_TASK Finished successfully ${id}, txId: ${txId}`,
+    `AUTO_TASK Finished successfully ${id}, txId: ${txId}`,
   );
 }
 

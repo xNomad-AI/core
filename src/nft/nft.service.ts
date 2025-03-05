@@ -50,7 +50,6 @@ export class NftService implements OnApplicationBootstrap {
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
       await this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft]);
-      await sleep(1500);
     }
   }
 
