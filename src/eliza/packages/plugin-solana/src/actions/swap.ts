@@ -85,7 +85,7 @@ Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\
 
 export const executeSwap: Action = {
   functionCallSpec: {
-  name: "swap_token",
+  name: "EXECUTE_SWAP",
   strict: true,
   additionalProperties: false,
   description: "Swap tokens on the Solana blockchain. When the user specifies 'buy <token>', the default input token is SOL. When the user specifies 'sell <token>', the default output token is SOL.",
@@ -114,7 +114,7 @@ export const executeSwap: Action = {
       },
       "inputTokenPercentage": {
         "type": ["number", "null"],
-          "description": "Percentage of the input token balance to swap. Required if inputTokenAmount is not provided."
+          "description": "Percentage of the input token balance to swap. Required if inputTokenAmount is not provided. When extracting percentages, convert values like \"50%\" into decimal form (e.g., 0.5 instead of 50)."
       },
       "outputTokenAmount": {
         "type": ["number", "null"],
@@ -210,8 +210,9 @@ async function handleExecuteSwap(
 
   const transactionBuf = Buffer.from(swapResult.swapTransaction, 'base64');
   const transaction = VersionedTransaction.deserialize(transactionBuf);
+  const estimateFee = await connection.getFeeForMessage(transaction.message);
   transaction.sign([keypair]);
-  elizaLogger.log('Sending transaction...');
+  elizaLogger.log(`Sending transaction..., estimateFee: ${estimateFee.value}`);
 
   let txid: string;
   try {
@@ -221,7 +222,13 @@ async function handleExecuteSwap(
       preflightCommitment: 'confirmed',
     });
   } catch (error) {
-    elizaLogger.warn('Error sending transaction:', error);
+    if (error.toString().includes('insufficient lamports')){
+      callback?.({
+        text: 'insufficient balance to execute swap',
+        isError: true,
+      })
+      return;
+    }
     throw error;
   }
 
@@ -345,24 +352,24 @@ async function checkResponse(
   }
 
   const WSOL_AMOUNT = await client.getBalance(NATIVE_MINT.toBase58());
-  const GAS_BANANCE = 0.001;   // require 0.001 SOL for gas fee
+  const GAS_BALANCE = 0.001;   // require 0.001 SOL for gas fee
 
   if (swapReq.inputTokenCA !== NATIVE_MINT.toBase58()) {
     // buy with token
     const balance = await client.getBalance(NATIVE_MINT.toBase58());
-    if (balance < GAS_BANANCE) {
+    if (balance < GAS_BALANCE) {
       elizaLogger.error('Insufficient balance for swap gas fee');
       const responseMsg = {
         text:
-          `Insufficient balance for swap gas fee, required: ${GAS_BANANCE} SOL but only have: ` +
+          `Insufficient balance for swap gas fee, required: ${GAS_BALANCE} SOL but only have: ` +
           balance,
       };
       callback?.(responseMsg);
       return null;
     }
-  } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BANANCE) {
+  } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BALANCE) {
     // buy with SOL
-    const requiredAmount = GAS_BANANCE + Number(swapReq.inputTokenAmount);
+    const requiredAmount = GAS_BALANCE + Number(swapReq.inputTokenAmount);
     elizaLogger.error('Insufficient balance for swap gas fee');
     const responseMsg = {
       text:
