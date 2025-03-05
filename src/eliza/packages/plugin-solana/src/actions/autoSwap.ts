@@ -170,7 +170,7 @@ export const autoTask: Action = {
     name: 'AUTO_TASK',
     strict: true,
     additionalProperties: false,
-    description: 'Perform auto token swap. Enables the agent to automatically execute swaps when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers.   description: "Swap tokens on the Solana blockchain. When the user specifies \'buy <token>\', the default input token is SOL. When the user specifies \'sell <token>\', the default output token is SOL.",\n',
+    description: 'Automatically executes a token swap when a specified condition is met, such as a price trigger or time delay. This function should only be used if the user specifies a condition like \'when price is above/below X\', \'at X price\', or \'after Y minutes\'. If the user simply says \'sell token\', this is NOT an auto task. When the user specifies \'buy <token> at certain condition\', the default input token is SOL. When the user specifies \'sell <token> at certain condition\', the default output token is SOL.',
     parameters: {
       type: 'object',
       properties: {
@@ -179,9 +179,9 @@ export const autoTask: Action = {
         outputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to buy. Either outputTokenSymbol or outputTokenCA must be provided.' },
         outputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to buy. If omitted in a sell order, SOL will be used by default. Either outputTokenSymbol or outputTokenCA must be provided.' },
         inputTokenAmount: { type: ['number', 'null'], description: 'Exact amount of inputToken to swap. Either inputTokenAmount or inputTokenPercentage must be provided.' },
-        inputTokenPercentage: { type: ['number', 'null'], description: 'Percentage of inputToken balance to swap. Either inputTokenAmount or inputTokenPercentage must be provided.' },
+        inputTokenPercentage: { type: ['number', 'null'], description: 'Percentage of inputToken balance to swap. convert 100% to 1 Either inputTokenAmount or inputTokenPercentage must be provided. When extracting percentages, convert values like "50%" into decimal form (e.g., 0.5 instead of 50).' },
         priceCondition: { type: ['string', 'null'], description: "Defines whether the swap should be triggered when the target token's price is 'above' or 'below' the specified priceTarget." },
-        priceTarget: { type: ['number', 'null'], description: 'Price target for the swap, ' },
+        priceTarget: { type: ['number', 'null'], description: 'Price target for the swap' },
         tokenTarget: { type: ['string', 'null'], description: 'Token symbol or contract address used for price trigger evaluation' },
         delay: { type: ['string', 'null'], description: 'Time Delay for the swap, e.g., "after 5 minutes" or "below 0.00169", Either delay or priceTarget must be provided.' },
       },
@@ -302,8 +302,7 @@ async function checkResponse(
   }
 
   // generate formatted response from chat
-  let swapReq = state.actionParameters as AutoSwapTask;
-  swapReq = convertNullStrings(swapReq);
+  let swapReq = convertNullStrings(state.actionParameters) as AutoSwapTask;
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
 

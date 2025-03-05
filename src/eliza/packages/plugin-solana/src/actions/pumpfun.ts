@@ -259,19 +259,7 @@ export default {
       callback?.(NotAgentAdminResponse);
       return false;
     }
-
-    // Generate structured content from natural language
-    const pumpContext = composeContext({
-      state,
-      template: pumpfunTemplate,
-    });
-
-    let content = await generateObjectDeprecated({
-      runtime,
-      context: pumpContext,
-      modelClass: ModelClass.LARGE,
-    });
-    content = convertNullStrings(content);
+    const content = convertNullStrings(state.actionParameters) as any;
     if (content.symbol?.startsWith('$')) {
       content.symbol = content.symbol.slice(1);
     }
