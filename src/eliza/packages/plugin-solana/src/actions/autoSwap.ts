@@ -514,31 +514,28 @@ async function executeSwapTokenTx(
   return txid;
 }
 
-function formatTaskInfo(params: AutoSwapTask): string {
-  let trigger = '';
-  if (
-    params.priceCondition &&
-    params.priceTarget &&
-    params.priceCondition !== 'null' &&
-    params.priceTarget !== 'null'
-  ) {
-    trigger = `when $${params.tokenTarget || params.inputTokenSymbol || params.inputTokenCA} price is ${params.priceCondition} ${params.priceTarget}`;
-  }
-  if (params.startAt) {
-    trigger += `\nstart at: ${JSON.stringify(params.startAt)}`;
-  }
-  trigger += `\nexpire at: ${JSON.stringify(params.expireAt)}`;
-
-  return `
-💱 Auto Task:
-----------------------------
-🔹 From: ${params.inputTokenAmount} ${params.inputTokenSymbol}  
-   📌 CA: ${params.inputTokenCA}
-
-🔸 To: ${params.outputTokenSymbol}  
-   📌 CA: ${params.outputTokenCA}
-   
-   Condition: ${trigger}
-----------------------------
-  `;
+function formatTaskInfo({
+  inputTokenAmount,
+  inputTokenCA,
+  inputTokenPercentage,
+  inputTokenSymbol,
+  priceCondition,
+  priceTarget,
+  tokenTarget,
+  startAt,
+  expireAt,
+}: AutoSwapTask): string {
+  const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'sell' : 'buy';
+  const amountInfo = swapType === 'sell' ? `${inputTokenAmount}(${inputTokenPercentage}%)` : `${inputTokenAmount} ${inputTokenSymbol || inputTokenCA}`;
+  const trigger = priceCondition ? `${inputTokenSymbol || inputTokenCA} price ${priceCondition} $${priceTarget}`: `At ${startAt.toUTCString()}`;
+  let taskInfo = 'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';
+  taskInfo += '————\n';
+  taskInfo += `⬇️ Type: Limit ${swapType} order\n`;
+  taskInfo += `🪙 Token: ${inputTokenSymbol} (${tokenTarget})\n`;
+  taskInfo += `💰 ${swapType} Amount: ${amountInfo}\n`;
+  taskInfo += `⚡️ Trigger: ${trigger}\n`;
+  taskInfo += `⏰ Expire time: ${expireAt? expireAt.toUTCString():'Never'}\n`;
+  taskInfo += `————\n`;
+  taskInfo += `You can cancel your scheduled tasks on the [Tasks] subpage.\n`;
+  return taskInfo;
 }

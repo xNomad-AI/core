@@ -179,11 +179,17 @@ export const transfer: Action = {
       return null;
     }
 
+    const solanaClient = new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair);
     if (confirmResponse.userAcked == 'pending') {
-      const transferInfo = formatTransferInfo(content);
+
+      const balance = await solanaClient.getBalance(content.tokenAddress);
+      const transferPercentage = (Number(content.amount) / balance * 100).toFixed(1);
+      const transferInfo = formatTransferInfo(senderKeypair.publicKey.toBase58(),{
+        ...content,
+        transferPercentage,
+      });
       const responseMsg = {
-        text: `${transferInfo}
-✅ Please confirm the withdraw by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
+        text: `${transferInfo}`
       };
       callback?.(responseMsg);
       return null;
@@ -199,7 +205,6 @@ export const transfer: Action = {
         getRuntimeKey(runtime, 'SOLANA_RPC_URL'),
         'confirmed',
       );
-      const solanaClient = new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair);
       const mintPubkey = new PublicKey(content.tokenAddress);
       const recipientPubkey = new PublicKey(content.recipient);
 
@@ -297,8 +302,7 @@ export const transfer: Action = {
       transaction.feePayer = senderKeypair.publicKey;
       transaction.recentBlockhash = recentBlockhash.blockhash;
       const estimatedFee = await transaction.getEstimatedFee(connection);
-      const rentExemption =
-        await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
+      const rentExemption = await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
       if (solBalance < solTransferOut + estimatedFee + rentExemption) {
         callback({
           text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
@@ -360,12 +364,16 @@ export const transfer: Action = {
   ] as ActionExample[][],
 } as Action;
 
-function formatTransferInfo(content: TransferContent): string {
+function formatTransferInfo(from: string, content): string {
   return `
-💱 Withdraw Request:
-----------------------------
-🔹 Withdraw: ${content.amount} ${content.tokenSymbol || content.tokenAddress} 
-🔸 To: ${content.recipient}  
-----------------------------
+Please confirm the info below. If any adjustments are needed, let me know the updated details.
+————
+➡️ Type: Transfer
+🪙 Token: ${content.tokenSymbol} (${content.tokenAddress})
+💰 Amount: ${content.amount} (${content.transferPercentage}%)
+💼 From: ${from}
+💼 To: ${content.recipient}
+————
+Reply 'ok' or 'yes' to confirm.
   `;
 }

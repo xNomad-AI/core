@@ -263,11 +263,15 @@ async function checkResponse(
   _options: { [key: string]: unknown },
   callback?: HandlerCallback,
 ): Promise<{
+  inputTokenAmount: number | null;
+  inputTokenSymbol: string;
+  inputTokenPercentage: number | null;
+  outputTokenSymbol: string;
   inputTokenCA: string;
+  outputTokenAmount: number | null;
   outputTokenCA: string;
-  inputTokenAmount: number;
-  programId: PublicKey;
-} | null> {
+  programId: PublicKey
+}> {
   const isAdmin = await isAgentAdmin(runtime, message);
   if (!isAdmin) {
     callback?.(NotAgentAdminResponse);
@@ -403,16 +407,16 @@ async function checkResponse(
   }
 
   if (confirmResponse.userAcked == 'pending') {
-    const swapInfo = formatSwapInfo({
+    const swapInfo = formatConfirmSwapInfo({
       inputTokenSymbol: swapReq.inputTokenSymbol,
       inputTokenCA: swapReq.inputTokenCA,
       outputTokenSymbol: swapReq.outputTokenSymbol,
       outputTokenCA: swapReq.outputTokenCA,
       inputTokenAmount: swapReq.inputTokenAmount,
+      inputPercentage: ((swapReq.inputTokenAmount / balance) * 100).toFixed(1),
     });
     const responseMsg = {
-      text: `${swapInfo}
-✅ Please confirm the swap by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
+      text: `${swapInfo}`,
       action: 'EXECUTE_SWAP',
     };
     callback?.(responseMsg);
@@ -422,21 +426,34 @@ async function checkResponse(
   return { ...swapReq, programId };
 }
 
-function formatSwapInfo(params: {
+function formatConfirmSwapInfo(params: {
   inputTokenSymbol: string;
   inputTokenCA: string;
   outputTokenSymbol: string;
   outputTokenCA: string;
   inputTokenAmount: number;
+  inputPercentage: string;
 }): string {
+  if (params.inputTokenCA !== NATIVE_MINT.toBase58() && params.outputTokenCA !== NATIVE_MINT.toBase58()) {
+    return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
+    ————
+    🔄 Type: Swap(swap $${params.inputTokenSymbol || params.inputTokenCA} for ${params.outputTokenSymbol || params.outputTokenCA})
+    🪙 $${params.inputTokenSymbol}: ${params.inputTokenCA}
+    🪙 $${params.outputTokenSymbol}: ${params.outputTokenCA}
+    💰 Swap amount: ${params.inputTokenAmount}
+    ————
+    Reply 'ok' or 'yes' to confirm.`;
+  }
+  const swapType = params.outputTokenCA === NATIVE_MINT.toBase58() ? 'Sell' : 'Buy';
+  const amountDescription = params.outputTokenCA === NATIVE_MINT.toBase58() ? `${params.inputTokenAmount} (${params.inputPercentage}%)` : `${params.inputTokenAmount} ${params.inputTokenSymbol}`;
+  const tokenDescription = params.outputTokenCA === NATIVE_MINT.toBase58() ? `$${params.inputTokenSymbol} (${params.inputTokenCA})` : `$${params.outputTokenSymbol} (${params.outputTokenCA})`;
   return `
-💱 Swap Request
-----------------------------
-🔹 Input: ${params.inputTokenAmount} ${params.inputTokenSymbol}  
-   📌 CA: ${params.inputTokenCA}
-
-🔸 Output: ${params.outputTokenSymbol}  
-   📌 CA: ${params.outputTokenCA}
-----------------------------
+  Please confirm the info below. If any adjustments are needed, let me know the updated details.
+  ————
+  ⬆️ Type: ${swapType}
+  🪙 Token: ${tokenDescription}
+  💰 ${swapType} Amount: ${amountDescription}
+  ————
+  Reply 'ok' or 'yes' to confirm.
   `;
 }

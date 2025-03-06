@@ -68,6 +68,7 @@ async function createAndBuyToken({
   ca: string;
   creator?: string;
   error?: any;
+  signature?: string;
 }> {
   let createResults: TransactionResult;
   try {
@@ -291,28 +292,20 @@ export default {
     );
     if (!imageUrl || !fs.existsSync(imageUrl)) {
       callback({
-        text:
-          formatCreateTokenInfo(content) +
-          `
-        Please provide an image for the token.`,
+        text: `Please provide an image for the token.`,
       });
       return false;
     }
     if (!name) {
       callback({
-        text:
-          formatCreateTokenInfo(content) +
-          `
-        Please provide a name for the token.`,
+        text: `Please provide a name for the token.`,
       });
       return false;
     }
     if (!symbol) {
       callback({
         text:
-          formatCreateTokenInfo(content) +
-          `
-        Please provide a symbol for the token.`,
+          `Please provide a symbol for the token.`,
       });
       return false;
     }
@@ -342,8 +335,7 @@ export default {
     if (confirmResponse.userAcked == 'pending') {
       const confirmMessage = formatCreateTokenInfo(content);
       const responseMsg = {
-        text: `${confirmMessage}
-✅ Please confirm by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
+        text: `${confirmMessage}`,
         action: 'CREATE_TOKEN',
         media: [
           {
@@ -421,41 +413,37 @@ export default {
         slippage,
       });
 
-      if (callback) {
-        if (result.success) {
-          callback({
-            text: `Token ${tokenMetadata.name} (${tokenMetadata.symbol}) created successfully!\nContract Address: ${result.ca}\nCreator: ${result.creator}\nView at: https://pump.fun/${result.ca}`,
-            content: {
-              tokenInfo: {
-                symbol: tokenMetadata.symbol,
-                address: result.ca,
-                creator: result.creator,
-                name: tokenMetadata.name,
-                description: tokenMetadata.description,
-                timestamp: Date.now(),
-              },
-            },
-          });
-        } else {
-          callback({
-            text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
-            content: {
-              error: result.error,
-              mintAddress: result.ca,
-            },
-          });
-        }
-      }
-      const successMessage = `Token created success: ${result.success}!,  View at: https://pump.fun/${mintKeypair.publicKey.toBase58()}`;
-      elizaLogger.log(successMessage);
-      return result.success;
-    } catch (error) {
-      if (callback) {
+
+      if (result.success) {
         callback({
-          text: `Error during pumpfun token creation: ${error.message}`,
-          content: { error: error.message },
+          text: `Transaction submitted, please wait for confirmation.\nCheck token on: https://pump.fun/${mintKeypair.publicKey.toBase58()}\nTransaction hash: ${result.signature}`,
+          content: {
+            tokenInfo: {
+              symbol: tokenMetadata.symbol,
+              address: result.ca,
+              creator: result.creator,
+              name: tokenMetadata.name,
+              description: tokenMetadata.description,
+              timestamp: Date.now(),
+            },
+          },
+        });
+      } else {
+        callback({
+          text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
+          isError: true,
+          content: {
+            error: result.error,
+            mintAddress: result.ca,
+          },
         });
       }
+    } catch (error) {
+        callback({
+          text: `Error during pumpfun token creation: ${error.message}`,
+          isError: true,
+          content: { error: error.message },
+        });
       return false;
     }
   },
@@ -560,22 +548,15 @@ async function _createAndBuyWithUrl(
   return createResults;
 }
 
-function formatCreateTokenInfo(params: CreateTokenMetadata): string {
+function formatCreateTokenInfo(params: any): string {
   return `
-💱 Create Token On pump.fun
-----------------------------
-🔹 Name: ${params.name}
-
-🔸 Symbol: ${params.symbol}
-
-🔹 Description: ${params.description}
-
-🔸 Twitter: ${params.twitter}
-
-🔹 Website: ${params.website}
-
-🔸 Telegram: ${params.telegram}
-----------------------------
+🎟️ Type: issue token
+🪙 Token: ${params.symbol} (${params.name})
+📝 Description: ${params.description || ''}
+🐦 Twitter: ${params.twitter || ''}
+📱 Telegram: ${params.telegram || ''}
+🌐 Website: ${params.website || ''}
+💰 Buy amount: ${params.buyAmountSol || 0} SOL
   `;
 }
 
