@@ -202,7 +202,7 @@ export class NftService implements OnApplicationBootstrap {
     });
 
     // hiden the http proxy
-    if (nftConfig.characterConfig.settings?.secrets?.TWITTER_HTTP_PROXY) {
+    if (nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY) {
       nftConfig.characterConfig.settings.secrets.TWITTER_HTTP_PROXY = '';
     }
     return nftConfig;
