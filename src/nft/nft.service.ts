@@ -388,12 +388,20 @@ export class NftService implements OnApplicationBootstrap {
       contractAddress: nft.contractAddress,
       tokenId: nft.tokenId,
     });
+    const primaryCoin = await this.getPrimaryCoin(nftId);
 
     return {
       ...nft,
       agentId,
       agentAccount,
       owner: nftOwner?.ownerAddress,
+      primaryCoin: primaryCoin
+        ? {
+            address: primaryCoin.mintAddress,
+            symbol: primaryCoin.coinInfo.symbol,
+            image: primaryCoin.coinInfo.image,
+          }
+        : undefined,
     };
   }
 
