@@ -33,7 +33,7 @@
     "@elizaos/adapter-mongodb": "file:data/eliza/packages/adapter-mongodb",
     "@elizaos/client-direct": "file:data/eliza/packages/client-direct",
     "@elizaos/client-telegram": "file:data/eliza/packages/client-telegram",
-    "@elizaos/client-twitter": "file:data/eliza/packages/client-twitter",
+    "@elizaos/client-twitter": "github:xNomad-AI/client-twitter#f6253269a9b9188031886e72a380d13ea7e1f536",
     "@elizaos/core": "file:data/eliza/packages/core",
     "@elizaos/plugin-solana": "workspace:*",
     "@elizaos/plugin-tee": "file:data/eliza/packages/plugin-tee",

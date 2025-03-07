@@ -56,4 +56,38 @@ export class SettingsService {
 
     return insertedDocs.length;
   }
+
+  async randomGetHttpProxy(limit: number = 1) {
+    const HTTP_PROXY_MAX_USERS = 2;
+
+    const proxies = await this.mongo.coreSettings.find(
+      { category: "httpProxy", "value.product": "datacenterProxies", "value.count": { $lt: HTTP_PROXY_MAX_USERS } },
+    ).sort({ 'value.count': 1 }).limit(limit).toArray();
+
+    if (proxies.length !== 0) {
+      return proxies[0].value.httpProxy;
+    }
+  }
+
+  async increaseHttpProxyCount(httpProxy: string) {
+    return await this.mongo.coreSettings.updateOne(
+      { "value.httpProxy": httpProxy },
+      {
+        $inc: {
+          'value.count': 1,
+        },
+      },
+    );
+  }
+
+  async decreaseHttpProxyCount(httpProxy: string) {
+    return await this.mongo.coreSettings.updateOne(
+      { "value.httpProxy": httpProxy },
+      {
+        $inc: {
+          'value.count': -1,
+        },
+      },
+    );
+  }
 }

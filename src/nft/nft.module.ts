@@ -4,7 +4,7 @@ import { NftController } from './nft.controller.js';
 import { AgentModule } from '../agent/agent.module.js';
 import { NftSyncService } from './nft-sync.service.js';
 import { AddressModule } from '../address/address.module.js';
-import { SettingsService } from './settings.service.js';
+import { SettingsService } from './core-settings.service.js';
 
 @Module({
   imports: [AgentModule, AddressModule],

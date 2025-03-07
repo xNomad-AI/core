@@ -1,7 +1,6 @@
 import { stringToUuid } from '@elizaos/core';
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { ObjectId, WithId } from 'mongodb';
 import PQueue from 'p-queue';
 import { AddressService } from '../address/address.service.js';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
@@ -10,7 +9,6 @@ import {
   AICollection,
   AINft,
   CharacterConfig,
-  NftConfig,
 } from '../shared/mongo/types.js';
 import { NftgoService } from '../shared/nftgo.service.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
@@ -96,60 +94,6 @@ export class NftService implements OnApplicationBootstrap {
     }
   }
 
-  async increaseHttpProxyCount(_id: ObjectId) {
-    await this.mongo.coreSettings.updateOne(
-      { _id },
-      {
-        $inc: {
-          'value.count': 1,
-        },
-      },
-    );
-  }
-
-  async decreaseHttpProxyCount(httpProxy: string) {
-    await this.mongo.coreSettings.updateOne(
-      { 'value.httpProxy': httpProxy },
-      {
-        $inc: {
-          'value.count': -1,
-        },
-      },
-    );
-  }
-
-  // TODO fix transaction
-  async getNftHttpProxy(
-    nftConfig: WithId<NftConfig>,
-    action: 'delete' | 'update',
-  ): Promise<string | undefined> {
-    const dbProxy =
-      nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
-
-    if (!dbProxy) {
-      const proxies = await this.mongo.coreSettings
-        .find({
-          category: 'httpProxy',
-          'value.product': 'datacenterProxies',
-          'value.count': { $lt: 2 },
-        })
-        .toArray();
-      // sort by p.value.count
-      const sortedProxies = proxies.sort(
-        (a, b) => a.value.count - b.value.count,
-      );
-      if (sortedProxies.length === 0) return undefined;
-
-      await this.increaseHttpProxyCount(sortedProxies[0]._id);
-      return sortedProxies[0].value.httpProxy;
-      // characterConfig.settings.secrets.TWITTER_HTTP_PROXY = proxy;
-    } else {
-      if (action === 'delete') await this.decreaseHttpProxyCount(dbProxy);
-
-      return dbProxy;
-    }
-  }
-
   async updateNftConfig({
     nftId,
     characterConfig,
@@ -162,19 +106,6 @@ export class NftService implements OnApplicationBootstrap {
     });
     characterConfig = deepMerge(nftConfig?.characterConfig, characterConfig);
 
-    // add proxy to agent
-    const dbProxy =
-      nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
-    let action: 'delete' | 'update' = 'update';
-    if (dbProxy && !characterConfig.settings?.secrets?.TWITTER_HTTP_PROXY) {
-      action = 'delete';
-    }
-    const proxy = await this.getNftHttpProxy(nftConfig, action);
-    if (proxy) {
-      if (characterConfig.settings?.secrets)
-        characterConfig.settings.secrets.TWITTER_HTTP_PROXY = proxy;
-    }
-
     await this.mongo.nftConfigs.updateOne(
       { nftId },
       {
@@ -185,7 +116,10 @@ export class NftService implements OnApplicationBootstrap {
       { upsert: true },
     );
     const nft = await this.mongo.nfts.findOne({ nftId });
-    void this.handleNewAINfts([nft], true);
+    void this.handleNewAINfts([nft], true).catch((e) => {
+      this.logger.error("Failed to restart agent", e);
+      this.logger.error(e);
+    });
 
     // hiden the http proxy
     if (characterConfig.settings?.secrets?.TWITTER_HTTP_PROXY) {
@@ -196,24 +130,32 @@ export class NftService implements OnApplicationBootstrap {
     };
   }
 
-  async getNftConfig(nftId: string) {
+  async getNftConfig(nftId: string, options?: {
+    ignoreTwitterHttpProxy?: boolean;
+  }) {
     const nftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
 
-    // hiden the http proxy
-    if (nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY) {
+    // default hiden the http proxy
+    if ((options?.ignoreTwitterHttpProxy ?? true) && nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY) {
       nftConfig.characterConfig.settings.secrets.TWITTER_HTTP_PROXY = '';
     }
     return nftConfig;
   }
 
+  async getTwitterHttpProxy(nftId: string) {
+    const nftConfig = await this.getNftConfig(nftId, { ignoreTwitterHttpProxy: false });
+    return nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
+  }
+
   async deleteNftConfig(nftId: string) {
     await this.mongo.nftConfigs.deleteOne({ nftId });
     const nft = await this.mongo.nfts.findOne({ nftId });
-    void this.handleNewAINfts([nft], true);
-
-    // TODO await decreaseHttpProxyCount()
+    void this.handleNewAINfts([nft], true).catch((e) => {
+      this.logger.error("Failed to restart agent", e);
+      this.logger.error(e);
+    });;
   }
 
   async getAgentOwner(agentId: string) {

@@ -21,6 +21,9 @@ import { CharacterConfig } from '../shared/mongo/types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { sleep } from '../shared/utils.service.js';
 import { WalletProxyService } from '../wallet/wallet-proxy.service.js';
+import { SettingsService } from '../nft/core-settings.service.js';
+import { NftConfigService } from '../nft/nft-config.service.js';
+import { ClientName } from 'src/eliza/starter/clients/index.js';
 
 export type ElizaAgentConfig = {
   chain: string;
@@ -38,17 +41,62 @@ export class ElizaManagerService {
     private readonly appConfig: ConfigService,
     private readonly mongoService: MongoService,
     private readonly walletProxyService: WalletProxyService,
+    private readonly settingsService: SettingsService,
+    private readonly nftConfigService: NftConfigService,
   ) {
     logger.setContext(ElizaManagerService.name);
     this.elizaClient = new DirectClient();
-    this.elizaClient.startAgent = async (
-      character: Character,
-      nftId?: string,
-    ) => {
-      return startAgent(character, this.elizaClient, nftId, {
+    this.elizaClient.startAgent = this.directClientStartAgent.bind(this);
+  }
+
+  private async preStartAgent(character: Character, nftId?: string) {
+    if (!nftId) return;
+
+    const twitterUsername = character.settings?.secrets?.TWITTER_USERNAME;
+    if (twitterUsername) {
+      // if proxy not exists, get one
+      let httpProxy = character.settings?.secrets?.TWITTER_HTTP_PROXY;
+      if (!httpProxy) {
+        httpProxy = await this.settingsService.randomGetHttpProxy();
+      }
+
+      if (!httpProxy) {
+        this.logger.warn('No http proxy found for Twitter client', twitterUsername);
+      } else {
+        // should use the same proxy for the same user to provide a stable service
+        await this.nftConfigService.updateNftTwitterHttpProxy(nftId, httpProxy);
+        character.settings.secrets.TWITTER_HTTP_PROXY = httpProxy;
+      }
+    }
+  }
+
+  private async postStartAgent(character: Character, errors: Record<ClientName, any>, nftId?: string, ) {
+    if (!nftId) return;
+
+    // if client start success, increase the http proxy count so that the next client can use the other proxy
+    let httpProxy = character.settings?.secrets?.TWITTER_HTTP_PROXY;
+    if (httpProxy && errors['client-twitter'] === null) {
+      await this.settingsService.increaseHttpProxyCount(httpProxy);
+    }
+  }
+
+  private async directClientStartAgent(character: Character, nftId?: string) {
+    try {
+      await this.preStartAgent(character, nftId);
+      const { runtime, errors } = await startAgent(character, this.elizaClient, nftId, {
         mongoClient: this.mongoService.client,
       });
-    };
+      if (errors['client-telegram'] || errors['client-twitter']) {
+        this.logger.error(`nftId: ${nftId} start with errors : ${JSON.stringify(errors)}`);
+      }
+
+      await this.postStartAgent(character, errors, nftId);
+
+      return runtime;
+    } catch (error) {
+      this.logger.error(`Failed to start agent for NFT ${nftId}: ${error}`);
+      // throw error;
+    }
   }
 
   async startAgentServer() {
@@ -68,9 +116,7 @@ export class ElizaManagerService {
   async startAgentLocal(config: ElizaAgentConfig) {
     try {
       const character = await this.initAgentCharacter(config);
-      await startAgent(character, this.elizaClient, config.nftId, {
-        mongoClient: this.mongoService.client,
-      });
+      await this.directClientStartAgent(character, config.nftId);
     } catch (e) {
       this.logger.error(
         `Failed to start agent for NFT ${config.nftId}: ${e.message}`,

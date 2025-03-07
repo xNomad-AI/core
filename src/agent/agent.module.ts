@@ -3,10 +3,12 @@ import { WalletModule } from '../wallet/wallet.module.js';
 import { AgentAccountController } from './agent-account.controller.js';
 import { AgentController } from './agent.controller.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
+import { SettingsService } from '../nft/core-settings.service.js';
+import { NftConfigService } from '../nft/nft-config.service.js';
 
 @Module({
   imports: [WalletModule],
-  providers: [ElizaManagerService],
+  providers: [ElizaManagerService, SettingsService, NftConfigService],
   controllers: [AgentController, AgentAccountController],
   exports: [ElizaManagerService],
 })

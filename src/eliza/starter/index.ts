@@ -63,29 +63,23 @@ export async function startAgent(
     mongoClient?: MongoClient;
   },
 ) {
-  try {
-    character.id ??= stringToUuid(nftId || character.name);
-    character.username ??= character.name;
+  character.id ??= stringToUuid(nftId || character.name);
+  character.username ??= character.name;
 
-    const token = getTokenForProvider(character.modelProvider, character);
-    const db = await initializeDatabase(options.mongoClient, `agent`);
+  const token = getTokenForProvider(character.modelProvider, character);
+  const db = await initializeDatabase(options.mongoClient, `agent`);
 
-    const cache = initializeDbCache(character, db);
-    const runtime = await createAgent(character, db, cache, token);
+  const cache = initializeDbCache(character, db);
+  const runtime = await createAgent(character, db, cache, token);
 
-    await runtime.initialize();
+  await runtime.initialize();
 
-    runtime.clients = await initializeClients(character, runtime);
+  const { clients, errors } = await initializeClients(character, runtime);
+  runtime.clients = clients;
 
-    directClient.registerAgent(runtime);
+  directClient.registerAgent(runtime);
 
-    return runtime;
-  } catch (error) {
-    elizaLogger.error(
-      `Error starting agent for character ${character.name}:`,
-      error,
-    );
-  }
+  return { runtime, errors };
 }
 
 export async function newTradeAgentRuntime(

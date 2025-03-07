@@ -24,7 +24,7 @@ import { testTwitterConfig } from '../shared/twitter.service.js';
 import { UpdateCoreSettingsDto, UpdateTwitterConfigDto } from './nft.dto.js';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
-import { SettingsService } from './settings.service.js';
+import { SettingsService } from './core-settings.service.js';
 import { CORE_ADMIN_API_KEY, DELEGATION_MODE } from '../static-settings.js';
 
 @Controller('/nft')
@@ -153,6 +153,8 @@ export class NftController {
     if (!DELEGATION_MODE && !(await this.nftService.isNftAdmin(chain, address, nftId))) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
+
+    const httpProxy = await this.nftService.getTwitterHttpProxy(nftId);
     await this.nftService.updateNftConfig({
       nftId,
       characterConfig: {
@@ -166,6 +168,10 @@ export class NftController {
         },
       },
     });
+
+    if (httpProxy) {
+      await this.settingsService.decreaseHttpProxyCount(httpProxy);
+    }
   }
 
   @UseGuards(AuthGuard)

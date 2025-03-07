@@ -5,11 +5,18 @@ import { TwitterClientInterface } from '@elizaos/client-twitter';
 import { Character, IAgentRuntime } from '@elizaos/core';
 import TelegramClientInterface from '@elizaos/client-telegram';
 
+export type ClientName = 'client-telegram' | 'client-twitter';
+
 export async function initializeClients(
   character: Character,
   runtime: IAgentRuntime,
 ) {
   const clients: Record<string, any> = [];
+  const errors: Record<ClientName, any> = {
+    'client-telegram': null,
+    'client-twitter': null,
+  };
+
   const clientTypes = character.clients?.map((str) => str.toLowerCase()) || [];
 
   // if (clientTypes.includes('auto')) {
@@ -32,6 +39,7 @@ export async function initializeClients(
       const telegramClient = await TelegramClientInterface.start(runtime);
       if (telegramClient) clients['client-telegram'] = telegramClient;
     } catch (e) {
+      errors['client-telegram'] = e;
       console.error(
         `Failed to start ${character.name} Telegram client: ${e.message}`,
       );
@@ -51,11 +59,11 @@ export async function initializeClients(
         console.log(`Suspended Twitter client for ${character.name}`);
       } else {
         console.log(`Starting Twitter client for ${character.name}`);
-        // if proxy not exists, get one
         const twitterClients = await TwitterClientInterface.start(runtime);
         clients['client-twitter'] = twitterClients;
       }
     } catch (e) {
+      errors['client-twitter'] = e.message;
       console.error(
         `Failed to start ${character.name} Twitter client: ${e.message}`,
       );
@@ -73,5 +81,5 @@ export async function initializeClients(
     }
   }
 
-  return clients;
+  return { clients, errors };
 }
