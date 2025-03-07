@@ -1,15 +1,9 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { MongoService } from '../shared/mongo/mongo.service.js';
-import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { LaunchpadService } from './launchpad.service.js';
 
 @Controller('/launchpad')
 export class LaunchpadController {
-  constructor(
-    private readonly launchpadService: LaunchpadService,
-    private readonly tradeMonitorService: TradeMonitorService,
-    private readonly mongo: MongoService,
-  ) {}
+  constructor(private readonly launchpadService: LaunchpadService) {}
 
   @Get('/:chain/common-collection-nft-fee')
   async getCreateCommonCollectionNftFee(
@@ -65,34 +59,5 @@ export class LaunchpadController {
     const delegation =
       await this.launchpadService.createWeb3StorageDelegation(did);
     return delegation;
-  }
-
-  @Get('agent-created-tokens')
-  async getAgentCreatedTokens(
-    @Query('sortBy') sortBy: string,
-    @Query('sortOrder') sortOrder: string,
-    @Query('offset') offset: number,
-    @Query('limit') limit: number,
-    @Query('creatorAddress') creatorAddress?: string,
-  ) {
-    const response = await this.tradeMonitorService.getAgentCreatedTokens({
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
-      offset,
-      limit,
-      creatorAddress,
-    });
-
-    response.list.forEach((item) => {
-      if (item.override) {
-        item.description = item.override.description;
-        item.twitter = item.override.twitter;
-        item.telegram = item.override.telegram;
-        item.website = item.override.website;
-      }
-      delete item.override;
-    });
-
-    return response;
   }
 }

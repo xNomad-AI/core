@@ -49,6 +49,7 @@ export interface AgentCreatedToken {
   chain: string;
   address: string;
   creatorAddress: string;
+  nftId: string;
   name: string;
   symbol: string;
   decimals: number;
@@ -211,6 +212,7 @@ export class TradeMonitorService {
     chain: string;
     address: string;
     creatorAddress: string;
+    nftId: string;
   }) {
     try {
       const response = await firstValueFrom(
@@ -220,6 +222,7 @@ export class TradeMonitorService {
             chain: params.chain,
             address: params.address,
             creatorAddress: params.creatorAddress,
+            nftId: params.nftId,
           },
           {
             headers: {

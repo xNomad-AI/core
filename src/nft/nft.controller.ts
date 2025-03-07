@@ -21,11 +21,11 @@ import { CharacterConfig } from '../shared/mongo/types.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { testTwitterConfig } from '../shared/twitter.service.js';
+import { CORE_ADMIN_API_KEY, DELEGATION_MODE } from '../static-settings.js';
+import { SettingsService } from './core-settings.service.js';
 import { UpdateCoreSettingsDto, UpdateTwitterConfigDto } from './nft.dto.js';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto } from './nft.types.js';
-import { SettingsService } from './core-settings.service.js';
-import { CORE_ADMIN_API_KEY, DELEGATION_MODE } from '../static-settings.js';
 
 @Controller('/nft')
 export class NftController {
@@ -110,7 +110,10 @@ export class NftController {
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!DELEGATION_MODE && !(await this.nftService.isNftAdmin(chain, address, nftId))) {
+    if (
+      !DELEGATION_MODE &&
+      !(await this.nftService.isNftAdmin(chain, address, nftId))
+    ) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
 
@@ -150,7 +153,10 @@ export class NftController {
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!DELEGATION_MODE && !(await this.nftService.isNftAdmin(chain, address, nftId))) {
+    if (
+      !DELEGATION_MODE &&
+      !(await this.nftService.isNftAdmin(chain, address, nftId))
+    ) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
 
@@ -202,7 +208,10 @@ export class NftController {
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!DELEGATION_MODE && !(await this.nftService.isNftAdmin(chain, address, nftId))) {
+    if (
+      !DELEGATION_MODE &&
+      !(await this.nftService.isNftAdmin(chain, address, nftId))
+    ) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
     return await this.nftService.getNftConfig(nftId);
@@ -245,7 +254,9 @@ export class NftController {
     if (!CORE_ADMIN_API_KEY) {
       throw new UnauthorizedException('Admin API key is not set');
     }
-    if (request.headers['X-ADMIN-API-KEY'.toLowerCase()] !== CORE_ADMIN_API_KEY) {
+    if (
+      request.headers['X-ADMIN-API-KEY'.toLowerCase()] !== CORE_ADMIN_API_KEY
+    ) {
       throw new UnauthorizedException('Invalid admin API key');
     }
 
@@ -253,6 +264,40 @@ export class NftController {
     return {
       inserted,
     };
+  }
+
+  @CacheTTL(10)
+  @Get('agent-created-tokens')
+  async getAgentCreatedTokens(
+    @Query('sortBy') sortBy: string,
+    @Query('sortOrder') sortOrder: string,
+    @Query('offset') offset: number,
+    @Query('limit') limit: number,
+    @Query('creatorAddress') creatorAddress?: string,
+  ) {
+    const response = await this.tradeMonitorService.getAgentCreatedTokens({
+      sortBy: sortBy as any,
+      sortOrder: sortOrder as any,
+      offset,
+      limit,
+      creatorAddress,
+    });
+
+    await Promise.all(
+      response.list.map(async (item) => {
+        if (item.override) {
+          item.description = item.override.description;
+          item.twitter = item.override.twitter;
+          item.telegram = item.override.telegram;
+          item.website = item.override.website;
+        }
+        delete item.override;
+
+        item['nft'] = await this.nftService.getNftById(item.chain, item.nftId);
+      }),
+    );
+
+    return response;
   }
 
   @UseGuards(AuthGuard)

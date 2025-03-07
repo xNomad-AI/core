@@ -135,6 +135,7 @@ export class LaunchCoinService {
       chain: 'solana',
       address: mintKeypair.publicKey.toBase58(),
       creatorAddress: agentKeypair.publicKey.toBase58(),
+      nftId: coin.nftId,
     });
 
     this.logger.log('Sending transaction');
