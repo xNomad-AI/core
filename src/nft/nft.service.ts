@@ -207,6 +207,10 @@ export class NftService implements OnApplicationBootstrap {
           break;
         case 'rarityDesc':
           sort['rarity.rank'] = 1;
+          break;
+        case 'mintTimeDesc':
+          sort['mint.timestamp'] = -1;
+          break;
       }
     }
     if (opts.traitsQuery) {

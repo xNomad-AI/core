@@ -37,6 +37,13 @@ export interface AINft {
     score: number;
     rank: number;
   };
+  mint: {
+    to: string;
+    quantity: number;
+    timestamp: number;
+    blockNumber: number;
+    txHash: string;
+  };
   aiAgent: AIAgent;
   agentId: string;
   agentAccount: {

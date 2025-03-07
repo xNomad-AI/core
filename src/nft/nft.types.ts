@@ -27,7 +27,7 @@ export type NftSearchOptions = {
   traitsQuery?: { traitValue: string; traitType: string }[];
 };
 
-export type NftSearchSortBy = 'rarityDesc' | 'numberAsc' | 'numberDesc';
+export type NftSearchSortBy = 'rarityDesc' | 'numberAsc' | 'numberDesc' | 'mintTimeDesc';
 
 export async function transformToAINft(nft: Nft): Promise<AINft> {
   // solana and some non-evm chain's NFT has either token_id or contract_address, not both
@@ -58,6 +58,13 @@ export async function transformToAINft(nft: Nft): Promise<AINft> {
     contractAddress: contractAddress,
     image: nft.image,
     name: nft.name,
+    mint: {
+      to: nft.created.minted_to,
+      quantity: nft.created?.quantity || 1,
+      timestamp: nft.created?.timestamp,
+      blockNumber: nft.created.block_number,
+      txHash: nft.created.transaction,
+    },
     tokenId: tokenId,
     tokenURI: nft.image,
     rarity: nft.rarity,
