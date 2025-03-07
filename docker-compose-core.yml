@@ -1,13 +1,14 @@
 version: '3.8'
 
 services:
-  core:
-    image: YOURORG/core:<YOUR_IMAGE_VERSION>
-    container_name: core
-    ports:
-      - "8080:8080"
-      - "3000:3000"
+  phala:
+    image: phalanetwork/tappd-simulator:0.0.6
+    container_name: phala-tee-simulator
     restart: always
+    ports:
+      - "8090:8090"
+    networks: 
+    - core_local
 
   mongodb:
     image: mongo:4.4
@@ -31,6 +32,30 @@ services:
       interval: 5s
       retries: 10
       timeout: 30s
+    networks: 
+    - core_local
+
+  agent: 
+    image: xnomadai/debug-client:0.0.3
+    command: ["/bin/bash", "-c", "pnpm run dev --host"]
+    ports:
+      - "5173:5173"
+    networks: 
+    - core_local
+
+  wallet: 
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8081:8080"
+    image: xnomadai/core-wallet:0.1.2
+    environment:
+      - WALLET_SERVICE_SECRET_TOKEN=EDIT THIS
+      - TEE_MODE=DOCKER
+    networks: 
+    - core_local
+    depends_on:
+      - phala
 
 networks:
   core_local:
