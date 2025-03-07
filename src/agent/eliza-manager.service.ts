@@ -310,6 +310,7 @@ export class ElizaManagerService {
     character.settings.secrets['WALLET_SECRET_SALT'] = salt;
     character.settings['TEE_MODE'] = teeMode;
     character.settings['WALLET_SECRET_SALT'] = salt;
+    character.settings['NFT_ID'] = nftId;
     if (
       character.modelProvider === 'deepseek' &&
       !character.settings['modelConfig']

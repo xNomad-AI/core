@@ -22,3 +22,20 @@ export {
   executeAutoTokenSwapTask,
   AutoSwapTask,
 } from './actions/autoSwap.js';
+
+
+export class SharedProvider {
+  private static instances = new Map<string, any>();
+
+  public static set<T>(name, instance: T) {
+    this.instances.set(name, instance);
+  }
+
+  public static get<T>(name: string) : T {
+    const instance = this.instances.get(name);
+    if (!instance) {
+      throw new Error(`Service ${name} is not initialized.`);
+    }
+    return instance;
+  }
+}

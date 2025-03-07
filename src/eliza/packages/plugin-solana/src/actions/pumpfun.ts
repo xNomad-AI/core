@@ -35,6 +35,14 @@ import {
   isAgentAdmin, NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 
+import * as fs from 'fs';
+import { getWalletKey } from '../keypairUtils.js';
+import { getRuntimeKey } from '../environment.js';
+import { convertNullStrings } from '../providers/swapUtils.js';
+import * as path from 'path';
+import { SharedProvider } from '../index.js';
+
+
 async function createAndBuyToken({
   deployer,
   mint,
@@ -125,53 +133,6 @@ async function createAndBuyToken({
   }
 }
 
-// Save the base64 data to a file
-import * as fs from 'fs';
-import { getWalletKey } from '../keypairUtils.js';
-import { getRuntimeKey } from '../environment.js';
-import { convertNullStrings } from '../providers/swapUtils.js';
-import * as path from 'path';
-
-const pumpfunTemplate = `
-You are an expert on Solana token creation, mainly referring to token launches on Pump.fun.
-
-Carefully read and understand the above conversation. Pay attention to distinguishing between completed conversations and newly initiated requests.
-
-Extract the requested token creation information from the most recent user request, ensuring accuracy in all fields.
-
-**For the image URL**, always extract the **latest uploaded image's local file path or remote url ** from the user's attachments. If no image is uploaded, leave it empty.
-
-Respond with a JSON markdown block containing only the extracted values. Use \`null\` for any values that cannot be determined.
-
-### **Example Response Format:**
-\`\`\`json
-{
-    "name": "GLITCHIZA",
-    "symbol": "GLITCHIZA",
-    "imageUrl": null,
-    "description": null,
-    "twitter": "https://x.com/elonmusk",
-    "website": "https://x.com",
-    "telegram": "https://t.me/+El39K_BrnIVhOWM1",
-    "buyAmountSol": "0.00069"
-}
-\`\`\`
-
-{{recentMessages}}
-
-Given the recent messages, extract or generate (come up with if not included) the following information about the requested token creation:
-- Token name
-- Token symbol
-- Token image url, the image path user uploaded, if not provided, it will be empty
-- Token description, if not provided, it will be empty
-- Twitter URL
-- Website URL
-- Telegram URL
-- Amount of SOL to buy
-
-Respond with a JSON markdown block containing only the extracted values. Twitter URL, Website URL, Telegram URL is not must required, if not provided, it will be empty.
-Amount of SOL to buy is not required, if not provided, it will be 0.
-`;
 
 const userConfirmTemplate = `
 {{recentMessages}}
@@ -402,6 +363,14 @@ export default {
       if (!fullTokenMetadata.name) {
         throw new Error('fullTokenMetadata Token name is required');
       }
+
+      SharedProvider.get<any>("tradeMonitorService").registerAgentCreatedToken({
+        chain: 'solana',
+        address: mintKeypair.publicKey.toBase58(),
+        creatorAddress: deployerKeypair.publicKey.toBase58(),
+        nftId: getRuntimeKey(runtime, 'NFT_ID'),
+      });
+
       const result = await createAndBuyToken({
         deployer: deployerKeypair,
         mint: mintKeypair,
