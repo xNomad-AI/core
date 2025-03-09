@@ -276,7 +276,7 @@ export const autoTask: Action = {
       callback,
     );
     if (!task) {
-      return true;
+      return false;
     }
     try {
       const content: Content = {
@@ -391,6 +391,7 @@ async function checkResponse(
     if (!swapReq.inputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid inputToken CA you want to sell',
+        result: 'Invalid inputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -405,6 +406,7 @@ async function checkResponse(
     if (!swapReq.outputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid outputToken CA you want to buy',
+        result: 'Invalid outputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -419,6 +421,7 @@ async function checkResponse(
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
+      result: 'Specify the buy amount of a token is not supported now',
     });
   }
 
@@ -437,6 +440,7 @@ async function checkResponse(
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'AUTO_TASK',
+      result: 'Invalid input amount',
     };
     callback?.(responseMsg);
     return null;
@@ -446,6 +450,7 @@ async function checkResponse(
   if (!balance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
+      result: 'The user input balance is 0.',
     };
     callback?.(responseMsg);
   }
@@ -453,6 +458,7 @@ async function checkResponse(
   if (balance < swapReq.inputTokenAmount) {
     const responseMsg = {
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
+      result: 'Insufficient balance for swap',
     };
     callback?.(responseMsg);
     return null;
@@ -490,6 +496,8 @@ async function checkResponse(
   if (!swapReq.priceTarget && !swapReq.delay) {
     const responseMsg = {
       text: "If you’d like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
+      result:
+        'The user did not specify the target price for the swap or provide a time delay',
     };
     callback?.(responseMsg);
     return null;
@@ -525,6 +533,7 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'rejected') {
     const responseMsg = {
       text: 'ok. I will not set the autotask.',
+      result: 'The user rejected the autotask',
     };
     callback?.(responseMsg);
     return null;
@@ -536,6 +545,7 @@ async function checkResponse(
     const responseMsg = {
       text: `${swapInfo}`,
       action: 'AUTO_TASK',
+      result: 'The user is pending to confirm the autotask',
     };
     callback?.(responseMsg);
     return null;

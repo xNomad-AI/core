@@ -206,7 +206,7 @@ async function handleExecuteSwap(
     callback,
   );
   if (!response) {
-    return true;
+    return false;
   }
 
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
@@ -287,6 +287,7 @@ async function checkResponse(
     if (!swapReq.inputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid inputToken CA you want to sell',
+        result: 'Pending inputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -301,6 +302,7 @@ async function checkResponse(
     if (!swapReq.outputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid outputToken CA you want to buy',
+        result: 'Pending outputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -316,6 +318,7 @@ async function checkResponse(
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
+      result: 'Pending outputToken Amount',
     });
   }
 
@@ -335,6 +338,7 @@ async function checkResponse(
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'EXECUTE_SWAP',
+      result: 'Pending inputToken Amount',
     };
     callback?.(responseMsg);
     return null;
@@ -344,6 +348,7 @@ async function checkResponse(
   if (!balance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
+      result: 'Insufficient inputToken Balance',
     };
     callback?.(responseMsg);
   }
@@ -351,6 +356,7 @@ async function checkResponse(
   if (balance < swapReq.inputTokenAmount) {
     const responseMsg = {
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
+      result: 'Insufficient balance for swap',
     };
     callback?.(responseMsg);
     return null;
@@ -368,6 +374,7 @@ async function checkResponse(
         text:
           `Insufficient balance for swap gas fee, required: ${GAS_BALANCE} SOL but only have: ` +
           balance,
+        result: 'Insufficient balance for swap gas fee',
       };
       callback?.(responseMsg);
       return null;
@@ -380,6 +387,7 @@ async function checkResponse(
       text:
         `Insufficient balance for swap gas fee, required: ${requiredAmount} SOL but only have: ` +
         WSOL_AMOUNT,
+      result: 'Insufficient balance for swap gas fee',
     };
     callback?.(responseMsg);
     return null;
@@ -402,6 +410,7 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'rejected') {
     const responseMsg = {
       text: 'ok. I will not execute this transaction.',
+      result: 'User rejected the swap',
     };
     callback?.(responseMsg);
     return null;
@@ -419,6 +428,7 @@ async function checkResponse(
     const responseMsg = {
       text: `${swapInfo}`,
       action: 'EXECUTE_SWAP',
+      result: 'User pending the swap',
     };
     callback?.(responseMsg);
     return null;
