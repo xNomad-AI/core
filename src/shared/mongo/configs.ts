@@ -146,4 +146,10 @@ export const COLLECTIONS = [
       },
     ],
   },
+  {
+    db: DB_NAME,
+    name: 'swarms',
+    indexes: [],
+    uniqueIndexes: [],
+  },
 ] as const;
