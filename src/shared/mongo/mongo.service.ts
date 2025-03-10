@@ -15,7 +15,7 @@ import {
   NftConfig,
   NftPrimaryCoin,
   NftPrologues,
-  CoreSettings,
+  CoreSettings, CopyTrade,
 } from './types.js';
 
 @Injectable()
@@ -129,6 +129,10 @@ export class MongoService implements OnModuleInit {
 
   get addressNonces() {
     return this.getCollection<AddressNonce>('addressNonces');
+  }
+
+  get copyTrades() {
+    return this.client.db('agent').collection<CopyTrade>('copyTrades');
   }
 
   // global key-value storage

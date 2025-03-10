@@ -123,6 +123,15 @@ export async function getTokensBySymbol(
   }
 }
 
+export function isValidAddress(address: string) {
+  try {
+    const publicKey = new PublicKey(address);
+    return publicKey.toBase58().length === 44;
+  } catch (error) {
+    return false;
+  }
+}
+
 
 export function isValidSPLTokenAddress(address: string) {
   try {

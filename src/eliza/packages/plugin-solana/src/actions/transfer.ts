@@ -179,10 +179,9 @@ export const transfer: Action = {
       return null;
     }
 
-    const solanaClient = new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair);
+    const solanaClient = new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair.publicKey);
     if (confirmResponse.userAcked == 'pending') {
-
-      const balance = await solanaClient.getBalance(content.tokenAddress);
+      const balance = await solanaClient.getUIBalance(content.tokenAddress);
       const transferPercentage = (Number(content.amount) / balance * 100).toFixed(1);
       const transferInfo = formatTransferInfo(senderKeypair.publicKey.toBase58(),{
         ...content,

@@ -98,6 +98,12 @@ export interface NftConfig {
   nftId: string;
   chain: string;
   characterConfig: CharacterConfig;
+  copyTrade: {
+    slippage: number;
+    priorityFee: number;
+    tip: number;
+    mode: 'FAST' | 'ANTI_MEV';
+  }
 }
 
 export interface CoreSettings {
@@ -158,6 +164,20 @@ export interface AddressNonce {
   message: string;
   expiration: Date;
   updatedAt: Date;
+}
+
+export interface CopyTrade {
+  id: number;
+  agentId: string;
+  targetAddress: string;
+  walletAddress: string;
+  copySell: boolean;
+  mode: 'fixedAmount' | 'percentage';
+  fixedAmount?: number;
+  percentage?: number;
+  expiredAt?: number;
+  status: 'running' | 'paused';
+  createdAt: Date;
 }
 
 export type NonceType = 'claim' | 'login';

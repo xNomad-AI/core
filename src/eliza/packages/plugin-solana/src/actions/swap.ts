@@ -326,7 +326,7 @@ async function checkResponse(
   }
 
   if (!Number.isFinite((swapReq.inputTokenAmount)) && Number.isFinite(swapReq.inputTokenPercentage) && swapReq.inputTokenPercentage != 0){
-    const balance = await client.getBalance(swapReq.inputTokenCA);
+    const balance = await client.getUIBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
   }
 
@@ -339,7 +339,7 @@ async function checkResponse(
     return null;
   }
 
-  const balance = await client.getBalance(swapReq.inputTokenCA);
+  const balance = await client.getUIBalance(swapReq.inputTokenCA);
   if (!balance){
     const responseMsg = {
       text: 'Your input balance is 0.',
@@ -355,12 +355,12 @@ async function checkResponse(
     return null;
   }
 
-  const WSOL_AMOUNT = await client.getBalance(NATIVE_MINT.toBase58());
+  const WSOL_AMOUNT = await client.getUIBalance(NATIVE_MINT.toBase58());
   const GAS_BALANCE = 0.001;   // require 0.001 SOL for gas fee
 
   if (swapReq.inputTokenCA !== NATIVE_MINT.toBase58()) {
     // buy with token
-    const balance = await client.getBalance(NATIVE_MINT.toBase58());
+    const balance = await client.getUIBalance(NATIVE_MINT.toBase58());
     if (balance < GAS_BALANCE) {
       elizaLogger.error('Insufficient balance for swap gas fee');
       const responseMsg = {
