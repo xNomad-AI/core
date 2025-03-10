@@ -79,20 +79,17 @@ async function createAndBuyToken({
   signature?: string;
 }> {
   let createResults: TransactionResult;
+  elizaLogger.log(
+    'Creating token with metadata:',
+    deployer.publicKey.toBase58(),
+    mint.publicKey.toBase58(),
+    tokenMetadata,
+    buyAmountSol,
+    priorityFee,
+    allowOffCurve,
+    slippage,
+  );
   try {
-    if (!tokenMetadata.name) {
-      throw new Error('Token name is required');
-    }
-    elizaLogger.log(
-      'Creating token with metadata:',
-      deployer.publicKey.toBase58(),
-      mint.publicKey.toBase58(),
-      tokenMetadata,
-      buyAmountSol,
-      priorityFee,
-      allowOffCurve,
-      slippage,
-    );
     createResults = await sdk.createAndBuy(
       deployer,
       mint,
@@ -101,6 +98,7 @@ async function createAndBuyToken({
       BigInt(slippage),
       priorityFee,
       commitment,
+      'confirmed',
     );
   } catch (error) {
     elizaLogger.error('Error creating token:', error);
@@ -112,25 +110,12 @@ async function createAndBuyToken({
   }
 
   elizaLogger.log('Create Results: ', createResults);
-
-  if (createResults.success) {
-    elizaLogger.log(
-      'Success:',
-      `https://pump.fun/${mint.publicKey.toBase58()}`,
-    );
-
-    return {
-      success: true,
-      ca: mint.publicKey.toBase58(),
-      creator: deployer.publicKey.toBase58(),
-    };
-  } else {
-    elizaLogger.error(`Create and Buy failed, ${createResults.error}`);
-    return {
-      success: true,
-      ca: mint.publicKey.toBase58(),
-    };
-  }
+  return {
+    success: createResults.success,
+    ca: mint.publicKey.toBase58(),
+    creator: deployer.publicKey.toBase58(),
+    signature: createResults.signature,
+  };
 }
 
 
@@ -325,95 +310,86 @@ export default {
       unitPrice: 200_000,
     };
     const slippage = '400';
-    try {
-      // Get private key from settings and create deployer keypair
-      const { keypair: deployerKeypair } = await getWalletKey(runtime, true);
-      elizaLogger.log(`deployer: ${deployerKeypair.publicKey.toBase58()}`);
-      // Generate new mint keypair
-      const mintKeypair = Keypair.generate();
-      elizaLogger.log(
-        `Generated mint address: ${mintKeypair.publicKey.toBase58()}`,
-      );
 
-      // Setup connection and SDK
-      const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
-      const connection = new Connection(rpcUrl, {
-        commitment: 'confirmed',
-        confirmTransactionInitialTimeout: 120000, // 120 seconds
-        wsEndpoint: settings.SOLANA_RPC_URL!.replace('https', 'wss'),
-      });
+    // Get private key from settings and create deployer keypair
+    const { keypair: deployerKeypair } = await getWalletKey(runtime, true);
+    elizaLogger.log(`deployer: ${deployerKeypair.publicKey.toBase58()}`);
+    // Generate new mint keypair
+    const mintKeypair = Keypair.generate();
+    elizaLogger.log(
+      `Generated mint address: ${mintKeypair.publicKey.toBase58()}`,
+    );
 
-      elizaLogger.log(
-        `rpc connection: ${rpcUrl}, ${deployerKeypair.publicKey.toBase58()}`,
-      );
+    // Setup connection and SDK
+    const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
+    const connection = new Connection(rpcUrl, {
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 120000, // 120 seconds
+      wsEndpoint: settings.SOLANA_RPC_URL!.replace('https', 'wss'),
+    });
 
-      const wallet = new Wallet(deployerKeypair);
+    elizaLogger.log(
+      `rpc connection: ${rpcUrl}, ${deployerKeypair.publicKey.toBase58()}`,
+    );
 
-      const provider: AnchorProvider = new AnchorProvider(connection, wallet, {
-        commitment: 'confirmed',
-      });
-      const sdk = new PumpFunSDK(provider);
-      const lamports = Math.floor(Number(buyAmountSol) * LAMPORTS_PER_SOL);
+    const wallet = new Wallet(deployerKeypair);
 
-      elizaLogger.log(
-        'Executing create and buy transaction...',
-        deployerKeypair.publicKey,
-        mintKeypair.publicKey,
-      );
-      if (!fullTokenMetadata.name) {
-        throw new Error('fullTokenMetadata Token name is required');
-      }
+    const provider: AnchorProvider = new AnchorProvider(connection, wallet, {
+      commitment: 'confirmed',
+    });
+    const sdk = new PumpFunSDK(provider);
+    const lamports = Math.floor(Number(buyAmountSol) * LAMPORTS_PER_SOL);
 
-      SharedProvider.get<any>("tradeMonitorService").registerAgentCreatedToken({
-        chain: 'solana',
-        address: mintKeypair.publicKey.toBase58(),
-        creatorAddress: deployerKeypair.publicKey.toBase58(),
-        nftId: getRuntimeKey(runtime, 'NFT_ID'),
-      });
+    elizaLogger.log(
+      'Executing create and buy transaction...',
+      deployerKeypair.publicKey,
+      mintKeypair.publicKey,
+    );
+    if (!fullTokenMetadata.name) {
+      throw new Error('fullTokenMetadata Token name is required');
+    }
 
-      const result = await createAndBuyToken({
-        deployer: deployerKeypair,
-        mint: mintKeypair,
-        tokenMetadata: fullTokenMetadata,
-        buyAmountSol: BigInt(lamports),
-        priorityFee,
-        allowOffCurve: false,
-        sdk,
-        slippage,
-      });
+    SharedProvider.get<any>("tradeMonitorService").registerAgentCreatedToken({
+      chain: 'solana',
+      address: mintKeypair.publicKey.toBase58(),
+      creatorAddress: deployerKeypair.publicKey.toBase58(),
+      nftId: getRuntimeKey(runtime, 'NFT_ID'),
+    });
 
+    const result = await createAndBuyToken({
+      deployer: deployerKeypair,
+      mint: mintKeypair,
+      tokenMetadata: fullTokenMetadata,
+      buyAmountSol: BigInt(lamports),
+      priorityFee,
+      allowOffCurve: false,
+      sdk,
+      slippage,
+    });
 
-      if (result.success) {
-        callback({
-          text: `Transaction submitted, please wait for confirmation.\nCheck token on: https://pump.fun/${mintKeypair.publicKey.toBase58()}\nTransaction hash: ${result.signature}`,
-          content: {
-            tokenInfo: {
-              symbol: tokenMetadata.symbol,
-              address: result.ca,
-              creator: result.creator,
-              name: tokenMetadata.name,
-              description: tokenMetadata.description,
-              timestamp: Date.now(),
-            },
+    if (result.success) {
+      callback({
+        text: `Transaction submitted, please wait for confirmation.\nCheck token on: https://pump.fun/${mintKeypair.publicKey.toBase58()}\nTransaction hash: ${result.signature}`,
+        content: {
+          tokenInfo: {
+            symbol: tokenMetadata.symbol,
+            address: result.ca,
+            creator: result.creator,
+            name: tokenMetadata.name,
+            description: tokenMetadata.description,
+            timestamp: Date.now(),
           },
-        });
-      } else {
-        callback({
-          text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
-          isError: true,
-          content: {
-            error: result.error,
-            mintAddress: result.ca,
-          },
-        });
-      }
-    } catch (error) {
-        callback({
-          text: `Error during pumpfun token creation: ${error.message}`,
-          isError: true,
-          content: { error: error.message },
-        });
-      return false;
+        },
+      });
+    } else {
+      callback({
+        text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
+        isError: true,
+        content: {
+          error: result.error,
+          mintAddress: result.ca,
+        },
+      });
     }
   },
 
