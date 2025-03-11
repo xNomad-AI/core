@@ -21,6 +21,7 @@ type CopyTradeParameters = {
   copySell: boolean;
   walletAddress: string;
   expiredAt: number | undefined;
+  agentId: string;
 }
 
 const userConfirmTemplate = `
@@ -126,6 +127,7 @@ export const copyTrade: Action = {
 
     const wallet = await getWalletKey(runtime, true);
     response.walletAddress = wallet.keypair.publicKey.toBase58();
+    response.agentId = runtime.agentId;
     elizaLogger.log('COPY_TRADE:', response);
 
     const confirmContext = composeContext({

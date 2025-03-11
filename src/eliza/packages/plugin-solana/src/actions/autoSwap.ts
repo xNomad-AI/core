@@ -452,8 +452,7 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'pending') {
     const swapInfo = formatTaskInfo(swapReq);
     const responseMsg = {
-      text: `${swapInfo}
-✅ Please confirm by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
+      text: `${swapInfo}`,
       action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
@@ -531,11 +530,11 @@ function formatTaskInfo({
   let taskInfo = 'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';
   taskInfo += '————\n';
   taskInfo += `⬇️ Type: Limit ${swapType} order\n`;
-  taskInfo += `🪙 Token: ${inputTokenSymbol} (${tokenTarget})\n`;
+  taskInfo += `🪙 Token: $${inputTokenSymbol} ($${tokenTarget})\n`;
   taskInfo += `💰 ${swapType} Amount: ${amountInfo}\n`;
   taskInfo += `⚡️ Trigger: ${trigger}\n`;
   taskInfo += `⏰ Expire time: ${expireAt? expireAt.toUTCString():'Never'}\n`;
   taskInfo += `————\n`;
-  taskInfo += `You can cancel your scheduled tasks on the [Tasks] subpage.\n`;
+  taskInfo += `You can cancel your scheduled tasks on the [Tasks] subpage.\nReply 'ok' or 'yes' to confirm.`;
   return taskInfo;
 }
