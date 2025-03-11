@@ -159,14 +159,14 @@ export const copyTrade: Action = {
       return null;
     }
 
-    const createResult = await SharedProvider.get<any>("tradeMonitorService").createCopyTrade({
+    const {id} = await SharedProvider.get<any>("tradeMonitorService").createCopyTrade({
       targetAddress: response.targetAddress,
       walletAddress: response.walletAddress,
       expiredAt: response.expiredAt || 0,
     });
     await runtime.databaseAdapter.insert?.('copyTrades', {
       ...response,
-      ...createResult,
+      id,
       status: 'running',
       createdAt: new Date(),
     });

@@ -135,7 +135,7 @@ export class CallbackController {
     const agentId = copyTradeTask.agentId;
     const nft = await this.mongo.nfts.findOne({agentId});
     const nftConfig = await this.mongo.nftConfigs.findOne({nftId: nft.nftId});
-    const {slippage, mode, priorityFee, tip} = nftConfig?.copyTrade || { slippage: 1, mode: 'FAST', priorityFee: 0, tip: 0 };
+    const {slippage, mode, priorityFee, tip} = nftConfig?.trade || { slippage: 1, mode: 'FAST', priorityFee: 0, tip: 0 };
     const connection = await new Connection(this.appConfig.get('SOLANA_RPC_URL'), 'confirmed');
     const keypairResult = await getWalletKeyFromWalletService(
       {
