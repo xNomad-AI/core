@@ -98,7 +98,7 @@ export interface NftConfig {
   nftId: string;
   chain: string;
   characterConfig: CharacterConfig;
-  copyTrade: {
+  trade: {
     slippage: number;
     priorityFee: number;
     tip: number;
@@ -169,6 +169,7 @@ export interface AddressNonce {
 export interface CopyTrade {
   id: number;
   agentId: string;
+  name: string;
   targetAddress: string;
   walletAddress: string;
   copySell: boolean;

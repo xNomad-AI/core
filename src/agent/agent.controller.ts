@@ -17,10 +17,10 @@ import { NEW_AI_NFT_EVENT } from '../nft/nft.types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { ElevenlabsService } from '../shared/elevenlabs.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { TokenInfoService } from '../shared/token-info.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { CreateAgentDto } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
+import { CopyTrade } from '../shared/mongo/types';
 
 @Controller('/agent')
 export class AgentController {
@@ -83,8 +83,8 @@ export class AgentController {
   }
 
   @UseGuards(AuthGuard)
-  @Post('/copy-trade/settings')
-  async updateCopyTradeSettings(
+  @Post('/trade/settings')
+  async updateTradeSettings(
     @Request() request,
     @Query('agentId') agentId: string,
     @Body() { slippage, priorityFee, tip, mode }: {
@@ -100,7 +100,7 @@ export class AgentController {
       { nftId },
       {
         $set: {
-          copyTrade: { slippage, priorityFee, tip, mode },
+          trade: { slippage, priorityFee, tip, mode },
         },
         $setOnInsert: { nftId },
       },
@@ -115,7 +115,7 @@ export class AgentController {
     @Request() request,
   ) {
     await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
-    return await this.elizaManager.getCopyTrades(agentId);
+    await this.elizaManager.getCopyTrades(agentId);
   }
 
   @UseGuards(AuthGuard)
@@ -138,7 +138,19 @@ export class AgentController {
     @Request() request,
   ) {
     await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
-    await this.elizaManager.cancelCopyTrade(request['X-USER-ADDRESS'], id);
+    await this.elizaManager.cancelCopyTrade(agentId, id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/copy-trade')
+  async updateCopyTrade(
+    @Query('agentId') agentId: string,
+    @Query('id') id: number,
+    @Body() copyTrade: CopyTrade,
+    @Request() request,
+  ) {
+    await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
+    await this.elizaManager.updateCopyTrade(agentId, id, copyTrade);
   }
 
 
