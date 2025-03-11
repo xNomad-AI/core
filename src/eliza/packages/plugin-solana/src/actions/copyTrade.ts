@@ -153,7 +153,7 @@ export const copyTrade: Action = {
 
     if (confirmResponse.userAcked == 'pending') {
       const responseMsg = {
-        text: `${formatConfirmMessage(response)}\n\nPlease confirm by replying with 'yes' or 'confirm'.`,
+        text: `${formatConfirmMessage(response)}`,
       };
       callback?.(responseMsg);
       return null;
