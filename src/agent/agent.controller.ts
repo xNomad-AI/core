@@ -115,7 +115,7 @@ export class AgentController {
     @Request() request,
   ) {
     await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
-    await this.elizaManager.getCopyTrades(agentId);
+    return await this.elizaManager.getCopyTrades(agentId);
   }
 
   @UseGuards(AuthGuard)
