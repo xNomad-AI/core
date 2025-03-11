@@ -289,9 +289,18 @@ export class TradeMonitorService {
   async refreshAgentCreatedToken(address: string) {
     try {
       const response = await firstValueFrom(
-        this.httpService.post(`${this.endpoint}/ai-agent-coin/refresh-coin`, {
-          address,
-        }),
+        this.httpService.post(
+          `${this.endpoint}/ai-agent-coin/refresh-coin`,
+          {
+            address,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'API-KEY': this.apikey,
+            },
+          },
+        ),
       );
       return response.data;
     } catch (e) {
