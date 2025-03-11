@@ -17,10 +17,10 @@ import { NEW_AI_NFT_EVENT } from '../nft/nft.types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { ElevenlabsService } from '../shared/elevenlabs.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { TokenInfoService } from '../shared/token-info.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { CreateAgentDto } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
+import { CopyTrade } from '../shared/mongo/types';
 
 @Controller('/agent')
 export class AgentController {
@@ -65,7 +65,7 @@ export class AgentController {
     @Query('agentId') agentId: string,
     @Request() request,
   ) {
-    await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
+    await this.elizaManager.ensureAgentOwner(agentId, request['X-USER-ADDRESS']);
     return await this.elizaManager.getAgentAutotasks(agentId);
   }
 
@@ -76,15 +76,15 @@ export class AgentController {
     @Query('taskId') taskId: string,
     @Request() request,
   ) {
-    await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
+    await this.elizaManager.ensureAgentOwner(agentId, request['X-USER-ADDRESS']);
     await this.elizaManager.deleteAgentMemory(agentId, {
       memoryId: taskId,
     });
   }
 
   @UseGuards(AuthGuard)
-  @Post('/copy-trade/settings')
-  async updateCopyTradeSettings(
+  @Post('/trade/settings')
+  async updateTradeSettings(
     @Request() request,
     @Query('agentId') agentId: string,
     @Body() { slippage, priorityFee, tip, mode }: {
@@ -93,14 +93,14 @@ export class AgentController {
     tip: number;
     mode: 'FAST' | 'ANTI_MEV';
   }){
-    await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
+    await this.elizaManager.ensureAgentOwner(agentId, request['X-USER-ADDRESS']);
     const { nftId } = await this.mongo.nfts.findOne({ agentId });
 
     return await this.mongo.nftConfigs.updateOne(
       { nftId },
       {
         $set: {
-          copyTrade: { slippage, priorityFee, tip, mode },
+          trade: { slippage, priorityFee, tip, mode },
         },
         $setOnInsert: { nftId },
       },
@@ -114,7 +114,7 @@ export class AgentController {
     @Query('agentId') agentId: string,
     @Request() request,
   ) {
-    await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
+    await this.elizaManager.ensureAgentOwner(agentId, request['X-USER-ADDRESS']);
     return await this.elizaManager.getCopyTrades(agentId);
   }
 
@@ -126,7 +126,7 @@ export class AgentController {
     @Query('status') status: 'running' | 'paused',
     @Request() request,
   ) {
-    await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
+    await this.elizaManager.ensureAgentOwner(agentId, request['X-USER-ADDRESS']);
     await this.elizaManager.updateCopyTradeStatus(agentId, id, status);
   }
 
@@ -137,8 +137,20 @@ export class AgentController {
     @Query('id') id: number,
     @Request() request,
   ) {
-    await this.elizaManager.ensure(agentId, request['X-USER-ADDRESS']);
-    await this.elizaManager.cancelCopyTrade(request['X-USER-ADDRESS'], id);
+    await this.elizaManager.ensureAgentOwner(agentId, request['X-USER-ADDRESS']);
+    await this.elizaManager.cancelCopyTrade(agentId, id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/copy-trade')
+  async updateCopyTrade(
+    @Query('agentId') agentId: string,
+    @Query('id') id: number,
+    @Body() copyTrade: CopyTrade,
+    @Request() request,
+  ) {
+    await this.elizaManager.ensureAgentOwner(agentId, request['X-USER-ADDRESS']);
+    await this.elizaManager.updateCopyTrade(agentId, id, copyTrade);
   }
 
 

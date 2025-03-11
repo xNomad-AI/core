@@ -153,20 +153,20 @@ export const copyTrade: Action = {
 
     if (confirmResponse.userAcked == 'pending') {
       const responseMsg = {
-        text: `${formatConfirmMessage(response)}\n\nPlease confirm by replying with 'yes' or 'confirm'.`,
+        text: `${formatConfirmMessage(response)}`,
       };
       callback?.(responseMsg);
       return null;
     }
 
-    const createResult = await SharedProvider.get<any>("tradeMonitorService").createCopyTrade({
+    const {id} = await SharedProvider.get<any>("tradeMonitorService").createCopyTrade({
       targetAddress: response.targetAddress,
       walletAddress: response.walletAddress,
       expiredAt: response.expiredAt || 0,
     });
     await runtime.databaseAdapter.insert?.('copyTrades', {
       ...response,
-      ...createResult,
+      id,
       status: 'running',
       createdAt: new Date(),
     });

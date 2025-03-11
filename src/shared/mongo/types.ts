@@ -96,14 +96,23 @@ export interface CharacterConfig extends Partial<Character> {}
 
 export interface NftConfig {
   nftId: string;
-  chain: string;
-  characterConfig: CharacterConfig;
-  copyTrade: {
-    slippage: number;
-    priorityFee: number;
-    tip: number;
-    mode: 'FAST' | 'ANTI_MEV';
-  }
+  chain?: string;
+  characterConfig?: CharacterConfig;
+  trade?: TradeSettings;
+}
+
+export interface TradeSettings {
+  slippage: number;
+  priorityFee: number;
+  tip: number;
+  mode: 'FAST' | 'ANTI_MEV';
+}
+
+export const DEFAULT_TRADE_SETTINGS: TradeSettings = {
+  slippage: 1,
+  priorityFee: 0,
+  tip: 0,
+  mode: 'FAST',
 }
 
 export interface CoreSettings {
@@ -169,6 +178,7 @@ export interface AddressNonce {
 export interface CopyTrade {
   id: number;
   agentId: string;
+  name: string;
   targetAddress: string;
   walletAddress: string;
   copySell: boolean;

@@ -11,13 +11,13 @@ import {
   executeAutoTokenSwapTask,
 } from '@elizaos/plugin-solana';
 import { TEEMode } from '@elizaos/plugin-tee';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Timeout } from '@nestjs/schedule';
 import { Keypair } from '@solana/web3.js';
 import { newTradeAgentRuntime, startAgent } from '../eliza/starter/index.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { CharacterConfig } from '../shared/mongo/types.js';
+import { CharacterConfig, CopyTrade } from '../shared/mongo/types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { sleep } from '../shared/utils.service.js';
 import { WalletProxyService } from '../wallet/wallet-proxy.service.js';
@@ -250,6 +250,30 @@ export class ElizaManagerService {
     await this.mongoService.client.db('agent').collection('copyTrades').updateOne({ agentId, id }, { $set: { status } });
   }
 
+  async updateCopyTrade(agentId: string, id: number, {name, copySell, mode, status, fixedAmount, percentage}: CopyTrade){
+    const filter: any = { agentId }
+    if (id){
+      filter.id = id
+    }
+
+    const copyTrade = await this.mongoService.copyTrades.findOne(filter);
+    if (!copyTrade?.id){
+      throw new BadRequestException('Copy trade not exists');
+    }
+    await this.mongoService.copyTrades.updateOne(filter, {
+      $set: {
+        copySell,
+        name,
+        mode,
+        status,
+        fixedAmount,
+        percentage,
+      },
+      $setOnInsert: { agentId, id },
+    }, { upsert: true }  );
+
+  }
+
   async getCopyTrades(agentId: string){
     return await this.mongoService.client.db('agent').collection('copyTrades').find({ agentId }).toArray();
   }
@@ -426,7 +450,7 @@ export class ElizaManagerService {
     return owner?.ownerAddress === ownerAddress;
   }
 
-  async ensure(agentId: string, ownerAddress: string) {
+  async ensureAgentOwner(agentId: string, ownerAddress: string) {
     if (!(await this.isAgentOwner(agentId, ownerAddress))) {
       throw new Error('You are not the owner of this Agent');
     }

@@ -9,6 +9,7 @@ import { Connection } from '@solana/web3.js';
 import { getWalletKeyFromWalletService, SolanaClient } from '@elizaos/plugin-solana';
 import { TEEMode } from '@elizaos/plugin-tee';
 import { BigNumber } from 'bignumber.js';
+import { DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
 
 class BaseCallbackDto {
   monitorId: number;
@@ -135,7 +136,7 @@ export class CallbackController {
     const agentId = copyTradeTask.agentId;
     const nft = await this.mongo.nfts.findOne({agentId});
     const nftConfig = await this.mongo.nftConfigs.findOne({nftId: nft.nftId});
-    const {slippage, mode, priorityFee, tip} = nftConfig?.copyTrade || { slippage: 1, mode: 'FAST', priorityFee: 0, tip: 0 };
+    const {slippage, mode, priorityFee, tip} = nftConfig?.trade || DEFAULT_TRADE_SETTINGS;
     const connection = await new Connection(this.appConfig.get('SOLANA_RPC_URL'), 'confirmed');
     const keypairResult = await getWalletKeyFromWalletService(
       {
@@ -159,7 +160,7 @@ export class CallbackController {
       slippage,
       tip,
       userWalletAddress: walletAddress,
-    }
+    };
 
     // copy buy
     if (inputTokenCA === solAddress) {
