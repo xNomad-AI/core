@@ -495,13 +495,17 @@ async function _createAndBuyWithUrl(
 
 function formatCreateTokenInfo(params: any): string {
   return `
+ Please confirm the info below. If any adjustments are needed, let me know the updated details.
+————
 🎟️ Type: issue token
-🪙 Token: ${params.symbol} (${params.name})
+🪙 Token: $${params.symbol} (${params.name})
 📝 Description: ${params.description || ''}
 🐦 Twitter: ${params.twitter || ''}
 📱 Telegram: ${params.telegram || ''}
 🌐 Website: ${params.website || ''}
 💰 Buy amount: ${params.buyAmountSol || 0} SOL
+————
+Reply 'ok' or 'yes' to confirm.
   `;
 }
 
