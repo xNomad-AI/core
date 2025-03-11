@@ -25,7 +25,10 @@ import {
 import { convertNullStrings, swapToken } from '../providers/swapUtils.js';
 import { NATIVE_MINT } from '@solana/spl-token';
 import { getSolanaClient, sleep } from '../providers/solana-client.js';
-import { getTokenCABySymbol, validateAndAssignCA } from '../providers/tokenUtils.js';
+import {
+  getTokenCABySymbol,
+  validateAndAssignCA,
+} from '../providers/tokenUtils.js';
 import { getRuntimeKey } from '../environment.js';
 
 interface SwapTokenRequest {
@@ -88,19 +91,55 @@ export const executeSwap: Action = {
     name: 'swap_token',
     strict: true,
     additionalProperties: false,
-    description: 'Swap tokens on Solana blockchain, set default token symbol to SOL when user want to buy or sell tokens',
+    description:
+      'Swap tokens on Solana blockchain, set default token symbol to SOL when user want to buy or sell tokens',
     parameters: {
       type: 'object',
       properties: {
-        inputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
-        inputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
-        outputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
-        outputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
-        inputTokenAmount: { type: ['number', 'null'], description: 'Amount of inputToken to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
-        inputTokenPercentage: { type: ['number', 'null'], description: 'Percentage of inputToken balance to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
-        outputTokenAmount: { type: ['number', 'null'], description: 'Amount of outputToken to swap' },
+        inputTokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            'Symbol of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required',
+        },
+        inputTokenCA: {
+          type: ['string', 'null'],
+          description:
+            'Contract address of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required',
+        },
+        outputTokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            'Symbol of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required',
+        },
+        outputTokenCA: {
+          type: ['string', 'null'],
+          description:
+            'Contract address of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required',
+        },
+        inputTokenAmount: {
+          type: ['number', 'null'],
+          description:
+            'Amount of inputToken to swap, at least one of inputTokenAmount or inputTokenPercentage is required',
+        },
+        inputTokenPercentage: {
+          type: ['number', 'null'],
+          description:
+            'Percentage of inputToken balance to swap, at least one of inputTokenAmount or inputTokenPercentage is required',
+        },
+        outputTokenAmount: {
+          type: ['number', 'null'],
+          description: 'Amount of outputToken to swap',
+        },
       },
-      required: ['inputTokenSymbol', 'outputTokenSymbol', 'inputTokenCA', 'outputTokenCA', 'inputTokenAmount', 'inputTokenPercentage', 'outputTokenAmount'],
+      required: [
+        'inputTokenSymbol',
+        'outputTokenSymbol',
+        'inputTokenCA',
+        'outputTokenCA',
+        'inputTokenAmount',
+        'inputTokenPercentage',
+        'outputTokenAmount',
+      ],
     },
   },
   name: 'EXECUTE_SWAP',
@@ -169,7 +208,7 @@ async function handleExecuteSwap(
     callback,
   );
   if (!response) {
-    return true;
+    return false;
   }
 
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
@@ -262,14 +301,24 @@ async function checkResponse(
   if (swapReq.outputTokenSymbol?.toUpperCase() === 'SOL') {
     swapReq.outputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
   }
-  swapReq.inputTokenCA = validateAndAssignCA(swapReq.inputTokenSymbol, swapReq.inputTokenCA);
-  swapReq.outputTokenCA = validateAndAssignCA(swapReq.outputTokenSymbol, swapReq.outputTokenCA);
+  swapReq.inputTokenCA = validateAndAssignCA(
+    swapReq.inputTokenSymbol,
+    swapReq.inputTokenCA,
+  );
+  swapReq.outputTokenCA = validateAndAssignCA(
+    swapReq.outputTokenSymbol,
+    swapReq.outputTokenCA,
+  );
 
   if (!swapReq.inputTokenCA) {
-    swapReq.inputTokenCA = await getTokenCABySymbol(runtime, swapReq.inputTokenSymbol);
-    if (!swapReq.inputTokenCA){
+    swapReq.inputTokenCA = await getTokenCABySymbol(
+      runtime,
+      swapReq.inputTokenSymbol,
+    );
+    if (!swapReq.inputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid inputToken CA you want to sell',
+        result: 'Pending inputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -277,10 +326,14 @@ async function checkResponse(
   }
 
   if (!swapReq.outputTokenCA) {
-    swapReq.outputTokenCA = await getTokenCABySymbol(runtime, swapReq.outputTokenSymbol);
-    if (!swapReq.outputTokenCA){
+    swapReq.outputTokenCA = await getTokenCABySymbol(
+      runtime,
+      swapReq.outputTokenSymbol,
+    );
+    if (!swapReq.outputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid outputToken CA you want to buy',
+        result: 'Pending outputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -290,44 +343,58 @@ async function checkResponse(
   const client = await getSolanaClient(runtime);
   const programId = await client.getTokenProgramId(swapReq.inputTokenCA);
 
-  if (Number.isFinite((swapReq.outputTokenAmount)) && swapReq.outputTokenAmount != 0){
+  if (
+    Number.isFinite(swapReq.outputTokenAmount) &&
+    swapReq.outputTokenAmount != 0
+  ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
-    })
+      result: 'Pending outputToken Amount',
+    });
   }
 
-  if (!Number.isFinite((swapReq.inputTokenAmount)) && Number.isFinite(swapReq.inputTokenPercentage) && swapReq.inputTokenPercentage != 0){
+  if (
+    !Number.isFinite(swapReq.inputTokenAmount) &&
+    Number.isFinite(swapReq.inputTokenPercentage) &&
+    swapReq.inputTokenPercentage != 0
+  ) {
     const balance = await client.getBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
   }
 
-  if (!Number.isFinite((swapReq.inputTokenAmount)) || swapReq.inputTokenAmount <= 0) {
+  if (
+    !Number.isFinite(swapReq.inputTokenAmount) ||
+    swapReq.inputTokenAmount <= 0
+  ) {
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'EXECUTE_SWAP',
+      result: 'Pending inputToken Amount',
     };
     callback?.(responseMsg);
     return null;
   }
 
   const balance = await client.getBalance(swapReq.inputTokenCA);
-  if (!balance){
+  if (!balance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
+      result: 'Insufficient inputToken Balance',
     };
     callback?.(responseMsg);
   }
 
   if (balance < swapReq.inputTokenAmount) {
     const responseMsg = {
-      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`
+      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
+      result: 'Insufficient balance for swap',
     };
     callback?.(responseMsg);
     return null;
   }
 
   const WSOL_AMOUNT = await client.getBalance(NATIVE_MINT.toBase58());
-  const GAS_BANANCE = 0.001;   // require 0.001 SOL for gas fee
+  const GAS_BANANCE = 0.001; // require 0.001 SOL for gas fee
 
   if (swapReq.inputTokenCA !== NATIVE_MINT.toBase58()) {
     // buy with token
@@ -338,6 +405,7 @@ async function checkResponse(
         text:
           `Insufficient balance for swap gas fee, required: ${GAS_BANANCE} SOL but only have: ` +
           balance,
+        result: 'Insufficient balance for swap gas fee',
       };
       callback?.(responseMsg);
       return null;
@@ -350,6 +418,7 @@ async function checkResponse(
       text:
         `Insufficient balance for swap gas fee, required: ${requiredAmount} SOL but only have: ` +
         WSOL_AMOUNT,
+      result: 'Insufficient balance for swap gas fee',
     };
     callback?.(responseMsg);
     return null;
@@ -372,6 +441,7 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'rejected') {
     const responseMsg = {
       text: 'ok. I will not execute this transaction.',
+      result: 'User rejected the swap',
     };
     callback?.(responseMsg);
     return null;
@@ -389,6 +459,7 @@ async function checkResponse(
       text: `${swapInfo}
 ✅ Please confirm the swap by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
       action: 'EXECUTE_SWAP',
+      result: 'User pending the swap',
     };
     callback?.(responseMsg);
     return null;

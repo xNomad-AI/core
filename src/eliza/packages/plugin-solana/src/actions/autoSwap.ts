@@ -24,14 +24,22 @@ import {
   isAgentAdmin,
   NotAgentAdminMessage,
 } from '../providers/walletUtils.js';
-import { convertNullStrings, md5sum, swapToken } from '../providers/swapUtils.js';
+import {
+  convertNullStrings,
+  md5sum,
+  swapToken,
+} from '../providers/swapUtils.js';
 import {
   getSwapTokenPrice,
   validateAndAssignCA,
   getTokenCABySymbol,
   isValidSPLTokenAddress,
 } from '../providers/tokenUtils.js';
-import { getSolanaClient, sleep, SolanaClient } from '../providers/solana-client.js';
+import {
+  getSolanaClient,
+  sleep,
+  SolanaClient,
+} from '../providers/solana-client.js';
 import { getRuntimeKey } from '../environment.js';
 import { NATIVE_MINT } from '@solana/spl-token';
 
@@ -271,14 +279,17 @@ export async function executeAutoTokenSwapTask(
     return;
   }
 
-
   if (
     task.priceTarget &&
     task.priceCondition &&
     task.priceCondition !== 'null' &&
     task.priceTarget !== 'null'
   ) {
-    const tokenCA = task.tokenTarget || (task.priceCondition === 'below' ? task.outputTokenCA : task.inputTokenCA);
+    const tokenCA =
+      task.tokenTarget ||
+      (task.priceCondition === 'below'
+        ? task.outputTokenCA
+        : task.inputTokenCA);
 
     const tokenPrice = await getSwapTokenPrice(runtime, tokenCA);
     const tokenPriceMatched =
@@ -312,23 +323,77 @@ export const autoTask: Action = {
     name: 'AUTO_TASK',
     strict: true,
     additionalProperties: false,
-    description: 'Perform auto token swap. Enables the agent to automatically execute trades when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers, optimizing trading strategies without manual intervention.',
+    description:
+      'Perform auto token swap. Enables the agent to automatically execute trades when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers, optimizing trading strategies without manual intervention.',
     parameters: {
       type: 'object',
       properties: {
-        inputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
-        inputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required' },
-        outputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
-        outputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required' },
-        inputTokenAmount: { type: ['number', 'null'], description: 'Amount of inputToken to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
-        inputTokenPercentage: { type: ['number', 'null'], description: 'Percentage of inputToken balance to swap, at least one of inputTokenAmount or inputTokenPercentage is required' },
-        outputTokenAmount: { type: ['number', 'null'], description: 'Amount of outputToken to swap' },
-        priceCondition: { type: ['string', 'null'], description: 'Price condition for the swap, enum "below" or "above", at lease one of delay or priceTarget is provided' },
-        priceTarget: { type: ['number', 'null'], description: 'Price target for the swap' },
-        tokenTarget: { type: ['string', 'null'], description: 'Token address or symbol of the trigger and price targets to' },
-        delay: { type: ['string', 'null'], description: 'Delay for the swap, e.g., "after 5 minutes" or "below 0.00169", at lease one of delay or priceTarget is provided' },
+        inputTokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            'Symbol of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required',
+        },
+        inputTokenCA: {
+          type: ['string', 'null'],
+          description:
+            'Contract address of the token to sell, at least one of inputTokenSymbol or inputTokenCA is required',
+        },
+        outputTokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            'Symbol of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required',
+        },
+        outputTokenCA: {
+          type: ['string', 'null'],
+          description:
+            'Contract address of the token to buy, at least one of outputTokenSymbol or outputTokenCA is required',
+        },
+        inputTokenAmount: {
+          type: ['number', 'null'],
+          description:
+            'Amount of inputToken to swap, at least one of inputTokenAmount or inputTokenPercentage is required',
+        },
+        inputTokenPercentage: {
+          type: ['number', 'null'],
+          description:
+            'Percentage of inputToken balance to swap, at least one of inputTokenAmount or inputTokenPercentage is required',
+        },
+        outputTokenAmount: {
+          type: ['number', 'null'],
+          description: 'Amount of outputToken to swap',
+        },
+        priceCondition: {
+          type: ['string', 'null'],
+          description:
+            'Price condition for the swap, enum "below" or "above", at lease one of delay or priceTarget is provided',
+        },
+        priceTarget: {
+          type: ['number', 'null'],
+          description: 'Price target for the swap',
+        },
+        tokenTarget: {
+          type: ['string', 'null'],
+          description:
+            'Token address or symbol of the trigger and price targets to',
+        },
+        delay: {
+          type: ['string', 'null'],
+          description:
+            'Delay for the swap, e.g., "after 5 minutes" or "below 0.00169", at lease one of delay or priceTarget is provided',
+        },
       },
-      required: ['inputTokenSymbol', 'outputTokenSymbol', 'inputTokenCA', 'outputTokenCA', 'inputTokenAmount', 'inputTokenPercentage', 'outputTokenAmount', 'priceCondition', 'priceTarget', 'delay'],
+      required: [
+        'inputTokenSymbol',
+        'outputTokenSymbol',
+        'inputTokenCA',
+        'outputTokenCA',
+        'inputTokenAmount',
+        'inputTokenPercentage',
+        'outputTokenAmount',
+        'priceCondition',
+        'priceTarget',
+        'delay',
+      ],
     },
   },
   name: 'AUTO_TASK',
@@ -358,7 +423,7 @@ export const autoTask: Action = {
       callback,
     );
     if (!task) {
-      return true;
+      return false;
     }
     try {
       const content: Content = {
@@ -429,7 +494,6 @@ export const autoTask: Action = {
   ] as ActionExample[][],
 } as Action;
 
-
 async function checkResponse(
   runtime: IAgentRuntime,
   message: Memory,
@@ -442,6 +506,7 @@ async function checkResponse(
   if (!isAdmin) {
     const responseMsg = {
       text: NotAgentAdminMessage,
+      result: 'The request is not from agent owner',
     };
     callback?.(responseMsg);
     return null;
@@ -461,14 +526,24 @@ async function checkResponse(
   if (swapReq.outputTokenSymbol?.toUpperCase() === 'SOL') {
     swapReq.outputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
   }
-  swapReq.inputTokenCA = validateAndAssignCA(swapReq.inputTokenSymbol, swapReq.inputTokenCA);
-  swapReq.outputTokenCA = validateAndAssignCA(swapReq.outputTokenSymbol, swapReq.outputTokenCA);
+  swapReq.inputTokenCA = validateAndAssignCA(
+    swapReq.inputTokenSymbol,
+    swapReq.inputTokenCA,
+  );
+  swapReq.outputTokenCA = validateAndAssignCA(
+    swapReq.outputTokenSymbol,
+    swapReq.outputTokenCA,
+  );
 
   if (!swapReq.inputTokenCA) {
-    swapReq.inputTokenCA = await getTokenCABySymbol(runtime, swapReq.inputTokenSymbol);
-    if (!swapReq.inputTokenCA){
+    swapReq.inputTokenCA = await getTokenCABySymbol(
+      runtime,
+      swapReq.inputTokenSymbol,
+    );
+    if (!swapReq.inputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid inputToken CA you want to sell',
+        result: 'Invalid inputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -476,10 +551,14 @@ async function checkResponse(
   }
 
   if (!swapReq.outputTokenCA) {
-    swapReq.outputTokenCA = await getTokenCABySymbol(runtime, swapReq.outputTokenSymbol);
-    if (!swapReq.outputTokenCA){
+    swapReq.outputTokenCA = await getTokenCABySymbol(
+      runtime,
+      swapReq.outputTokenSymbol,
+    );
+    if (!swapReq.outputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid outputToken CA you want to buy',
+        result: 'Invalid outputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -488,44 +567,57 @@ async function checkResponse(
 
   const client = await getSolanaClient(runtime);
 
-  if (Number.isFinite((swapReq.outputTokenAmount)) && swapReq.outputTokenAmount != 0){
+  if (
+    Number.isFinite(swapReq.outputTokenAmount) &&
+    swapReq.outputTokenAmount != 0
+  ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
-    })
+      result: 'Specify the buy amount of a token is not supported now',
+    });
   }
 
-  if (Number.isFinite(swapReq.inputTokenPercentage) && swapReq.inputTokenPercentage != 0){
+  if (
+    Number.isFinite(swapReq.inputTokenPercentage) &&
+    swapReq.inputTokenPercentage != 0
+  ) {
     const balance = await client.getBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
   }
 
-  if (!Number.isFinite((swapReq.inputTokenAmount)) || swapReq.inputTokenAmount <= 0) {
+  if (
+    !Number.isFinite(swapReq.inputTokenAmount) ||
+    swapReq.inputTokenAmount <= 0
+  ) {
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'AUTO_TASK',
+      result: 'Invalid input amount',
     };
     callback?.(responseMsg);
     return null;
   }
 
   const balance = await client.getBalance(swapReq.inputTokenCA);
-  if (!balance){
+  if (!balance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
+      result: 'The user input balance is 0.',
     };
     callback?.(responseMsg);
   }
 
   if (balance < swapReq.inputTokenAmount) {
     const responseMsg = {
-      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`
+      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
+      result: 'Insufficient balance for swap',
     };
     callback?.(responseMsg);
     return null;
   }
 
   const WSOL_AMOUNT = await client.getBalance(NATIVE_MINT.toBase58());
-  const GAS_BANANCE = 0.001;   // require 0.001 SOL for gas fee
+  const GAS_BANANCE = 0.001; // require 0.001 SOL for gas fee
 
   if (swapReq.inputTokenCA !== NATIVE_MINT.toBase58()) {
     // buy with token
@@ -556,6 +648,8 @@ async function checkResponse(
   if (!swapReq.priceTarget && !swapReq.delay) {
     const responseMsg = {
       text: "If you’d like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
+      result:
+        'The user did not specify the target price for the swap or provide a time delay',
     };
     callback?.(responseMsg);
     return null;
@@ -591,6 +685,7 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'rejected') {
     const responseMsg = {
       text: 'ok. I will not set the autotask.',
+      result: 'The user rejected the autotask',
     };
     callback?.(responseMsg);
     return null;
@@ -602,13 +697,17 @@ async function checkResponse(
       text: `${swapInfo}
 ✅ Please confirm by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
       action: 'AUTO_TASK',
+      result: 'The user is pending to confirm the autotask',
     };
     callback?.(responseMsg);
     return null;
   }
 
-  if (!isValidSPLTokenAddress(swapReq.tokenTarget)){
-    swapReq.tokenTarget = swapReq.tokenTarget === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : swapReq.outputTokenCA;
+  if (!isValidSPLTokenAddress(swapReq.tokenTarget)) {
+    swapReq.tokenTarget =
+      swapReq.tokenTarget === swapReq.inputTokenSymbol
+        ? swapReq.inputTokenCA
+        : swapReq.outputTokenCA;
   }
   return swapReq;
 }
