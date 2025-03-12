@@ -115,13 +115,6 @@ export const DEFAULT_TRADE_SETTINGS: TradeSettings = {
   mode: 'FAST',
 }
 
-export const DEFAULT_TRADE_SETTINGS: TradeSettings = {
-  slippage: 1,
-  priorityFee: 0,
-  tip: 0,
-  mode: 'FAST',
-};
-
 export interface CoreSettings {
   category: 'httpProxy';
   value: {
