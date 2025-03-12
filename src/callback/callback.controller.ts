@@ -13,6 +13,7 @@ import {
 import { TEEMode } from '@elizaos/plugin-tee';
 import { BigNumber } from 'bignumber.js';
 import { DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
+import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 
 class BaseCallbackDto {
   monitorId: number;
@@ -68,6 +69,7 @@ export class CallbackController {
   constructor(
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
+    private elizaManager: ElizaManagerService,
     private mongo: MongoService,
   ) {
     this.apikey = this.appConfig.get<string>('TRADE_MONITOR_SERVICE_API_KEY')!;
@@ -108,14 +110,12 @@ export class CallbackController {
   @HttpCode(200)
   async handleAddressCallback(
     @Body() callbackData: AddressCallbackDto,
-    @Headers('X-Monitor-ID') id: number,
-    @Headers('X-Agent-Address') walletAddress: string,
+    @Headers('X-Monitor-ID') id: string,
     @Headers('api-key') apiKey: string,
   ) {
     this.validateApiKey(apiKey);
     this.logger.log('Received address monitor callback', {
       id,
-      walletAddress,
       ...callbackData,
     });
 
@@ -128,14 +128,11 @@ export class CallbackController {
       return;
     }
 
-    const copyTradeTask = await this.mongo.copyTrades.findOne({ id });
+    const copyTradeTask = await this.mongo.client.db('agent').collection('copyTrades').findOne({id: Number(id)});
     if (!copyTradeTask) {
       throw new Error('Copy trade not found');
     }
 
-    if (copyTradeTask.walletAddress !== walletAddress) {
-      throw new Error('Wallet address does not match');
-    }
     if (copyTradeTask.status !== 'running') {
       this.logger.log(`Copy trade is not running ${id}`);
       return;
@@ -152,7 +149,7 @@ export class CallbackController {
     );
     const keypairResult = await getWalletKeyFromWalletService({
       teeMode: this.appConfig.get<string>('TEE_MODE') as TEEMode,
-      walletSecretSalt: this.appConfig.get<string>('WALLET_SECRET_SALT'),
+      walletSecretSalt: this.elizaManager.getAgentSecretSalt('solana', nft.nftId),
       agentId,
       requirePrivateKey: true,
       endpoint: this.appConfig.get<string>('WALLET_SERVICE_ENDPOINT'),
@@ -174,7 +171,7 @@ export class CallbackController {
       priorityFee,
       slippage,
       tip,
-      userWalletAddress: walletAddress,
+      userWalletAddress: copyTradeTask.walletAddress,
     };
 
     // copy buy
@@ -200,7 +197,16 @@ export class CallbackController {
       swapTokenDto.amount = await solanaClient.getRawBalance(inputTokenCA);
     }
 
-    this.logger.log(`copy trade request: ${JSON.stringify(swapTokenDto)}`);
+    this.logger.log(`copy trade request: ${JSON.stringify({
+      mode,
+      amount: swapTokenDto.amount,
+      inputTokenCA,
+      outputTokenCA,
+      priorityFee,
+      slippage,
+      tip,
+      userWalletAddress: copyTradeTask.walletAddress,
+    })}`);
     await new SwapTokenService().swapToken(swapTokenDto);
     return {
       success: true,
