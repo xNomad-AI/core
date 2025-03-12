@@ -136,6 +136,7 @@ export class LaunchCoinService {
       address: mintKeypair.publicKey.toBase58(),
       creatorAddress: agentKeypair.publicKey.toBase58(),
       nftId: coin.nftId,
+      bound: true,
     });
 
     this.logger.log('Sending transaction');

@@ -281,6 +281,7 @@ export class NftController {
       offset,
       limit,
       creatorAddress,
+      onlyBound: true,
     });
 
     await Promise.all(
