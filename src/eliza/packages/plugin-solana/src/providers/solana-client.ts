@@ -15,7 +15,8 @@ import {
 import { getRuntimeKey } from '../environment.js';
 import { getWalletKey } from '../keypairUtils.js';
 
-export const STANDARD_SOL_ADDRESS = 'So11111111111111111111111111111111111111111';
+export const STANDARD_SOL_ADDRESS =
+  'So11111111111111111111111111111111111111111';
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -35,19 +36,18 @@ export class SolanaClient {
     this.keypair = keypair;
   }
 
-
   get publicKey() {
     return this.keypair.publicKey;
   }
 
-
   async getMintDecimals(token: string): Promise<number | undefined> {
-    if (token === STANDARD_SOL_ADDRESS){
+    if (token === STANDARD_SOL_ADDRESS) {
       return 9;
     }
-    const mintInfo = await this.connection.getParsedAccountInfo(new PublicKey(token));
-    const mintDecimals = (mintInfo.value?.data as any)?.parsed?.info
-      ?.decimals;
+    const mintInfo = await this.connection.getParsedAccountInfo(
+      new PublicKey(token),
+    );
+    const mintDecimals = (mintInfo.value?.data as any)?.parsed?.info?.decimals;
     if (!mintDecimals || isNaN(mintDecimals)) {
       return undefined;
     }
@@ -66,11 +66,11 @@ export class SolanaClient {
         return this.getSOLBalance();
       }
       return this.getSPLBalance(token);
-    }catch (e){
-      if (e.message?.includes('Invalid param: could not find account')){
+    } catch (e) {
+      if (e.message?.includes('Invalid param: could not find account')) {
         return 0;
-      }else{
-        throw e
+      } else {
+        throw e;
       }
     }
   }
@@ -105,11 +105,11 @@ export class SolanaClient {
       const balance =
         await this.connection.getTokenAccountBalance(associatedAccount);
       return balance.value.uiAmount;
-    }catch (e){
-      if (e.message?.includes('Invalid param: could not find account')){
+    } catch (e) {
+      if (e.message?.includes('Invalid param: could not find account')) {
         return 0;
-      }else{
-        throw e
+      } else {
+        throw e;
       }
     }
   }

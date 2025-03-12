@@ -5,14 +5,23 @@ import { autoTask } from './actions/autoSwap.js';
 import pumpfun from './actions/pumpfun.js';
 import { airdrop } from './actions/airdrop.js';
 import { transfer } from './actions/transfer.js';
-import {analyze} from './actions/analyze.js';
+import { analyze } from './actions/analyze.js';
 import { walletPortfolio } from './actions/wallet.js';
 import { none } from './actions/none.js';
 export { getTokenBalance, getTokenBalances };
 export const solanaPlugin: Plugin = {
   name: 'solana',
   description: 'Solana Plugin for Eliza',
-  actions: [none, walletPortfolio, analyze, transfer, executeSwap, pumpfun, autoTask, airdrop],
+  actions: [
+    none,
+    walletPortfolio,
+    analyze,
+    transfer,
+    executeSwap,
+    pumpfun,
+    autoTask,
+    airdrop,
+  ],
   evaluators: [],
   providers: [],
 };
@@ -23,7 +32,6 @@ export {
   AutoSwapTask,
 } from './actions/autoSwap.js';
 
-
 export class SharedProvider {
   private static instances = new Map<string, any>();
 
@@ -31,7 +39,7 @@ export class SharedProvider {
     this.instances.set(name, instance);
   }
 
-  public static get<T>(name: string) : T {
+  public static get<T>(name: string): T {
     const instance = this.instances.get(name);
     if (!instance) {
       throw new Error(`Service ${name} is not initialized.`);

@@ -25,7 +25,10 @@ import {
 import { convertNullStrings, swapToken } from '../providers/swapUtils.js';
 import { NATIVE_MINT } from '@solana/spl-token';
 import { getSolanaClient, sleep } from '../providers/solana-client.js';
-import { getTokenCABySymbol, validateAndAssignCA } from '../providers/tokenUtils.js';
+import {
+  getTokenCABySymbol,
+  validateAndAssignCA,
+} from '../providers/tokenUtils.js';
 import { getRuntimeKey } from '../environment.js';
 
 interface SwapTokenRequest {
@@ -85,44 +88,58 @@ Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\
 
 export const executeSwap: Action = {
   functionCallSpec: {
-  name: "EXECUTE_SWAP",
-  strict: true,
-  additionalProperties: false,
-  description: "Swap tokens on the Solana blockchain. When the user specifies 'buy <token>', the default input token is SOL. When the user specifies 'sell <token>', the default output token is SOL.",
-  parameters: {
-  type: "object",
+    name: 'EXECUTE_SWAP',
+    strict: true,
+    additionalProperties: false,
+    description:
+      "Swap tokens on the Solana blockchain. When the user specifies 'buy <token>', the default input token is SOL. When the user specifies 'sell <token>', the default output token is SOL.",
+    parameters: {
+      type: 'object',
       properties: {
-      "inputTokenSymbol": {
-        "type": ["string", "null"],
-          "description": "Symbol of the token to sell. Defaults to 'SOL' when buying another token. Either inputTokenSymbol or inputTokenCA must be provided."
+        inputTokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            "Symbol of the token to sell. Defaults to 'SOL' when buying another token. Either inputTokenSymbol or inputTokenCA must be provided.",
+        },
+        inputTokenCA: {
+          type: ['string', 'null'],
+          description:
+            'Contract address of the token to sell. Either inputTokenSymbol or inputTokenCA must be provided.',
+        },
+        outputTokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            "Symbol of the token to buy. Defaults to 'SOL' when selling another token. Either outputTokenSymbol or outputTokenCA must be provided.",
+        },
+        outputTokenCA: {
+          type: ['string', 'null'],
+          description:
+            'Contract address of the token to buy. Either outputTokenSymbol or outputTokenCA must be provided.',
+        },
+        inputTokenAmount: {
+          type: ['number', 'null'],
+          description:
+            'Exact amount of the input token to swap. Required if inputTokenPercentage is not provided.',
+        },
+        inputTokenPercentage: {
+          type: ['number', 'null'],
+          description:
+            'Percentage of the input token balance to swap. Required if inputTokenAmount is not provided. When extracting percentages, convert values like "50%" into decimal form (e.g., 0.5 instead of 50).',
+        },
+        outputTokenAmount: {
+          type: ['number', 'null'],
+          description: 'Expected amount of the output token to receive.',
+        },
       },
-      "inputTokenCA": {
-        "type": ["string", "null"],
-          "description": "Contract address of the token to sell. Either inputTokenSymbol or inputTokenCA must be provided."
-      },
-      "outputTokenSymbol": {
-        "type": ["string", "null"],
-          "description": "Symbol of the token to buy. Defaults to 'SOL' when selling another token. Either outputTokenSymbol or outputTokenCA must be provided."
-      },
-      "outputTokenCA": {
-        "type": ["string", "null"],
-          "description": "Contract address of the token to buy. Either outputTokenSymbol or outputTokenCA must be provided."
-      },
-      "inputTokenAmount": {
-        "type": ["number", "null"],
-          "description": "Exact amount of the input token to swap. Required if inputTokenPercentage is not provided."
-      },
-      "inputTokenPercentage": {
-        "type": ["number", "null"],
-          "description": "Percentage of the input token balance to swap. Required if inputTokenAmount is not provided. When extracting percentages, convert values like \"50%\" into decimal form (e.g., 0.5 instead of 50)."
-      },
-      "outputTokenAmount": {
-        "type": ["number", "null"],
-          "description": "Expected amount of the output token to receive."
-      }
+      required: [
+        'inputTokenSymbol',
+        'outputTokenSymbol',
+        'inputTokenCA',
+        'outputTokenCA',
+        'inputTokenAmount',
+        'inputTokenPercentage',
+      ],
     },
-    required: ['inputTokenSymbol', 'outputTokenSymbol', 'inputTokenCA', 'outputTokenCA', 'inputTokenAmount', 'inputTokenPercentage']
-  },
   },
   name: 'EXECUTE_SWAP',
   suppressInitialMessage: true,
@@ -222,11 +239,11 @@ async function handleExecuteSwap(
       preflightCommitment: 'confirmed',
     });
   } catch (error) {
-    if (error.toString().includes('insufficient lamports')){
+    if (error.toString().includes('insufficient lamports')) {
       callback?.({
         text: 'insufficient balance to execute swap',
         isError: true,
-      })
+      });
       return;
     }
     throw error;
@@ -270,7 +287,7 @@ async function checkResponse(
   inputTokenCA: string;
   outputTokenAmount: number | null;
   outputTokenCA: string;
-  programId: PublicKey
+  programId: PublicKey;
 }> {
   const isAdmin = await isAgentAdmin(runtime, message);
   if (!isAdmin) {
@@ -291,12 +308,21 @@ async function checkResponse(
   if (swapReq.outputTokenSymbol?.toUpperCase() === 'SOL') {
     swapReq.outputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
   }
-  swapReq.inputTokenCA = validateAndAssignCA(swapReq.inputTokenSymbol, swapReq.inputTokenCA);
-  swapReq.outputTokenCA = validateAndAssignCA(swapReq.outputTokenSymbol, swapReq.outputTokenCA);
+  swapReq.inputTokenCA = validateAndAssignCA(
+    swapReq.inputTokenSymbol,
+    swapReq.inputTokenCA,
+  );
+  swapReq.outputTokenCA = validateAndAssignCA(
+    swapReq.outputTokenSymbol,
+    swapReq.outputTokenCA,
+  );
 
   if (!swapReq.inputTokenCA) {
-    swapReq.inputTokenCA = await getTokenCABySymbol(runtime, swapReq.inputTokenSymbol);
-    if (!swapReq.inputTokenCA){
+    swapReq.inputTokenCA = await getTokenCABySymbol(
+      runtime,
+      swapReq.inputTokenSymbol,
+    );
+    if (!swapReq.inputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid inputToken CA you want to sell',
       };
@@ -306,8 +332,11 @@ async function checkResponse(
   }
 
   if (!swapReq.outputTokenCA) {
-    swapReq.outputTokenCA = await getTokenCABySymbol(runtime, swapReq.outputTokenSymbol);
-    if (!swapReq.outputTokenCA){
+    swapReq.outputTokenCA = await getTokenCABySymbol(
+      runtime,
+      swapReq.outputTokenSymbol,
+    );
+    if (!swapReq.outputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid outputToken CA you want to buy',
       };
@@ -319,18 +348,28 @@ async function checkResponse(
   const client = await getSolanaClient(runtime);
   const programId = await client.getTokenProgramId(swapReq.inputTokenCA);
 
-  if (Number.isFinite((swapReq.outputTokenAmount)) && swapReq.outputTokenAmount != 0){
+  if (
+    Number.isFinite(swapReq.outputTokenAmount) &&
+    swapReq.outputTokenAmount != 0
+  ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
-    })
+    });
   }
 
-  if (!Number.isFinite((swapReq.inputTokenAmount)) && Number.isFinite(swapReq.inputTokenPercentage) && swapReq.inputTokenPercentage != 0){
+  if (
+    !Number.isFinite(swapReq.inputTokenAmount) &&
+    Number.isFinite(swapReq.inputTokenPercentage) &&
+    swapReq.inputTokenPercentage != 0
+  ) {
     const balance = await client.getBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
   }
 
-  if (!Number.isFinite((swapReq.inputTokenAmount)) || swapReq.inputTokenAmount <= 0) {
+  if (
+    !Number.isFinite(swapReq.inputTokenAmount) ||
+    swapReq.inputTokenAmount <= 0
+  ) {
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'EXECUTE_SWAP',
@@ -340,7 +379,7 @@ async function checkResponse(
   }
 
   const balance = await client.getBalance(swapReq.inputTokenCA);
-  if (!balance){
+  if (!balance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
     };
@@ -349,14 +388,14 @@ async function checkResponse(
 
   if (balance < swapReq.inputTokenAmount) {
     const responseMsg = {
-      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`
+      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
     };
     callback?.(responseMsg);
     return null;
   }
 
   const WSOL_AMOUNT = await client.getBalance(NATIVE_MINT.toBase58());
-  const GAS_BALANCE = 0.001;   // require 0.001 SOL for gas fee
+  const GAS_BALANCE = 0.001; // require 0.001 SOL for gas fee
 
   if (swapReq.inputTokenCA !== NATIVE_MINT.toBase58()) {
     // buy with token
@@ -434,7 +473,10 @@ function formatConfirmSwapInfo(params: {
   inputTokenAmount: number;
   inputPercentage: string;
 }): string {
-  if (params.inputTokenCA !== NATIVE_MINT.toBase58() && params.outputTokenCA !== NATIVE_MINT.toBase58()) {
+  if (
+    params.inputTokenCA !== NATIVE_MINT.toBase58() &&
+    params.outputTokenCA !== NATIVE_MINT.toBase58()
+  ) {
     return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
     ————
     🔄 Type: Swap(swap $${params.inputTokenSymbol || params.inputTokenCA} for ${params.outputTokenSymbol || params.outputTokenCA})
@@ -444,9 +486,16 @@ function formatConfirmSwapInfo(params: {
     ————
     Reply 'ok' or 'yes' to confirm.`;
   }
-  const swapType = params.outputTokenCA === NATIVE_MINT.toBase58() ? 'Sell' : 'Buy';
-  const amountDescription = params.outputTokenCA === NATIVE_MINT.toBase58() ? `${params.inputTokenAmount} (${params.inputPercentage}%)` : `${params.inputTokenAmount} ${params.inputTokenSymbol}`;
-  const tokenDescription = params.outputTokenCA === NATIVE_MINT.toBase58() ? `$${params.inputTokenSymbol} (${params.inputTokenCA})` : `$${params.outputTokenSymbol} (${params.outputTokenCA})`;
+  const swapType =
+    params.outputTokenCA === NATIVE_MINT.toBase58() ? 'Sell' : 'Buy';
+  const amountDescription =
+    params.outputTokenCA === NATIVE_MINT.toBase58()
+      ? `${params.inputTokenAmount} (${params.inputPercentage}%)`
+      : `${params.inputTokenAmount} ${params.inputTokenSymbol}`;
+  const tokenDescription =
+    params.outputTokenCA === NATIVE_MINT.toBase58()
+      ? `$${params.inputTokenSymbol} (${params.inputTokenCA})`
+      : `$${params.outputTokenSymbol} (${params.outputTokenCA})`;
   return `
   Please confirm the info below. If any adjustments are needed, let me know the updated details.
   ————

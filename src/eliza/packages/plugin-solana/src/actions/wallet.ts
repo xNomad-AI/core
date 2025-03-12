@@ -5,7 +5,11 @@ import {
   type IAgentRuntime,
   type Memory,
   type State,
-  type Action, composeContext, generateObjectDeprecated, ModelClass, elizaLogger,
+  type Action,
+  composeContext,
+  generateObjectDeprecated,
+  ModelClass,
+  elizaLogger,
 } from '@elizaos/core';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getWalletPortfolio } from '../providers/walletUtils.js';
@@ -16,13 +20,26 @@ export const walletPortfolio: Action = {
     name: 'WALLET_PORTFOLIO',
     strict: true,
     additionalProperties: false,
-    description: 'Get the wallet total balance or specific token balance in agent wallet',
+    description:
+      'Get the wallet total balance or specific token balance in agent wallet',
     parameters: {
       type: 'object',
       properties: {
-        queryType: { type: ['string', 'null'], description: 'The type of query, should be "walletBalance" or "tokenBalance", default is walletBalance' },
-        tokenSymbol: { type: ['string', 'null'], description: 'The token symbol to query, at lease one of tokenSymbol or tokenAddress should be provided when queryType is "tokenBalance"' },
-        tokenAddress: { type: ['string', 'null'], description: 'The token contract address to query, at lease one of tokenSymbol or tokenAddress should be provided when queryType is "tokenBalance"' },
+        queryType: {
+          type: ['string', 'null'],
+          description:
+            'The type of query, should be "walletBalance" or "tokenBalance", default is walletBalance',
+        },
+        tokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            'The token symbol to query, at lease one of tokenSymbol or tokenAddress should be provided when queryType is "tokenBalance"',
+        },
+        tokenAddress: {
+          type: ['string', 'null'],
+          description:
+            'The token contract address to query, at lease one of tokenSymbol or tokenAddress should be provided when queryType is "tokenBalance"',
+        },
       },
       required: ['queryType', 'tokenSymbol', 'tokenAddress'],
     },
@@ -33,7 +50,8 @@ export const walletPortfolio: Action = {
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
-  description: "Get the wallet total balance or specific token balance in agent wallet",
+  description:
+    'Get the wallet total balance or specific token balance in agent wallet',
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -44,7 +62,7 @@ export const walletPortfolio: Action = {
     const response = convertNullStrings(state.actionParameters) as any;
     elizaLogger.log('WALLET_PORTFOLIO Response:', response);
 
-    const {publicKey} = await getWalletKey(runtime, false);
+    const { publicKey } = await getWalletKey(runtime, false);
     const portfolio = await getWalletPortfolio(runtime, publicKey.toBase58());
     switch (response.queryType) {
       case 'walletBalance':
@@ -53,7 +71,11 @@ export const walletPortfolio: Action = {
         });
         return;
       case 'tokenBalance':
-        const tokenInfo = portfolio?.items.find((item) => (item.symbol === response.tokenSymbol || item.address === response.tokenAddress));
+        const tokenInfo = portfolio?.items.find(
+          (item) =>
+            item.symbol === response.tokenSymbol ||
+            item.address === response.tokenAddress,
+        );
         callback?.({
           text: `${response.tokenSymbol} balance in my wallet is ${tokenInfo?.uiAmount}, it is worth $${tokenInfo?.valueUsd} now.`,
         });

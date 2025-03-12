@@ -32,7 +32,8 @@ import {
 } from '@elizaos/core';
 
 import {
-  isAgentAdmin, NotAgentAdminResponse,
+  isAgentAdmin,
+  NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 
 import * as fs from 'fs';
@@ -41,7 +42,6 @@ import { getRuntimeKey } from '../environment.js';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import * as path from 'path';
 import { SharedProvider } from '../index.js';
-
 
 async function createAndBuyToken({
   deployer,
@@ -118,7 +118,6 @@ async function createAndBuyToken({
   };
 }
 
-
 const userConfirmTemplate = `
 {{recentMessages}}
 
@@ -169,20 +168,51 @@ export default {
     name: 'CREATE_TOKEN',
     strict: true,
     additionalProperties: false,
-    description: 'Create a new token on pumpfun and buy a specified amount using SOL. Requires the token name, symbol and image url, buy amount after create in SOL.',
+    description:
+      'Create a new token on pumpfun and buy a specified amount using SOL. Requires the token name, symbol and image url, buy amount after create in SOL.',
     parameters: {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'Name of the token to create' },
-        symbol: { type: 'string', description: 'Symbol of the token to create' },
-        imageUrl: { type: ['string', 'null'], description: 'Image URL or attachment file of the token to create' },
-        description: { type: ['string', 'null'], description: 'Description of the token to create' },
-        twitter: { type: ['string', 'null'], description: 'Twitter URL of the token to create' },
-        website: { type: ['string', 'null'], description: 'Website URL of the token to create' },
-        telegram: { type: ['string', 'null'] , description: 'Telegram URL of the token to create' },
-        buyAmountSol: { type: ['number', 'null'], description: 'Amount of SOL to buy after token creation' },
+        symbol: {
+          type: 'string',
+          description: 'Symbol of the token to create',
+        },
+        imageUrl: {
+          type: ['string', 'null'],
+          description: 'Image URL or attachment file of the token to create',
+        },
+        description: {
+          type: ['string', 'null'],
+          description: 'Description of the token to create',
+        },
+        twitter: {
+          type: ['string', 'null'],
+          description: 'Twitter URL of the token to create',
+        },
+        website: {
+          type: ['string', 'null'],
+          description: 'Website URL of the token to create',
+        },
+        telegram: {
+          type: ['string', 'null'],
+          description: 'Telegram URL of the token to create',
+        },
+        buyAmountSol: {
+          type: ['number', 'null'],
+          description: 'Amount of SOL to buy after token creation',
+        },
       },
-      required: ['name', 'symbol', 'imageUrl', 'description', 'twitter', 'website', 'telegram', 'buyAmountSol'],
+      required: [
+        'name',
+        'symbol',
+        'imageUrl',
+        'description',
+        'twitter',
+        'website',
+        'telegram',
+        'buyAmountSol',
+      ],
     },
   },
   name: 'CREATE_TOKEN',
@@ -250,8 +280,7 @@ export default {
     }
     if (!symbol) {
       callback({
-        text:
-          `Please provide a symbol for the token.`,
+        text: `Please provide a symbol for the token.`,
       });
       return false;
     }
@@ -288,7 +317,7 @@ export default {
             type: 'image',
             url: getImageAccessUrl(imageUrl),
           },
-        ]
+        ],
       };
       callback?.(responseMsg);
       return null;
@@ -349,7 +378,7 @@ export default {
       throw new Error('fullTokenMetadata Token name is required');
     }
 
-    SharedProvider.get<any>("tradeMonitorService").registerAgentCreatedToken({
+    SharedProvider.get<any>('tradeMonitorService').registerAgentCreatedToken({
       chain: 'solana',
       address: mintKeypair.publicKey.toBase58(),
       creatorAddress: deployerKeypair.publicKey.toBase58(),
@@ -506,5 +535,7 @@ function formatCreateTokenInfo(params: any): string {
 }
 
 function getImageAccessUrl(imageUrl: string): string {
-  return imageUrl.startsWith('http') ? imageUrl : `/media/uploads/${path.basename(imageUrl)}`;
+  return imageUrl.startsWith('http')
+    ? imageUrl
+    : `/media/uploads/${path.basename(imageUrl)}`;
 }
