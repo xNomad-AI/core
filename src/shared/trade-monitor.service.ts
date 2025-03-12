@@ -321,7 +321,7 @@ export class TradeMonitorService {
 
   async setOverrideMetadataForAgentCreatedToken(params: {
     address: string;
-    metadata: {
+    override: {
       description: string;
       twitter: string;
       telegram: string;

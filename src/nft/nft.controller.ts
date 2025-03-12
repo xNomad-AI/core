@@ -447,7 +447,7 @@ export class NftController {
 
     await this.tradeMonitorService.setOverrideMetadataForAgentCreatedToken({
       address: primaryCoin.mintAddress,
-      metadata: {
+      override: {
         description: body.metadata.description,
         twitter: body.metadata.twitter,
         telegram: body.metadata.telegram,
