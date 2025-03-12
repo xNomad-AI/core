@@ -5,7 +5,7 @@ import { Body, Headers, HttpCode, UnauthorizedException } from '@nestjs/common';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { SwapTokenService } from '../utils/swap-token.service.js';
 import { SwapTokenDto } from '../utils/type.js';
-import { Connection } from '@solana/web3.js';
+import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import {
   getWalletKeyFromWalletService,
   SolanaClient,
@@ -113,7 +113,7 @@ export class CallbackController {
     @Headers('X-Monitor-ID') id: string,
     @Headers('api-key') apiKey: string,
   ) {
-    this.validateApiKey(apiKey);
+    // this.validateApiKey(apiKey);
     this.logger.log('Received address monitor callback', {
       ...callbackData,
       id,
@@ -168,9 +168,9 @@ export class CallbackController {
       keyPair: keypairResult.keypair,
       mode,
       outputTokenCA,
-      priorityFee,
+      priorityFee: priorityFee,
       slippage,
-      tip,
+      tip: tip * LAMPORTS_PER_SOL,
       userWalletAddress: copyTradeTask.walletAddress,
     };
 
@@ -198,19 +198,14 @@ export class CallbackController {
     }
 
     this.logger.log(`copy trade request: ${JSON.stringify({
-      mode,
-      amount: swapTokenDto.amount,
-      inputTokenCA,
-      outputTokenCA,
-      priorityFee,
-      slippage,
-      tip,
-      userWalletAddress: copyTradeTask.walletAddress,
+      ...swapTokenDto,
+      connection: undefined,
+      keyPair: undefined,
     })}`);
-    await new SwapTokenService().swapToken(swapTokenDto);
+    const txId = await new SwapTokenService().swapToken(swapTokenDto);
     return {
       success: true,
-      message: 'copy trade callback processed successfully',
+      message: `copy trade callback processed successfully, ${txId}`,
     };
   }
 
