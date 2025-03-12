@@ -43,6 +43,20 @@ export class SwapTokenService {
         userWalletAddress,
       } = dto;
 
+      if (!slippage || slippage < 0 || slippage > 1) {
+        throw new Error('Invalid slippage, slippage should be between 0 and 1');
+      }
+
+      if (tip < 0.001 * this.LAMPORTS_PER_SOL) {
+        throw new Error('Invalid tip, tip should be greater than 0.001 SOL');
+      }
+
+      if (mode === 'ANTI_MEV' && priorityFee < 0.018) {
+        throw new Error(
+          'In ANTI_MEV mode, priority fee should be greater than 0.018',
+        );
+      }
+
       this.logger.info(
         `[swap token] Swapping ${amount} ${inputTokenCA} to ${outputTokenCA}`,
       );
