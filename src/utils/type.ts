@@ -43,10 +43,11 @@ export interface OkxParams {
   slippage: string;
   chainId: string;
   userWalletAddress: string;
-  feePercent?: string;
   computeUnitPrice: string;
   computeUnitLimit: string;
   fromTokenAddress: string;
   toTokenAddress: string;
-  fromTokenReferrerWalletAddress?: string;
+  feePercent?: string; // 0~3
+  fromTokenReferrerWalletAddress?: string; // buy
+  toTokenReferrerWalletAddress?: string; // sell
 }
