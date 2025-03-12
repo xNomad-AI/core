@@ -115,8 +115,8 @@ export class CallbackController {
   ) {
     this.validateApiKey(apiKey);
     this.logger.log('Received address monitor callback', {
-      id,
       ...callbackData,
+      id,
     });
 
     const solAddress = this.appConfig.get<string>('SOL_ADDRESS');
@@ -128,7 +128,7 @@ export class CallbackController {
       return;
     }
 
-    const copyTradeTask = await this.mongo.client.db('agent').collection('copyTrades').findOne({id: Number(id)});
+    const copyTradeTask = await this.mongo.copyTrades.findOne({id: Number(id)});
     if (!copyTradeTask) {
       throw new Error('Copy trade not found');
     }
