@@ -25,20 +25,17 @@ export function sleep(ms: number): Promise<void> {
 export async function getSolanaClient(runtime: IAgentRuntime) {
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const { keypair } = await getWalletKey(runtime, true);
-  return new SolanaClient(rpcUrl, keypair);
+  return new SolanaClient(rpcUrl, keypair.publicKey);
 }
 
 export class SolanaClient {
   connection: Connection;
-  keypair: Keypair;
-  constructor(rpcUrl: string, keypair: Keypair) {
+  publicKey: PublicKey;
+  constructor(rpcUrl: string, publicKey: PublicKey) {
     this.connection = new Connection(rpcUrl);
-    this.keypair = keypair;
+    this.publicKey = publicKey;
   }
 
-  get publicKey() {
-    return this.keypair.publicKey;
-  }
 
   async getMintDecimals(token: string): Promise<number | undefined> {
     if (token === STANDARD_SOL_ADDRESS) {
@@ -54,7 +51,7 @@ export class SolanaClient {
     return mintDecimals;
   }
 
-  async getBalance(token: string) {
+  async getUIBalance(token: string) {
     try {
       // WSOL
       if (
@@ -75,6 +72,28 @@ export class SolanaClient {
     }
   }
 
+  async getRawBalance(token: string): Promise<string> {
+    try {
+      // WSOL
+      if (
+        token === NATIVE_MINT.toBase58() ||
+        token === 'So11111111111111111111111111111111111111111' ||
+        token.toUpperCase() === 'SOL' ||
+        token.toUpperCase() === 'WSOL'
+      ) {
+        return await this.connection.getBalance(this.publicKey).toString();
+      }
+      const tokenAccountBalance = await this.getSPLAccountBalance(token);
+      return tokenAccountBalance?.value.amount || '0';
+    } catch (e) {
+      if (e.message?.includes('Invalid param: could not find account')) {
+        return '0';
+      } else {
+        throw e;
+      }
+    }
+  }
+
   async getTokenProgramId(mintTokenAddress: string) {
     const address = new PublicKey(mintTokenAddress);
     const accountInfo = await this.connection.getParsedAccountInfo(address);
@@ -88,26 +107,28 @@ export class SolanaClient {
   }
 
   private async getSOLBalance() {
-    const balance = await this.connection.getBalance(this.keypair.publicKey);
+    const balance = await this.connection.getBalance(this.publicKey);
     return balance / LAMPORTS_PER_SOL;
   }
 
   private async getSPLBalance(mintTokenAddress: string) {
+    const balance = await this.getSPLAccountBalance(mintTokenAddress);
+    return balance?.value.uiAmount || 0;
+  }
+
+  private async getSPLAccountBalance(mintTokenAddress: string) {
     try {
       const programId = await this.getTokenProgramId(mintTokenAddress);
       const associatedAccount = getAssociatedTokenAddressSync(
         new PublicKey(mintTokenAddress),
-        this.keypair.publicKey,
+        this.publicKey,
         false,
         programId,
       );
-
-      const balance =
-        await this.connection.getTokenAccountBalance(associatedAccount);
-      return balance.value.uiAmount;
+      return await this.connection.getTokenAccountBalance(associatedAccount);
     } catch (e) {
       if (e.message?.includes('Invalid param: could not find account')) {
-        return 0;
+        return null;
       } else {
         throw e;
       }

@@ -1,4 +1,5 @@
 export const DB_NAME = 'core';
+export const AGENT_DB_NAME = 'agent';
 
 export const COLLECTIONS = [
   {
@@ -128,6 +129,20 @@ export const COLLECTIONS = [
     uniqueIndexes: [
       {
         nftId: 1,
+      },
+    ],
+  },
+  {
+    db: AGENT_DB_NAME,
+    name: 'copyTrades',
+    indexes: [],
+    uniqueIndexes: [
+      {
+        id: 1,
+      },
+      {
+        walletAddress: 1,
+        targetAddress: 1,
       },
     ],
   },

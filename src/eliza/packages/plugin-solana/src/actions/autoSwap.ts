@@ -426,8 +426,9 @@ async function checkResponse(
   if (
     Number.isFinite(swapReq.inputTokenPercentage) &&
     swapReq.inputTokenPercentage != 0
+
   ) {
-    const balance = await client.getBalance(swapReq.inputTokenCA);
+    const balance = await client.getUIBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
   }
 
@@ -443,7 +444,7 @@ async function checkResponse(
     return null;
   }
 
-  const balance = await client.getBalance(swapReq.inputTokenCA);
+  const balance = await client.getUIBalance(swapReq.inputTokenCA);
   if (!balance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
@@ -459,12 +460,12 @@ async function checkResponse(
     return null;
   }
 
-  const WSOL_AMOUNT = await client.getBalance(NATIVE_MINT.toBase58());
+  const WSOL_AMOUNT = await client.getUIBalance(NATIVE_MINT.toBase58());
   const GAS_BANANCE = 0.001; // require 0.001 SOL for gas fee
 
   if (swapReq.inputTokenCA !== NATIVE_MINT.toBase58()) {
     // buy with token
-    const balance = await client.getBalance(NATIVE_MINT.toBase58());
+    const balance = await client.getUIBalance(NATIVE_MINT.toBase58());
     if (balance < GAS_BANANCE) {
       elizaLogger.error('Insufficient balance for swap gas fee');
       const responseMsg = {
@@ -534,8 +535,7 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'pending') {
     const swapInfo = formatTaskInfo(swapReq);
     const responseMsg = {
-      text: `${swapInfo}
-✅ Please confirm by replying with 'yes' or 'ok'.If I’m wrong, feel free to correct me directly.`,
+      text: `${swapInfo}`,
       action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
@@ -563,7 +563,7 @@ async function executeSwapTokenTx(
   );
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
-  const solanaClient = new SolanaClient(rpcUrl, keypair);
+  const solanaClient = new SolanaClient(rpcUrl, keypair.publicKey);
   const programId = await solanaClient.getTokenProgramId(inputTokenCA);
   const swapResult = await swapToken(
     connection,
@@ -622,11 +622,11 @@ function formatTaskInfo({
     'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';
   taskInfo += '————\n';
   taskInfo += `⬇️ Type: Limit ${swapType} order\n`;
-  taskInfo += `🪙 Token: ${inputTokenSymbol} (${tokenTarget})\n`;
+  taskInfo += `🪙 Token: $${inputTokenSymbol} ($${tokenTarget})\n`;
   taskInfo += `💰 ${swapType} Amount: ${amountInfo}\n`;
   taskInfo += `⚡️ Trigger: ${trigger}\n`;
   taskInfo += `⏰ Expire time: ${expireAt ? expireAt.toUTCString() : 'Never'}\n`;
   taskInfo += `————\n`;
-  taskInfo += `You can cancel your scheduled tasks on the [Tasks] subpage.\n`;
+  taskInfo += `You can cancel your scheduled tasks on the [Tasks] subpage.\nReply 'ok' or 'yes' to confirm.`;
   return taskInfo;
 }

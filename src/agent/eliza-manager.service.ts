@@ -11,19 +11,20 @@ import {
   executeAutoTokenSwapTask,
 } from '@elizaos/plugin-solana';
 import { TEEMode } from '@elizaos/plugin-tee';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Timeout } from '@nestjs/schedule';
 import { Keypair } from '@solana/web3.js';
 import { newTradeAgentRuntime, startAgent } from '../eliza/starter/index.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { CharacterConfig } from '../shared/mongo/types.js';
+import { CharacterConfig, CopyTrade } from '../shared/mongo/types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { sleep } from '../shared/utils.service.js';
 import { WalletProxyService } from '../wallet/wallet-proxy.service.js';
 import { SettingsService } from '../nft/core-settings.service.js';
 import { NftConfigService } from '../nft/nft-config.service.js';
-import { ClientName } from 'src/eliza/starter/clients/index.js';
+import { ClientName } from '../eliza/starter/clients/index.js';
+import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 
 export type ElizaAgentConfig = {
   chain: string;
@@ -40,6 +41,7 @@ export class ElizaManagerService {
     private readonly logger: TransientLoggerService,
     private readonly appConfig: ConfigService,
     private readonly mongoService: MongoService,
+    private readonly tradeMonitorService: TradeMonitorService,
     private readonly walletProxyService: WalletProxyService,
     private readonly settingsService: SettingsService,
     private readonly nftConfigService: NftConfigService,
@@ -161,17 +163,6 @@ export class ElizaManagerService {
     }
   }
 
-  async checkTee() {
-    const agents: Map<string, any> = this.elizaClient.agents;
-    agents.forEach((runtime, agentId) => {
-      const salt = runtime.getSetting('WALLET_SECRET_SALT');
-      const teeMode = runtime.getSetting('TEE_MODE');
-      if (!salt || !teeMode) {
-        this.logger.error(`Agent ${agentId} is missing salt or teeMode`);
-      }
-    });
-  }
-
   async deleteAgentMemory(
     agentId: string,
     opts?: {
@@ -262,6 +253,60 @@ export class ElizaManagerService {
       }
       await sleep(10000);
     }
+  }
+
+  async cancelCopyTrade(agentId: string, id: number) {
+    await this.tradeMonitorService.cancelCopyTrade(id);
+    await this.mongoService.client
+      .db('agent')
+      .collection('copyTrades')
+      .deleteOne({ agentId, id });
+  }
+
+  async updateCopyTradeStatus(agentId: string, id: number, status: string) {
+    await this.mongoService.client
+      .db('agent')
+      .collection('copyTrades')
+      .updateOne({ agentId, id }, { $set: { status } });
+  }
+
+  async updateCopyTrade(
+    agentId: string,
+    id: number,
+    { name, copySell, mode, status, fixedAmount, percentage }: CopyTrade,
+  ) {
+    const filter: any = { agentId };
+    if (id) {
+      filter.id = id;
+    }
+
+    const copyTrade = await this.mongoService.copyTrades.findOne(filter);
+    if (!copyTrade?.id) {
+      throw new BadRequestException('Copy trade not exists');
+    }
+    await this.mongoService.copyTrades.updateOne(
+      filter,
+      {
+        $set: {
+          copySell,
+          name,
+          mode,
+          status,
+          fixedAmount,
+          percentage,
+        },
+        $setOnInsert: { agentId, id },
+      },
+      { upsert: true },
+    );
+  }
+
+  async getCopyTrades(agentId: string) {
+    return await this.mongoService.client
+      .db('agent')
+      .collection('copyTrades')
+      .find({ agentId })
+      .toArray();
   }
 
   async runAutoSwapTask() {
@@ -434,5 +479,11 @@ export class ElizaManagerService {
       tokenId: nft?.tokenId,
     });
     return owner?.ownerAddress === ownerAddress;
+  }
+
+  async ensureAgentOwner(agentId: string, ownerAddress: string) {
+    if (!(await this.isAgentOwner(agentId, ownerAddress))) {
+      throw new Error('You are not the owner of this Agent');
+    }
   }
 }

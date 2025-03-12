@@ -4,6 +4,7 @@ import {
   Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
+import { BigNumber } from 'bignumber.js';
 
 export type SwapTransaction = VersionedTransaction | Transaction;
 
@@ -13,7 +14,7 @@ export interface SwapTokenDto {
   userWalletAddress: string;
   inputTokenCA: string;
   outputTokenCA: string;
-  amount: number;
+  amount: string | BigNumber;
   slippage: number; // 0.01 = 1%
   priorityFee: number;
   tip?: number; // default 0.001 SOL
