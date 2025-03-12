@@ -16,6 +16,7 @@ import { Request as ExpressRequest } from 'express';
 import { CacheTTL } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import AsyncRetry from 'async-retry';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { CharacterConfig } from '../shared/mongo/types.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
@@ -342,15 +343,7 @@ export class NftController {
 
   @Get('/:chain/:nftId/payment-update-primary-coin')
   async getPaymentUpdatePrimaryCoin() {
-    const feeRecipient = this.config.get(
-      'SOLANA_LAUNCHPAD_FEE_RECIPIENT_ADDRESS',
-    );
-    const feeInSol = process.env.RUN_ENV === 'dev' ? 0.0001 : 1;
-
-    return {
-      recipient: feeRecipient,
-      solAmount: feeInSol,
-    };
+    return this.getBindPrimaryCoinPaymentInfo();
   }
 
   @UseGuards(AuthGuard)
@@ -382,10 +375,7 @@ export class NftController {
       throw new Error('Primary coin not found');
     }
 
-    const feeRecipient = this.config.get(
-      'SOLANA_LAUNCHPAD_FEE_RECIPIENT_ADDRESS',
-    );
-    const feeInSol = process.env.RUN_ENV === 'dev' ? 0.0001 : 1;
+    const { recipient, solAmount } = this.getBindPrimaryCoinPaymentInfo();
 
     const validateTx = async (
       txid: string,
@@ -393,20 +383,30 @@ export class NftController {
       expectedRecipient: string,
       expectedSol: number,
     ) => {
-      // validate payment txid
+      this.logger.log(`Validating payment tx ${txid}`);
       const connection = new Connection(this.config.get('SOLANA_RPC_URL'));
 
-      const tx = await connection
-        .getParsedTransaction(txid, {
-          maxSupportedTransactionVersion: 0,
-        })
-        .catch((e) => {
-          this.logger.error(`failed to get payment tx ${txid}: ${e}`);
-          throw new Error(`failed to get payment tx ${txid}: ${e}`);
-        });
-      if (!tx) {
-        throw new Error(`Payment tx not found: ${txid}`);
-      }
+      const tx = await AsyncRetry(
+        async (bail) => {
+          const tx = await connection.getParsedTransaction(txid, {
+            maxSupportedTransactionVersion: 0,
+            commitment: 'confirmed',
+          });
+          if (!tx) {
+            throw new Error(`not found`);
+          }
+          return tx;
+        },
+        {
+          retries: 30,
+          maxTimeout: 3000,
+          onRetry: (error, attempt) => {
+            this.logger.warn(
+              `Attempt ${attempt}: failed to get payment tx ${txid}: ${error}`,
+            );
+          },
+        },
+      );
 
       const blockTime = await connection.getBlockTime(tx.slot);
       if (Date.now() / 1000 - blockTime! > 15 * 60) {
@@ -439,9 +439,11 @@ export class NftController {
         this.logger.log(msg);
         throw new Error(msg);
       }
+
+      this.logger.log(`Payment tx ${txid} is valid`);
     };
 
-    await validateTx(body.paymentTxId, address, feeRecipient, feeInSol);
+    await validateTx(body.paymentTxId, address, recipient, solAmount);
 
     await this.tradeMonitorService.setOverrideMetadataForAgentCreatedToken({
       address: primaryCoin.mintAddress,
@@ -464,5 +466,12 @@ export class NftController {
       delete coin.override;
     }
     return coin;
+  }
+
+  private getBindPrimaryCoinPaymentInfo() {
+    return {
+      recipient: this.config.get('SOLANA_LAUNCHPAD_FEE_RECIPIENT_ADDRESS'),
+      solAmount: process.env.RUN_ENV === 'dev' ? 0.0001 : 1,
+    };
   }
 }
