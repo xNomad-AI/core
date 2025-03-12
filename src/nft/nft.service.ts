@@ -143,7 +143,7 @@ export class NftService implements OnApplicationBootstrap {
     });
 
     nftConfig = nftConfig || {nftId, chain: 'solana'};
-    if (nftConfig?.trade){
+    if (!nftConfig?.trade){
       nftConfig.trade =  DEFAULT_TRADE_SETTINGS;
     }
 
