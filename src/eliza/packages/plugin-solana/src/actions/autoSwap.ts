@@ -21,16 +21,25 @@ import {
 } from '@solana/web3.js';
 import { getWalletKey } from '../keypairUtils.js';
 import {
-  isAgentAdmin, NotAgentAdminResponse,
+  isAgentAdmin,
+  NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
-import { convertNullStrings, md5sum, swapToken } from '../providers/swapUtils.js';
+import {
+  convertNullStrings,
+  md5sum,
+  swapToken,
+} from '../providers/swapUtils.js';
 import {
   getSwapTokenPrice,
   validateAndAssignCA,
   getTokenCABySymbol,
   isValidSPLTokenAddress,
 } from '../providers/tokenUtils.js';
-import { getSolanaClient, sleep, SolanaClient } from '../providers/solana-client.js';
+import {
+  getSolanaClient,
+  sleep,
+  SolanaClient,
+} from '../providers/solana-client.js';
 import { getRuntimeKey } from '../environment.js';
 import { NATIVE_MINT } from '@solana/spl-token';
 
@@ -128,14 +137,17 @@ export async function executeAutoTokenSwapTask(
     return;
   }
 
-
   if (
     task.priceTarget &&
     task.priceCondition &&
     task.priceCondition !== 'null' &&
     task.priceTarget !== 'null'
   ) {
-    const tokenCA = task.tokenTarget || (task.priceCondition === 'below' ? task.outputTokenCA : task.inputTokenCA);
+    const tokenCA =
+      task.tokenTarget ||
+      (task.priceCondition === 'below'
+        ? task.outputTokenCA
+        : task.inputTokenCA);
 
     const tokenPrice = await getSwapTokenPrice(runtime, tokenCA);
     const tokenPriceMatched =
@@ -149,7 +161,9 @@ export async function executeAutoTokenSwapTask(
       return;
     }
   }
-  elizaLogger.log(`AUTO_TASK started successfully, ${id}, task: ${JSON.stringify(task)}`);
+  elizaLogger.log(
+    `AUTO_TASK started successfully, ${id}, task: ${JSON.stringify(task)}`,
+  );
 
   await runtime.databaseAdapter.removeMemory(id, AutoSwapTaskTable);
   const { keypair } = await getWalletKey(runtime, true);
@@ -160,9 +174,7 @@ export async function executeAutoTokenSwapTask(
     task.outputTokenCA,
     Number(task.inputTokenAmount),
   );
-  elizaLogger.info(
-    `AUTO_TASK Finished successfully ${id}, txId: ${txId}`,
-  );
+  elizaLogger.info(`AUTO_TASK Finished successfully ${id}, txId: ${txId}`);
 }
 
 export const autoTask: Action = {
@@ -170,22 +182,72 @@ export const autoTask: Action = {
     name: 'AUTO_TASK',
     strict: true,
     additionalProperties: false,
-    description: 'Automatically executes a token swap when a specified condition is met, such as a price trigger or time delay. This function should only be used if the user specifies a condition like \'when price is above/below X\', \'at X price\', or \'after Y minutes\'. If the user simply says \'sell token\', this is NOT an auto task. When the user specifies \'buy <token> at certain condition\', the default input token is SOL. When the user specifies \'sell <token> at certain condition\', the default output token is SOL.',
+    description:
+      "Automatically executes a token swap when a specified condition is met, such as a price trigger or time delay. This function should only be used if the user specifies a condition like 'when price is above/below X', 'at X price', or 'after Y minutes'. If the user simply says 'sell token', this is NOT an auto task. When the user specifies 'buy <token> at certain condition', the default input token is SOL. When the user specifies 'sell <token> at certain condition', the default output token is SOL.",
     parameters: {
       type: 'object',
       properties: {
-        inputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to sell. If omitted in a buy order, SOL will be used by default. Either inputTokenSymbol or inputTokenCA must be provided.' },
-        inputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to sell. Either inputTokenSymbol or inputTokenCA must be provided.' },
-        outputTokenSymbol: { type: ['string', 'null'], description: 'Symbol of the token to buy. Either outputTokenSymbol or outputTokenCA must be provided.' },
-        outputTokenCA: { type: ['string', 'null'], description: 'Contract address of the token to buy. If omitted in a sell order, SOL will be used by default. Either outputTokenSymbol or outputTokenCA must be provided.' },
-        inputTokenAmount: { type: ['number', 'null'], description: 'Exact amount of inputToken to swap. Either inputTokenAmount or inputTokenPercentage must be provided.' },
-        inputTokenPercentage: { type: ['number', 'null'], description: 'Percentage of inputToken balance to swap. convert 100% to 1 Either inputTokenAmount or inputTokenPercentage must be provided. When extracting percentages, convert values like "50%" into decimal form (e.g., 0.5 instead of 50).' },
-        priceCondition: { type: ['string', 'null'], description: "Defines whether the swap should be triggered when the target token's price is 'above' or 'below' the specified priceTarget." },
-        priceTarget: { type: ['number', 'null'], description: 'Price target for the swap' },
-        tokenTarget: { type: ['string', 'null'], description: 'Token symbol or contract address used for price trigger evaluation' },
-        delay: { type: ['string', 'null'], description: 'Time Delay for the swap, e.g., "after 5 minutes" or "below 0.00169", Either delay or priceTarget must be provided.' },
+        inputTokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            'Symbol of the token to sell. If omitted in a buy order, SOL will be used by default. Either inputTokenSymbol or inputTokenCA must be provided.',
+        },
+        inputTokenCA: {
+          type: ['string', 'null'],
+          description:
+            'Contract address of the token to sell. Either inputTokenSymbol or inputTokenCA must be provided.',
+        },
+        outputTokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            'Symbol of the token to buy. Either outputTokenSymbol or outputTokenCA must be provided.',
+        },
+        outputTokenCA: {
+          type: ['string', 'null'],
+          description:
+            'Contract address of the token to buy. If omitted in a sell order, SOL will be used by default. Either outputTokenSymbol or outputTokenCA must be provided.',
+        },
+        inputTokenAmount: {
+          type: ['number', 'null'],
+          description:
+            'Exact amount of inputToken to swap. Either inputTokenAmount or inputTokenPercentage must be provided.',
+        },
+        inputTokenPercentage: {
+          type: ['number', 'null'],
+          description:
+            'Percentage of inputToken balance to swap. convert 100% to 1 Either inputTokenAmount or inputTokenPercentage must be provided. When extracting percentages, convert values like "50%" into decimal form (e.g., 0.5 instead of 50).',
+        },
+        priceCondition: {
+          type: ['string', 'null'],
+          description:
+            "Defines whether the swap should be triggered when the target token's price is 'above' or 'below' the specified priceTarget.",
+        },
+        priceTarget: {
+          type: ['number', 'null'],
+          description: 'Price target for the swap',
+        },
+        tokenTarget: {
+          type: ['string', 'null'],
+          description:
+            'Token symbol or contract address used for price trigger evaluation',
+        },
+        delay: {
+          type: ['string', 'null'],
+          description:
+            'Time Delay for the swap, e.g., "after 5 minutes" or "below 0.00169", Either delay or priceTarget must be provided.',
+        },
       },
-      required: ['inputTokenSymbol', 'outputTokenSymbol', 'inputTokenCA', 'outputTokenCA', 'inputTokenAmount', 'inputTokenPercentage', 'priceCondition', 'priceTarget', 'delay'],
+      required: [
+        'inputTokenSymbol',
+        'outputTokenSymbol',
+        'inputTokenCA',
+        'outputTokenCA',
+        'inputTokenAmount',
+        'inputTokenPercentage',
+        'priceCondition',
+        'priceTarget',
+        'delay',
+      ],
     },
   },
   name: 'AUTO_TASK',
@@ -286,7 +348,6 @@ export const autoTask: Action = {
   ] as ActionExample[][],
 } as Action;
 
-
 async function checkResponse(
   runtime: IAgentRuntime,
   message: Memory,
@@ -314,12 +375,21 @@ async function checkResponse(
   if (swapReq.outputTokenSymbol?.toUpperCase() === 'SOL') {
     swapReq.outputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
   }
-  swapReq.inputTokenCA = validateAndAssignCA(swapReq.inputTokenSymbol, swapReq.inputTokenCA);
-  swapReq.outputTokenCA = validateAndAssignCA(swapReq.outputTokenSymbol, swapReq.outputTokenCA);
+  swapReq.inputTokenCA = validateAndAssignCA(
+    swapReq.inputTokenSymbol,
+    swapReq.inputTokenCA,
+  );
+  swapReq.outputTokenCA = validateAndAssignCA(
+    swapReq.outputTokenSymbol,
+    swapReq.outputTokenCA,
+  );
 
   if (!swapReq.inputTokenCA) {
-    swapReq.inputTokenCA = await getTokenCABySymbol(runtime, swapReq.inputTokenSymbol);
-    if (!swapReq.inputTokenCA){
+    swapReq.inputTokenCA = await getTokenCABySymbol(
+      runtime,
+      swapReq.inputTokenSymbol,
+    );
+    if (!swapReq.inputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid inputToken CA you want to sell',
       };
@@ -329,8 +399,11 @@ async function checkResponse(
   }
 
   if (!swapReq.outputTokenCA) {
-    swapReq.outputTokenCA = await getTokenCABySymbol(runtime, swapReq.outputTokenSymbol);
-    if (!swapReq.outputTokenCA){
+    swapReq.outputTokenCA = await getTokenCABySymbol(
+      runtime,
+      swapReq.outputTokenSymbol,
+    );
+    if (!swapReq.outputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid outputToken CA you want to buy',
       };
@@ -341,18 +414,27 @@ async function checkResponse(
 
   const client = await getSolanaClient(runtime);
 
-  if (Number.isFinite((swapReq.outputTokenAmount)) && swapReq.outputTokenAmount != 0){
+  if (
+    Number.isFinite(swapReq.outputTokenAmount) &&
+    swapReq.outputTokenAmount != 0
+  ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
-    })
+    });
   }
 
-  if (Number.isFinite(swapReq.inputTokenPercentage) && swapReq.inputTokenPercentage != 0){
+  if (
+    Number.isFinite(swapReq.inputTokenPercentage) &&
+    swapReq.inputTokenPercentage != 0
+  ) {
     const balance = await client.getUIBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
   }
 
-  if (!Number.isFinite((swapReq.inputTokenAmount)) || swapReq.inputTokenAmount <= 0) {
+  if (
+    !Number.isFinite(swapReq.inputTokenAmount) ||
+    swapReq.inputTokenAmount <= 0
+  ) {
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'AUTO_TASK',
@@ -362,7 +444,7 @@ async function checkResponse(
   }
 
   const balance = await client.getUIBalance(swapReq.inputTokenCA);
-  if (!balance){
+  if (!balance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
     };
@@ -371,14 +453,14 @@ async function checkResponse(
 
   if (balance < swapReq.inputTokenAmount) {
     const responseMsg = {
-      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`
+      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
     };
     callback?.(responseMsg);
     return null;
   }
 
   const WSOL_AMOUNT = await client.getUIBalance(NATIVE_MINT.toBase58());
-  const GAS_BANANCE = 0.001;   // require 0.001 SOL for gas fee
+  const GAS_BANANCE = 0.001; // require 0.001 SOL for gas fee
 
   if (swapReq.inputTokenCA !== NATIVE_MINT.toBase58()) {
     // buy with token
@@ -425,7 +507,7 @@ async function checkResponse(
     swapReq.startAt = new Date();
   }
 
-  swapReq.expireAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  swapReq.expireAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
   elizaLogger.info(`checking if user confirm to create task`);
 
@@ -450,6 +532,7 @@ async function checkResponse(
   }
 
   if (confirmResponse.userAcked == 'pending') {
+    swapReq.inputTokenPercentage = (swapReq.inputTokenAmount/balance);
     const swapInfo = formatTaskInfo(swapReq);
     const responseMsg = {
       text: `${swapInfo}`,
@@ -459,8 +542,11 @@ async function checkResponse(
     return null;
   }
 
-  if (!isValidSPLTokenAddress(swapReq.tokenTarget)){
-    swapReq.tokenTarget = swapReq.tokenTarget === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : swapReq.outputTokenCA;
+  if (!isValidSPLTokenAddress(swapReq.tokenTarget)) {
+    swapReq.tokenTarget =
+      swapReq.tokenTarget === swapReq.inputTokenSymbol
+        ? swapReq.inputTokenCA
+        : swapReq.outputTokenCA;
   }
   return swapReq;
 }
@@ -518,22 +604,35 @@ function formatTaskInfo({
   inputTokenCA,
   inputTokenPercentage,
   inputTokenSymbol,
+  outputTokenSymbol,
+  outputTokenCA,
   priceCondition,
   priceTarget,
   tokenTarget,
   startAt,
   expireAt,
 }: AutoSwapTask): string {
-  const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'sell' : 'buy';
-  const amountInfo = swapType === 'sell' ? `${inputTokenAmount}(${inputTokenPercentage}%)` : `${inputTokenAmount} ${inputTokenSymbol || inputTokenCA}`;
-  const trigger = priceCondition ? `${inputTokenSymbol || inputTokenCA} price ${priceCondition} $${priceTarget}`: `At ${startAt.toUTCString()}`;
-  let taskInfo = 'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';
+  const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'buy' : 'sell';
+  const tokenInfo = swapType === 'sell' ? `$${inputTokenSymbol} (${inputTokenCA})` : `$${outputTokenSymbol} (${outputTokenCA})`;
+  const targetTokenSymbol =
+    tokenTarget === inputTokenCA ? inputTokenSymbol :
+      tokenTarget === outputTokenCA ? outputTokenSymbol :
+        tokenTarget;
+  const amountInfo =
+    swapType === 'sell'
+      ? `${inputTokenAmount}(${(inputTokenPercentage * 100)?.toFixed(1)}%)`
+      : `${inputTokenAmount} ${inputTokenSymbol || inputTokenCA}`;
+  const trigger = priceCondition
+    ? `${targetTokenSymbol} price ${priceCondition} $${priceTarget}`
+    : `At ${startAt.toUTCString()}`;
+  let taskInfo =
+    'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';
   taskInfo += '————\n';
   taskInfo += `⬇️ Type: Limit ${swapType} order\n`;
-  taskInfo += `🪙 Token: $${inputTokenSymbol} ($${tokenTarget})\n`;
+  taskInfo += `🪙 Token: ${tokenInfo}\n`;
   taskInfo += `💰 ${swapType} Amount: ${amountInfo}\n`;
   taskInfo += `⚡️ Trigger: ${trigger}\n`;
-  taskInfo += `⏰ Expire time: ${expireAt? expireAt.toUTCString():'Never'}\n`;
+  taskInfo += `⏰ Expire time: ${expireAt ? expireAt.toUTCString().replace('GMT', 'UTC') : 'Never'}\n`;
   taskInfo += `————\n`;
   taskInfo += `You can cancel your scheduled tasks on the [Tasks] subpage.\nReply 'ok' or 'yes' to confirm.`;
   return taskInfo;

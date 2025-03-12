@@ -58,7 +58,7 @@ export async function isAgentAdmin(runtime: IAgentRuntime, message: Memory) {
 export const NotAgentAdminResponse = {
   text: 'Access denied: Only the Agent Owner has permission to perform this action. Please sign in with the correct account.',
   isError: true,
-}
+};
 
 export async function getWalletTokenBySymbol(
   runtime: IAgentRuntime,

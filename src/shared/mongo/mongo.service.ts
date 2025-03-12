@@ -15,7 +15,8 @@ import {
   NftConfig,
   NftPrimaryCoin,
   NftPrologues,
-  CoreSettings, CopyTrade,
+  CoreSettings,
+  CopyTrade,
 } from './types.js';
 
 @Injectable()

@@ -33,7 +33,10 @@ import {
 } from '../providers/walletUtils.js';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getRuntimeKey } from '../environment.js';
-import { SolanaClient, STANDARD_SOL_ADDRESS } from '../providers/solana-client.js';
+import {
+  SolanaClient,
+  STANDARD_SOL_ADDRESS,
+} from '../providers/solana-client.js';
 import { BigNumber } from 'bignumber.js';
 
 export interface TransferContent extends Content {
@@ -92,14 +95,29 @@ export const transfer: Action = {
     name: 'SEND_TOKEN',
     strict: true,
     additionalProperties: false,
-    description: 'Transfer SPL tokens or SOL from agent wallet to another address',
+    description:
+      'Transfer SPL tokens or SOL from agent wallet to another address',
     parameters: {
       type: 'object',
       properties: {
-        tokenSymbol: { type: ['string', 'null'], description: 'The token symbol to transfer, at lease one of tokenSymbol or tokenAddress is provided' },
-        tokenAddress: { type: ['string', 'null'], description: 'The token contract address to transfer, at lease one of tokenSymbol or tokenAddress is provided' },
-        recipient: { type: 'string', description: 'The recipient wallet address' },
-        amount: { type: 'string', description: 'The number amount of tokens to transfer' },
+        tokenSymbol: {
+          type: ['string', 'null'],
+          description:
+            'The token symbol to transfer, at lease one of tokenSymbol or tokenAddress is provided',
+        },
+        tokenAddress: {
+          type: ['string', 'null'],
+          description:
+            'The token contract address to transfer, at lease one of tokenSymbol or tokenAddress is provided',
+        },
+        recipient: {
+          type: 'string',
+          description: 'The recipient wallet address',
+        },
+        amount: {
+          type: 'string',
+          description: 'The number amount of tokens to transfer',
+        },
       },
       required: ['tokenSymbol', 'tokenAddress', 'recipient', 'amount'],
     },
@@ -122,7 +140,9 @@ export const transfer: Action = {
       callback?.(NotAgentAdminResponse);
       return false;
     }
-    const content = convertNullStrings(state.actionParameters) as TransferContent;
+    const content = convertNullStrings(
+      state.actionParameters,
+    ) as TransferContent;
 
     if (!content.amount || isNaN(content.amount as number)) {
       callback({
@@ -179,16 +199,25 @@ export const transfer: Action = {
       return null;
     }
 
-    const solanaClient = new SolanaClient(getRuntimeKey(runtime, 'SOLANA_RPC_URL'), senderKeypair.publicKey);
+    const solanaClient = new SolanaClient(
+      getRuntimeKey(runtime, 'SOLANA_RPC_URL'),
+      senderKeypair.publicKey,
+    );
     if (confirmResponse.userAcked == 'pending') {
       const balance = await solanaClient.getUIBalance(content.tokenAddress);
-      const transferPercentage = (Number(content.amount) / balance * 100).toFixed(1);
-      const transferInfo = formatTransferInfo(senderKeypair.publicKey.toBase58(),{
-        ...content,
-        transferPercentage,
-      });
+      const transferPercentage = (
+        (Number(content.amount) / balance) *
+        100
+      ).toFixed(1);
+      const transferInfo = formatTransferInfo(
+        senderKeypair.publicKey.toBase58(),
+        {
+          ...content,
+          transferPercentage,
+        },
+      );
       const responseMsg = {
-        text: `${transferInfo}`
+        text: `${transferInfo}`,
       };
       callback?.(responseMsg);
       return null;
@@ -207,7 +236,9 @@ export const transfer: Action = {
       const mintPubkey = new PublicKey(content.tokenAddress);
       const recipientPubkey = new PublicKey(content.recipient);
 
-      const mintDecimals = await solanaClient.getMintDecimals(content.tokenAddress);
+      const mintDecimals = await solanaClient.getMintDecimals(
+        content.tokenAddress,
+      );
       if (!mintDecimals || isNaN(mintDecimals)) {
         callback({
           text: `Token ${content.tokenAddress} not found. Please provide a valid token address.`,
@@ -215,11 +246,14 @@ export const transfer: Action = {
         return false;
       }
       const mintAmount = BigInt(
-        new BigNumber(content.amount).multipliedBy(new BigNumber(10).pow(mintDecimals)).toFixed(0)
+        new BigNumber(content.amount)
+          .multipliedBy(new BigNumber(10).pow(mintDecimals))
+          .toFixed(0),
       );
 
       const solBalance = await connection.getBalance(senderKeypair.publicKey);
-      let solTransferOut = content.tokenAddress === STANDARD_SOL_ADDRESS  ? Number(mintAmount) : 0;
+      let solTransferOut =
+        content.tokenAddress === STANDARD_SOL_ADDRESS ? Number(mintAmount) : 0;
 
       const transaction = new Transaction();
       if (content.tokenAddress === STANDARD_SOL_ADDRESS) {
@@ -237,7 +271,9 @@ export const transfer: Action = {
           }),
         );
       } else {
-        const programId = await solanaClient.getTokenProgramId(content.tokenAddress);
+        const programId = await solanaClient.getTokenProgramId(
+          content.tokenAddress,
+        );
         const senderATA = getAssociatedTokenAddressSync(
           mintPubkey,
           senderKeypair.publicKey,
@@ -301,7 +337,8 @@ export const transfer: Action = {
       transaction.feePayer = senderKeypair.publicKey;
       transaction.recentBlockhash = recentBlockhash.blockhash;
       const estimatedFee = await transaction.getEstimatedFee(connection);
-      const rentExemption = await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
+      const rentExemption =
+        await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
       if (solBalance < solTransferOut + estimatedFee + rentExemption) {
         callback({
           text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,

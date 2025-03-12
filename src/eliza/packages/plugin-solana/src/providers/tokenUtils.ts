@@ -85,16 +85,18 @@ function getTokenName(mintAddress: PublicKey): string {
   return tokenNameMap[mintAddress.toBase58()] || 'Unknown Token';
 }
 
-
-export async function getTokenCABySymbol(runtime: IAgentRuntime, keyword: string): Promise<string|undefined>{
+export async function getTokenCABySymbol(
+  runtime: IAgentRuntime,
+  keyword: string,
+): Promise<string | undefined> {
   let tokens = await getTokensBySymbol(runtime, keyword);
-  if (tokens?.[0].address){
-    return tokens[0].address;
+  if (tokens?.[0]?.address) {
+    return tokens[0]?.address;
   }
-  if(keyword.startsWith('$')){
+  if (keyword.startsWith('$')) {
     tokens = await getTokensBySymbol(runtime, keyword.slice(1));
   }
-  return tokens?.[0].address;
+  return tokens?.[0]?.address;
 }
 
 export async function getTokensBySymbol(
@@ -116,7 +118,12 @@ export async function getTokensBySymbol(
     };
     const response = await fetch(url, { headers });
     const result = await response.json();
-    return result?.data?.items?.[0]?.result as { name: string, symbol:string, address: string, decimals: string|number }[];
+    return result?.data?.items?.[0]?.result as {
+      name: string;
+      symbol: string;
+      address: string;
+      decimals: string | number;
+    }[];
   } catch (error) {
     elizaLogger.error(`Error getting token CA: ${error}`);
     return [];
@@ -131,7 +138,6 @@ export function isValidAddress(address: string) {
     return false;
   }
 }
-
 
 export function isValidSPLTokenAddress(address: string) {
   try {
@@ -150,14 +156,14 @@ export function isValidSPLTokenAddress(address: string) {
 }
 
 // tokenSymbol maybe mismatched with tokenCA, so we need to validate and assign the correct one
-export function validateAndAssignCA(tokenSymbol: string, tokenCA: string){
+export function validateAndAssignCA(tokenSymbol: string, tokenCA: string) {
   const isValidSymbol = isValidSPLTokenAddress(tokenSymbol);
   const isValidCA = isValidSPLTokenAddress(tokenCA);
 
   if (isValidSymbol && !isValidCA) {
     return tokenSymbol;
   }
-  if (isValidCA){
+  if (isValidCA) {
     return tokenCA;
   }
   return null;

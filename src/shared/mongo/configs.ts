@@ -110,15 +110,17 @@ export const COLLECTIONS = [
     db: DB_NAME,
     name: 'coreSettings',
     // indexes: [],
-    indexes: [{
-      category: 1,
-      "value.product": 1,
-    }],
+    indexes: [
+      {
+        category: 1,
+        'value.product': 1,
+      },
+    ],
     uniqueIndexes: [
       {
-        "value.httpProxy": 1,
-      }
-    ]
+        'value.httpProxy': 1,
+      },
+    ],
   },
   {
     db: DB_NAME,

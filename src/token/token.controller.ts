@@ -1,9 +1,5 @@
 import { CacheTTL } from '@nestjs/cache-manager';
-import {
-  Controller,
-  Get,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MongoService } from '../shared/mongo/mongo.service.js';
@@ -54,12 +50,18 @@ export class TokenController {
     const results = await Promise.all(
       typeArray.map(async (t) => {
         switch (t) {
-          case 'news': return { news: await this.tokenInfo.getTokenNews(tokenAddress) };
-          case 'twitter': return { twitter: await this.tokenInfo.getTokenTwitterInfo(tokenAddress) };
-          case 'info': return { info: await this.tokenInfo.getTokenInfo(tokenAddress) };
-          default: return {};
+          case 'news':
+            return { news: await this.tokenInfo.getTokenNews(tokenAddress) };
+          case 'twitter':
+            return {
+              twitter: await this.tokenInfo.getTokenTwitterInfo(tokenAddress),
+            };
+          case 'info':
+            return { info: await this.tokenInfo.getTokenInfo(tokenAddress) };
+          default:
+            return {};
         }
-      })
+      }),
     );
     return results.reduce((acc, res) => ({ ...acc, ...res }), {});
   }

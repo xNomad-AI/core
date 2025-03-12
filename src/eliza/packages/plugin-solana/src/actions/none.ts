@@ -27,7 +27,7 @@ About {{agentName}}:
     { 
     "user": "{{agentName}}", 
     "text": "<string>",  
-} `
+} `;
 export const none: Action = {
   functionCallSpec: {
     name: 'none',

@@ -20,11 +20,13 @@ export async function getWalletKey(
   runtime: IAgentRuntime,
   requirePrivateKey = true,
 ): Promise<KeypairResult> {
-  const teeMode = runtime.getSetting('TEE_MODE') as TEEMode || TEEMode.OFF;
+  const teeMode = (runtime.getSetting('TEE_MODE') as TEEMode) || TEEMode.OFF;
   const walletSecretSalt = runtime.getSetting('WALLET_SECRET_SALT');
   const agentId = runtime.agentId;
   const endpoint = runtime.getSetting('WALLET_SERVICE_ENDPOINT');
-  const walletServiceSecretToken = runtime.getSetting('WALLET_SERVICE_SECRET_TOKEN');
+  const walletServiceSecretToken = runtime.getSetting(
+    'WALLET_SERVICE_SECRET_TOKEN',
+  );
   return await getWalletKeyFromWalletService({
     teeMode,
     walletSecretSalt,
@@ -41,13 +43,15 @@ export async function getWalletKeyFromWalletService({
   agentId,
   requirePrivateKey,
   endpoint,
-  walletServiceSecretToken }: {
- teeMode: TEEMode,
-  walletSecretSalt: string,
-  agentId: string,
-  requirePrivateKey: boolean,
-  endpoint: string,
-  walletServiceSecretToken: string}): Promise<KeypairResult>  {
+  walletServiceSecretToken,
+}: {
+  teeMode: TEEMode;
+  walletSecretSalt: string;
+  agentId: string;
+  requirePrivateKey: boolean;
+  endpoint: string;
+  walletServiceSecretToken: string;
+}): Promise<KeypairResult> {
   if (teeMode === TEEMode.OFF) {
     throw new Error('TEE_MODE must be enabled to use this function');
   }
@@ -76,9 +80,7 @@ export async function getWalletKeyFromWalletService({
       )
       .then((response) => {
         return {
-          keypair: Keypair.fromSecretKey(
-            bs58.decode(response.data.secretKey),
-          ),
+          keypair: Keypair.fromSecretKey(bs58.decode(response.data.secretKey)),
           publicKey: new PublicKey(response.data.publicKey),
         };
       });

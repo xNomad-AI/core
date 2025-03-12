@@ -6,7 +6,10 @@ import { MongoService } from '../shared/mongo/mongo.service.js';
 import { SwapTokenService } from '../utils/swap-token.service.js';
 import { SwapTokenDto } from '../utils/type.js';
 import { Connection } from '@solana/web3.js';
-import { getWalletKeyFromWalletService, SolanaClient } from '@elizaos/plugin-solana';
+import {
+  getWalletKeyFromWalletService,
+  SolanaClient,
+} from '@elizaos/plugin-solana';
 import { TEEMode } from '@elizaos/plugin-tee';
 import { BigNumber } from 'bignumber.js';
 import { DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
@@ -31,17 +34,23 @@ class AddressCallbackDto extends BaseCallbackDto {
 }
 
 function getSwapInfo(callback: AddressCallbackDto) {
-  if (callback.transfers.length !== 2){
+  if (callback.transfers.length !== 2) {
     throw new Error('Invalid swap transfer length');
   }
-  const inputTransfer = callback.transfers[0].from === callback.address ? callback.transfers[0] : callback.transfers[1];
-  const outputTransfer = callback.transfers[0].from === callback.address ? callback.transfers[1] : callback.transfers[0];
+  const inputTransfer =
+    callback.transfers[0].from === callback.address
+      ? callback.transfers[0]
+      : callback.transfers[1];
+  const outputTransfer =
+    callback.transfers[0].from === callback.address
+      ? callback.transfers[1]
+      : callback.transfers[0];
   return {
     inputTokenCA: inputTransfer.tokenAddress,
     inputTokenAmount: inputTransfer.amount,
     outputTokenCA: outputTransfer.tokenAddress,
     outputTokenAmount: outputTransfer.amount,
-  }
+  };
 }
 
 export interface OKXTransfer {
@@ -51,8 +60,6 @@ export interface OKXTransfer {
   symbol: string;
   amount: string;
 }
-
-
 
 @Controller('/callbacks')
 export class CallbackController {
@@ -114,7 +121,8 @@ export class CallbackController {
 
     const solAddress = this.appConfig.get<string>('SOL_ADDRESS');
 
-    const {inputTokenCA, inputTokenAmount, outputTokenCA} = getSwapInfo(callbackData);
+    const { inputTokenCA, inputTokenAmount, outputTokenCA } =
+      getSwapInfo(callbackData);
     if (inputTokenCA != solAddress && outputTokenCA != solAddress) {
       this.logger.log(`ignore not SOL swap, ${id}`);
       return;
@@ -134,23 +142,30 @@ export class CallbackController {
     }
 
     const agentId = copyTradeTask.agentId;
-    const nft = await this.mongo.nfts.findOne({agentId});
-    const nftConfig = await this.mongo.nftConfigs.findOne({nftId: nft.nftId});
-    const {slippage, mode, priorityFee, tip} = nftConfig?.trade || DEFAULT_TRADE_SETTINGS;
-    const connection = await new Connection(this.appConfig.get('SOLANA_RPC_URL'), 'confirmed');
-    const keypairResult = await getWalletKeyFromWalletService(
-      {
-        teeMode: this.appConfig.get<string>('TEE_MODE') as TEEMode,
-        walletSecretSalt: this.appConfig.get<string>('WALLET_SECRET_SALT'),
-        agentId,
-        requirePrivateKey: true,
-        endpoint: this.appConfig.get<string>('WALLET_SERVICE_ENDPOINT'),
-        walletServiceSecretToken: this.appConfig.get<string>('WALLET_SERVICE_SECRET_TOKEN'),
-      }
+    const nft = await this.mongo.nfts.findOne({ agentId });
+    const nftConfig = await this.mongo.nftConfigs.findOne({ nftId: nft.nftId });
+    const { slippage, mode, priorityFee, tip } =
+      nftConfig?.trade || DEFAULT_TRADE_SETTINGS;
+    const connection = await new Connection(
+      this.appConfig.get('SOLANA_RPC_URL'),
+      'confirmed',
     );
-    const solanaClient = new SolanaClient(this.appConfig.get<string>('SOLANA_RPC_URL'), keypairResult.keypair.publicKey);
+    const keypairResult = await getWalletKeyFromWalletService({
+      teeMode: this.appConfig.get<string>('TEE_MODE') as TEEMode,
+      walletSecretSalt: this.appConfig.get<string>('WALLET_SECRET_SALT'),
+      agentId,
+      requirePrivateKey: true,
+      endpoint: this.appConfig.get<string>('WALLET_SERVICE_ENDPOINT'),
+      walletServiceSecretToken: this.appConfig.get<string>(
+        'WALLET_SERVICE_SECRET_TOKEN',
+      ),
+    });
+    const solanaClient = new SolanaClient(
+      this.appConfig.get<string>('SOLANA_RPC_URL'),
+      keypairResult.keypair.publicKey,
+    );
     const swapTokenDto: SwapTokenDto = {
-      amount: "0",
+      amount: '0',
       connection,
       inputTokenCA,
       keyPair: keypairResult.keypair,
@@ -166,16 +181,21 @@ export class CallbackController {
     if (inputTokenCA === solAddress) {
       const decimals = await solanaClient.getMintDecimals(outputTokenCA);
       if (copyTradeTask.mode == 'fixedAmount') {
-        swapTokenDto.amount = BigNumber(copyTradeTask.fixedAmount).multipliedBy(10 ** decimals).integerValue();
-      }else{
-        swapTokenDto.amount = BigNumber(copyTradeTask.percentage).multipliedBy(inputTokenAmount).multipliedBy(10 ** decimals).integerValue();
+        swapTokenDto.amount = BigNumber(copyTradeTask.fixedAmount)
+          .multipliedBy(10 ** decimals)
+          .integerValue();
+      } else {
+        swapTokenDto.amount = BigNumber(copyTradeTask.percentage)
+          .multipliedBy(inputTokenAmount)
+          .multipliedBy(10 ** decimals)
+          .integerValue();
       }
     }
     // copy sell
     if (outputTokenCA === solAddress) {
       if (!copyTradeTask.copySell) {
         this.logger.log(`ignore copy sell, ${id}`);
-        return
+        return;
       }
       swapTokenDto.amount = await solanaClient.getRawBalance(inputTokenCA);
     }
