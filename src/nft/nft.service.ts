@@ -138,9 +138,14 @@ export class NftService implements OnApplicationBootstrap {
       ignoreTwitterHttpProxy?: boolean;
     },
   ): Promise<NftConfig> {
-    const nftConfig = await this.mongo.nftConfigs.findOne({
+    let nftConfig: NftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
+
+    nftConfig = nftConfig || {nftId, chain: 'solana'};
+    if (nftConfig?.trade){
+      nftConfig.trade =  DEFAULT_TRADE_SETTINGS;
+    }
 
     // default hiden the http proxy
     if (
@@ -149,13 +154,7 @@ export class NftService implements OnApplicationBootstrap {
     ) {
       nftConfig.characterConfig.settings.secrets.TWITTER_HTTP_PROXY = '';
     }
-    return (
-      nftConfig || {
-        nftId,
-        chain: 'solana',
-        trade: DEFAULT_TRADE_SETTINGS,
-      }
-    );
+    return nftConfig;
   }
 
   async getTwitterHttpProxy(nftId: string) {
