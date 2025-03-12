@@ -507,7 +507,7 @@ async function checkResponse(
     swapReq.startAt = new Date();
   }
 
-  swapReq.expireAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  swapReq.expireAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
   elizaLogger.info(`checking if user confirm to create task`);
 
@@ -532,6 +532,7 @@ async function checkResponse(
   }
 
   if (confirmResponse.userAcked == 'pending') {
+    swapReq.inputTokenPercentage = (swapReq.inputTokenAmount/balance);
     const swapInfo = formatTaskInfo(swapReq);
     const responseMsg = {
       text: `${swapInfo}`,
@@ -603,28 +604,35 @@ function formatTaskInfo({
   inputTokenCA,
   inputTokenPercentage,
   inputTokenSymbol,
+  outputTokenSymbol,
+  outputTokenCA,
   priceCondition,
   priceTarget,
   tokenTarget,
   startAt,
   expireAt,
 }: AutoSwapTask): string {
-  const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'sell' : 'buy';
+  const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'buy' : 'sell';
+  const tokenInfo = swapType === 'sell' ? `$${inputTokenSymbol} (${inputTokenCA})` : `$${outputTokenSymbol} (${outputTokenCA})`;
+  const targetTokenSymbol =
+    tokenTarget === inputTokenCA ? inputTokenSymbol :
+      tokenTarget === outputTokenCA ? outputTokenSymbol :
+        tokenTarget;
   const amountInfo =
     swapType === 'sell'
-      ? `${inputTokenAmount}(${inputTokenPercentage}%)`
+      ? `${inputTokenAmount}(${(inputTokenPercentage * 100)?.toFixed(1)}%)`
       : `${inputTokenAmount} ${inputTokenSymbol || inputTokenCA}`;
   const trigger = priceCondition
-    ? `${inputTokenSymbol || inputTokenCA} price ${priceCondition} $${priceTarget}`
+    ? `${targetTokenSymbol} price ${priceCondition} $${priceTarget}`
     : `At ${startAt.toUTCString()}`;
   let taskInfo =
     'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';
   taskInfo += '————\n';
   taskInfo += `⬇️ Type: Limit ${swapType} order\n`;
-  taskInfo += `🪙 Token: $${inputTokenSymbol} ($${tokenTarget})\n`;
+  taskInfo += `🪙 Token: ${tokenInfo}\n`;
   taskInfo += `💰 ${swapType} Amount: ${amountInfo}\n`;
   taskInfo += `⚡️ Trigger: ${trigger}\n`;
-  taskInfo += `⏰ Expire time: ${expireAt ? expireAt.toUTCString() : 'Never'}\n`;
+  taskInfo += `⏰ Expire time: ${expireAt ? expireAt.toUTCString().replace('GMT', 'UTC') : 'Never'}\n`;
   taskInfo += `————\n`;
   taskInfo += `You can cancel your scheduled tasks on the [Tasks] subpage.\nReply 'ok' or 'yes' to confirm.`;
   return taskInfo;

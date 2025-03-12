@@ -222,8 +222,9 @@ Please confirm the info below. If any adjustments are needed, let me know the up
 💼 Target wallet address: ${response.targetAddress}
 🏷️ Name: ${response.name}
 🔆 Copy mode: ${response.mode}
-💰 Buy amount: ${buyInfo}
+💰 ${buyInfo}
 ⬆️ Copy sell: ${response.copySell ? 'yes' : 'no'}
 ————
-You can stop the copy trade on the [Tasks] subpage. Reply 'ok' or 'yes' to confirm.`;
+You can stop the copy trade on the [Tasks] subpage. 
+Reply 'ok' or 'yes' to confirm.`;
 }
