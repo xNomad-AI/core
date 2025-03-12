@@ -471,6 +471,9 @@ export class NftService implements OnApplicationBootstrap {
     if (token.creatorAddress !== agentWallet) {
       throw new Error('agent is not the creator of the token');
     }
+    await this.tradeMonitorService.bindAgentCreatedTokenToNft({
+      address: token.address,
+    });
 
     await this.mongo.nftPrimaryCoins.insertOne({
       chain,
