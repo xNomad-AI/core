@@ -3,13 +3,11 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 @Module({
   imports: [
-    PrometheusModule.register(
-      {
-        defaultMetrics: {
-          enabled: false,
-        },
-      }
-    ),
+    PrometheusModule.register({
+      defaultMetrics: {
+        enabled: false,
+      },
+    }),
   ],
 })
 export class MetricsModule {}

@@ -12,18 +12,20 @@ export class SettingsService {
     this.logger.setContext(SettingsService.name);
   }
 
-  async upsertCoreSettings(
-    proxies: UpdateCoreSettingsDto[],
-  ) {
+  async upsertCoreSettings(proxies: UpdateCoreSettingsDto[]) {
     const httpProxies: string[] = proxies.map((proxy) => {
       const username = proxy.username;
       const password = proxy.password;
       return `http://${username}:${password}@${proxy.entryPoint}:${proxy.port}`;
     });
-    const existingProxies = await this.mongo.coreSettings.find({
-      "value.httpProxy": { $in: httpProxies }
-    }).toArray();
-    const existingHttpProxies = existingProxies.map((proxy) => proxy.value.httpProxy);
+    const existingProxies = await this.mongo.coreSettings
+      .find({
+        'value.httpProxy': { $in: httpProxies },
+      })
+      .toArray();
+    const existingHttpProxies = existingProxies.map(
+      (proxy) => proxy.value.httpProxy,
+    );
 
     const insertedDocs: any[] = [];
     for (const proxy of proxies) {
@@ -33,9 +35,9 @@ export class SettingsService {
 
       if (!existingHttpProxies.includes(httpProxy)) {
         insertedDocs.push({
-          category: "httpProxy",
+          category: 'httpProxy',
           value: {
-            product: "datacenterProxies",
+            product: 'datacenterProxies',
             username,
             password,
             // example.com
@@ -46,8 +48,8 @@ export class SettingsService {
             assignedIP: proxy.ip,
             httpProxy: `http://${username}:${password}@${proxy.entryPoint}:${proxy.port}`,
             // how many agent using this proxy
-            count: 0
-          }
+            count: 0,
+          },
         });
       }
     }
@@ -60,9 +62,15 @@ export class SettingsService {
   async randomGetHttpProxy(limit: number = 1) {
     const HTTP_PROXY_MAX_USERS = 2;
 
-    const proxies = await this.mongo.coreSettings.find(
-      { category: "httpProxy", "value.product": "datacenterProxies", "value.count": { $lt: HTTP_PROXY_MAX_USERS } },
-    ).sort({ 'value.count': 1 }).limit(limit).toArray();
+    const proxies = await this.mongo.coreSettings
+      .find({
+        category: 'httpProxy',
+        'value.product': 'datacenterProxies',
+        'value.count': { $lt: HTTP_PROXY_MAX_USERS },
+      })
+      .sort({ 'value.count': 1 })
+      .limit(limit)
+      .toArray();
 
     if (proxies.length !== 0) {
       return proxies[0].value.httpProxy;
@@ -71,7 +79,7 @@ export class SettingsService {
 
   async increaseHttpProxyCount(httpProxy: string) {
     return await this.mongo.coreSettings.updateOne(
-      { "value.httpProxy": httpProxy },
+      { 'value.httpProxy': httpProxy },
       {
         $inc: {
           'value.count': 1,
@@ -82,7 +90,7 @@ export class SettingsService {
 
   async decreaseHttpProxyCount(httpProxy: string) {
     return await this.mongo.coreSettings.updateOne(
-      { "value.httpProxy": httpProxy },
+      { 'value.httpProxy': httpProxy },
       {
         $inc: {
           'value.count': -1,

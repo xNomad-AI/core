@@ -29,7 +29,10 @@ export const airdrop: Action = {
     parameters: {
       type: 'object',
       properties: {
-        programName: { type: ['string', 'null'], description: 'The program name of the airdrop' },
+        programName: {
+          type: ['string', 'null'],
+          description: 'The program name of the airdrop',
+        },
       },
       required: ['programName'],
     },

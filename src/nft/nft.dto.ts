@@ -1,5 +1,23 @@
 import { Type } from 'class-transformer';
-import { ValidateNested, IsEmail, IsString, IsNotEmpty, Matches, MinLength, IsOptional, IsInt, Min, Max, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, registerDecorator, IsNotIn, IsIP, IsFQDN } from 'class-validator';
+import {
+  ValidateNested,
+  IsEmail,
+  IsString,
+  IsNotEmpty,
+  Matches,
+  MinLength,
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
+  registerDecorator,
+  IsNotIn,
+  IsIP,
+  IsFQDN,
+} from 'class-validator';
 
 // Custom validation constraint
 @ValidatorConstraint({ async: false })
@@ -34,7 +52,8 @@ class UpdateTwitterConfigDtoSecrets {
   @IsNotEmpty()
   // https://help.x.com/en/managing-your-account/x-username-rules
   @Matches(/^[A-Za-z0-9_]{4,15}$/, {
-    message: 'Username must be 4 to 15 characters long and can only contain letters, numbers, and underscores',
+    message:
+      'Username must be 4 to 15 characters long and can only contain letters, numbers, and underscores',
   })
   TWITTER_USERNAME: string;
 
@@ -63,7 +82,8 @@ class UpdateTwitterConfigDtoSecrets {
   @IsString()
   // https://stackoverflow.com/questions/61868770/tegram-bot-api-token-format
   @Matches(/^[0-9]{8,10}:[a-zA-Z0-9_-]{35}$/, {
-    message: 'Telegram bot token must be in the format of 123456789:ABCdefghIJKlmnopQRStuvWxyZ',
+    message:
+      'Telegram bot token must be in the format of 123456789:ABCdefghIJKlmnopQRStuvWxyZ',
   })
   @IsOptional()
   TELEGRAM_BOT_TOKEN?: string;
@@ -82,21 +102,21 @@ class UpdateTwitterConfigDtoSecrets {
 
   // waiting for frontend to fix string to number
   @IsOptional()
-  POST_INTERVAL_MIN?: string
+  POST_INTERVAL_MIN?: string;
   @IsOptional()
-  POST_INTERVAL_MAX?: string
+  POST_INTERVAL_MAX?: string;
 
   @IsInt()
   @Max(200)
   @IsOptional()
-  MAX_LENGTH?: number
+  MAX_LENGTH?: number;
 }
 
 class UpdateTwitterConfigDtoSettings {
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => UpdateTwitterConfigDtoSecrets)
-  secrets: UpdateTwitterConfigDtoSecrets
+  secrets: UpdateTwitterConfigDtoSecrets;
 }
 
 class UpdateTwitterConfigDtoTemplates {
@@ -116,7 +136,7 @@ class UpdateTwitterConfigDtoCharacterConfig {
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => UpdateTwitterConfigDtoTemplates)
-  templates: UpdateTwitterConfigDtoTemplates
+  templates: UpdateTwitterConfigDtoTemplates;
 }
 
 export class UpdateTwitterConfigDto {
@@ -128,7 +148,6 @@ export class UpdateTwitterConfigDto {
   @Type(() => UpdateTwitterConfigDtoCharacterConfig)
   characterConfig: UpdateTwitterConfigDtoCharacterConfig;
 }
-
 
 export class UpdateCoreSettingsDto {
   // {

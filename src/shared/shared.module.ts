@@ -38,11 +38,9 @@ import { SharedProvider } from '@elizaos/plugin-solana';
   ],
 })
 export class SharedModule implements OnModuleInit {
-  constructor(
-    private readonly _tradeMonitorService: TradeMonitorService,
-  ) {}
+  constructor(private readonly _tradeMonitorService: TradeMonitorService) {}
 
   onModuleInit() {
-    SharedProvider.set("tradeMonitorService", this._tradeMonitorService);
+    SharedProvider.set('tradeMonitorService', this._tradeMonitorService);
   }
 }

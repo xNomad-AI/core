@@ -5,7 +5,13 @@ import PQueue from 'p-queue';
 import { AddressService } from '../address/address.service.js';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { AICollection, AINft, CharacterConfig, DEFAULT_TRADE_SETTINGS, NftConfig } from '../shared/mongo/types.js';
+import {
+  AICollection,
+  AINft,
+  CharacterConfig,
+  DEFAULT_TRADE_SETTINGS,
+  NftConfig,
+} from '../shared/mongo/types.js';
 import { NftgoService } from '../shared/nftgo.service.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
@@ -113,7 +119,7 @@ export class NftService implements OnApplicationBootstrap {
     );
     const nft = await this.mongo.nfts.findOne({ nftId });
     void this.handleNewAINfts([nft], true).catch((e) => {
-      this.logger.error("Failed to restart agent", e);
+      this.logger.error('Failed to restart agent', e);
       this.logger.error(e);
     });
 
@@ -126,26 +132,36 @@ export class NftService implements OnApplicationBootstrap {
     };
   }
 
-  async getNftConfig(nftId: string, options?: {
-    ignoreTwitterHttpProxy?: boolean;
-  }): Promise<NftConfig> {
+  async getNftConfig(
+    nftId: string,
+    options?: {
+      ignoreTwitterHttpProxy?: boolean;
+    },
+  ): Promise<NftConfig> {
     const nftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
 
     // default hiden the http proxy
-    if ((options?.ignoreTwitterHttpProxy ?? true) && nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY) {
+    if (
+      (options?.ignoreTwitterHttpProxy ?? true) &&
+      nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY
+    ) {
       nftConfig.characterConfig.settings.secrets.TWITTER_HTTP_PROXY = '';
     }
-    return nftConfig || {
-      nftId,
-      chain: 'solana',
-      trade: DEFAULT_TRADE_SETTINGS,
-    };
+    return (
+      nftConfig || {
+        nftId,
+        chain: 'solana',
+        trade: DEFAULT_TRADE_SETTINGS,
+      }
+    );
   }
 
   async getTwitterHttpProxy(nftId: string) {
-    const nftConfig = await this.getNftConfig(nftId, { ignoreTwitterHttpProxy: false });
+    const nftConfig = await this.getNftConfig(nftId, {
+      ignoreTwitterHttpProxy: false,
+    });
     return nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
   }
 
@@ -153,9 +169,9 @@ export class NftService implements OnApplicationBootstrap {
     await this.mongo.nftConfigs.deleteOne({ nftId });
     const nft = await this.mongo.nfts.findOne({ nftId });
     void this.handleNewAINfts([nft], true).catch((e) => {
-      this.logger.error("Failed to restart agent", e);
+      this.logger.error('Failed to restart agent', e);
       this.logger.error(e);
-    });;
+    });
   }
 
   async getAgentOwner(agentId: string) {

@@ -1,4 +1,8 @@
-import { getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import {
+  getAssociatedTokenAddress,
+  getOrCreateAssociatedTokenAccount,
+  TOKEN_2022_PROGRAM_ID,
+} from '@solana/spl-token';
 import {
   type BlockhashWithExpiryBlockHeight,
   Connection,
@@ -355,7 +359,6 @@ function getJUP_SWAP_FEE_ACCOUNT() {
   return ret;
 }
 
-
 export async function swapToken(
   connection: Connection,
   walletPublicKey: PublicKey,
@@ -374,12 +377,12 @@ export async function swapToken(
 
     elizaLogger.log('Decimals:', decimals.toString());
     const amountBN = new BigNumber(amount);
-    let adjustedAmount = amountBN.multipliedBy(
-      new BigNumber(10).pow(decimals),
-    );
+    let adjustedAmount = amountBN.multipliedBy(new BigNumber(10).pow(decimals));
 
-    if (!adjustedAmount.isInteger()){
-      elizaLogger.warn(`Amount ${adjustedAmount} is not an integer, rounding down`);
+    if (!adjustedAmount.isInteger()) {
+      elizaLogger.warn(
+        `Amount ${adjustedAmount} is not an integer, rounding down`,
+      );
       adjustedAmount = adjustedAmount.integerValue(BigNumber.ROUND_DOWN);
     }
 

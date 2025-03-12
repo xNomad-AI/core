@@ -113,14 +113,14 @@ export const DEFAULT_TRADE_SETTINGS: TradeSettings = {
   priorityFee: 0,
   tip: 0,
   mode: 'FAST',
-}
+};
 
 export interface CoreSettings {
-  category: "httpProxy",
+  category: 'httpProxy';
   value: {
-    product: "datacenterProxies",
-    username: string,
-    password: string,
+    product: 'datacenterProxies';
+    username: string;
+    password: string;
     // example.com
     entryPoint: string;
     // 8001

@@ -14,7 +14,7 @@ export interface SwapTokenDto {
   userWalletAddress: string;
   inputTokenCA: string;
   outputTokenCA: string;
-  amount: string | BigNumber ;
+  amount: string | BigNumber;
   slippage: number; // 0.01 = 1%
   priorityFee: number;
   tip?: number; // default 0.001 SOL
