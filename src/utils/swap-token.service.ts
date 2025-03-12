@@ -20,6 +20,7 @@ import {
   bloxValidatorNodeService,
   jitoValidatorNodeService,
 } from './validator-node.service.js';
+import { NATIVE_MINT } from '@solana/spl-token';
 export class SwapTokenService {
   private readonly logger: Console;
   private readonly LAMPORTS_PER_SOL = 1000000000;
@@ -29,6 +30,14 @@ export class SwapTokenService {
   }
 
   async swapToken(dto: SwapTokenDto): Promise<string> {
+
+    if (dto.inputTokenCA === NATIVE_MINT.toBase58()){
+      dto.inputTokenCA = '11111111111111111111111111111111';
+    }
+    if (dto.outputTokenCA === NATIVE_MINT.toBase58()){
+      dto.outputTokenCA = '11111111111111111111111111111111';
+    }
+
     try {
       const {
         connection,
@@ -42,6 +51,20 @@ export class SwapTokenService {
         mode = 'FAST',
         userWalletAddress,
       } = dto;
+
+      if (!slippage || slippage < 0 || slippage > 1) {
+        throw new Error('Invalid slippage, slippage should be between 0 and 1');
+      }
+
+      if (tip < 0.001 * this.LAMPORTS_PER_SOL) {
+        throw new Error('Invalid tip, tip should be greater than 0.001 SOL');
+      }
+
+      if (mode === 'ANTI_MEV' && priorityFee < 0.018) {
+        throw new Error(
+          'In ANTI_MEV mode, priority fee should be greater than 0.018',
+        );
+      }
 
       this.logger.info(
         `[swap token] Swapping ${amount} ${inputTokenCA} to ${outputTokenCA}`,
