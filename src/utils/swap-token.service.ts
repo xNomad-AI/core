@@ -1,3 +1,4 @@
+import { NATIVE_MINT } from '@solana/spl-token';
 import {
   AddressLookupTableAccount,
   Connection,
@@ -20,7 +21,6 @@ import {
   bloxValidatorNodeService,
   jitoValidatorNodeService,
 } from './validator-node.service.js';
-import { NATIVE_MINT } from '@solana/spl-token';
 export class SwapTokenService {
   private readonly logger: Console;
   private readonly LAMPORTS_PER_SOL = 1000000000;
@@ -30,11 +30,10 @@ export class SwapTokenService {
   }
 
   async swapToken(dto: SwapTokenDto): Promise<string> {
-
-    if (dto.inputTokenCA === NATIVE_MINT.toBase58()){
+    if (dto.inputTokenCA === NATIVE_MINT.toBase58()) {
       dto.inputTokenCA = '11111111111111111111111111111111';
     }
-    if (dto.outputTokenCA === NATIVE_MINT.toBase58()){
+    if (dto.outputTokenCA === NATIVE_MINT.toBase58()) {
       dto.outputTokenCA = '11111111111111111111111111111111';
     }
 
@@ -220,6 +219,7 @@ export class SwapTokenService {
   }
 
   private async getOKXCallData(params: OkxParams): Promise<OkxSwapResponse> {
+    params.directRoute = true;
     return await okxService.getCallData(params);
   }
 
