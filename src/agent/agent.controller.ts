@@ -105,7 +105,10 @@ export class AgentController {
     @Body() tradeSettingsDTO: TradeSettingsDTO
   ) {
     validateTradeSettings(tradeSettingsDTO);
-    const { slippage, priorityFee, tip, mode } = tradeSettingsDTO;
+    let { slippage, priorityFee, tip, mode } = tradeSettingsDTO;
+    if (!tip || !isFinite(tip)) {
+      tip = DEFAULT_TRADE_SETTINGS.tip;
+    }
     await this.elizaManager.ensureAgentOwner(
       agentId,
       request['X-USER-ADDRESS'],
