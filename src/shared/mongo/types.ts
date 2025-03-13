@@ -111,7 +111,7 @@ export interface TradeSettings {
 export const DEFAULT_TRADE_SETTINGS: TradeSettings = {
   slippage: 0.25,
   priorityFee: 0.006,
-  tip: 0,
+  tip: 0.001,
   mode: 'FAST',
 }
 
