@@ -50,4 +50,5 @@ export interface OkxParams {
   feePercent?: string; // 0~3
   fromTokenReferrerWalletAddress?: string; // buy
   toTokenReferrerWalletAddress?: string; // sell
+  directRoute?: boolean;
 }
