@@ -157,6 +157,17 @@ export const copyTrade: Action = {
     const wallet = await getWalletKey(runtime, true);
     response.walletAddress = wallet.keypair.publicKey.toBase58();
     response.agentId = runtime.agentId;
+    const records = await runtime.databaseAdapter.find?.('copyTrades', {
+      agentId: response.agentId,
+      targetAddress: response.targetAddress,
+      walletAddress: response.walletAddress,
+    });
+    if (records?.length > 0){
+      callback({
+        text: 'You have already set copy trade of this address. You can edit the copy trade on the [Tasks] subpage.'
+      });
+      return;
+    }
     elizaLogger.log('COPY_TRADE:', response);
 
     const confirmContext = composeContext({
