@@ -1,25 +1,19 @@
 import {
-  getAssociatedTokenAddress,
   getOrCreateAssociatedTokenAccount, NATIVE_MINT,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
-  type BlockhashWithExpiryBlockHeight,
   Connection,
   type Keypair, LAMPORTS_PER_SOL,
   PublicKey,
   type RpcResponseAndContext, SignatureStatus,
-  type SimulatedTransactionResponse,
-  type TokenAmount,
   VersionedTransaction,
 } from '@solana/web3.js';
 import { settings, elizaLogger, IAgentRuntime } from '@elizaos/core';
 
-const solAddress = settings.SOL_ADDRESS;
-const SLIPPAGE = settings.SLIPPAGE;
-const connection = new Connection(
-  settings.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
-);
+import { createHash } from 'crypto';
+import { BigNumber } from 'bignumber.js';
+import { sleep, SolanaClient } from './solanaClient.js';
 
 export async function getTokenDecimals(
   connection: Connection,
@@ -42,13 +36,6 @@ export async function getTokenDecimals(
 
   throw new Error('Unable to fetch token decimals');
 }
-
-
-import { createHash } from 'crypto';
-import { getRuntimeKey } from '../environment.js';
-import { BigNumber } from 'bignumber.js';
-import { getWalletKey } from '../keypairUtils.js';
-import { getSolanaClient, sleep, SolanaClient } from './solana-client.js';
 
 export function md5sum(data: string): string {
   return createHash('md5').update(data).digest('hex');
@@ -79,6 +66,11 @@ function getJUP_SWAP_FEE_ACCOUNT() {
   const ret =
     settings.JUP_SWAP_FEE_ACCOUNT || DEFAULT_CONFIG.JUP_SWAP_FEE_ACCOUNT;
   return ret;
+}
+
+export async function getTradeSettings(agentId: string) {
+  const result = await fetch(`http://localhost:8080/agent/trade/settings?agentId=${agentId}`);
+  return await result.json() as {priorityFee, tip, slippage, mode};
 }
 
 export async function swapToken(

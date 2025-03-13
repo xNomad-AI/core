@@ -3,8 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { Body, Headers, HttpCode, UnauthorizedException } from '@nestjs/common';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { SwapTokenService } from '../utils/swap-token.service.js';
-import { SwapTokenDto } from '../utils/type.js';
+import { SwapTokenService } from '@elizaos/plugin-solana';
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import {
   getWalletKeyFromWalletService,
@@ -163,7 +162,7 @@ export class CallbackController {
       this.appConfig.get<string>('SOLANA_RPC_URL'),
       keypairResult.keypair.publicKey,
     );
-    const swapTokenDto: SwapTokenDto = {
+    const swapTokenDto: any = {
       amount: '0',
       connection,
       inputTokenCA,

@@ -1,7 +1,7 @@
 import type { Plugin } from '@elizaos/core';
 import { getTokenBalance, getTokenBalances } from './providers/tokenUtils.js';
 import { getWalletKeyFromWalletService } from './keypairUtils.js';
-import { SolanaClient } from './providers/solana-client.js';
+import { SolanaClient } from './providers/solanaClient.js';
 import { executeSwap } from './actions/swap.js';
 import { autoTask } from './actions/autoSwap.js';
 import pumpfun from './actions/pumpfun.js';
@@ -10,12 +10,14 @@ import { transfer } from './actions/transfer.js';
 import { analyze } from './actions/analyze.js';
 import { walletPortfolio } from './actions/wallet.js';
 import { none } from './actions/none.js';
-import { copyTrade } from './actions/copyTrade';
+import { copyTrade } from './actions/copyTrade.js';
+import {SwapTokenService} from './providers/swapTokenService.js';
 export {
   getTokenBalance,
   getTokenBalances,
   getWalletKeyFromWalletService,
   SolanaClient,
+  SwapTokenService,
 };
 export const solanaPlugin: Plugin = {
   name: 'solana',

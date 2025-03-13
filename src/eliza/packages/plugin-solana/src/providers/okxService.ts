@@ -7,7 +7,7 @@ interface Config {
   OK_ACCESS_PROJECT: string;
 }
 
-class OKXService {
+class OkxService {
   private readonly targetUrl = 'https://www.okx.com';
   private readonly logger: Console;
 
@@ -103,6 +103,6 @@ const config: Config = {
   OK_ACCESS_PROJECT: process.env.OK_ACCESS_PROJECT!,
 };
 
-const okxService = new OKXService(config);
+const okxService = new OkxService(config);
 
 export default okxService;

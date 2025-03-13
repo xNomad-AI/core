@@ -10,7 +10,7 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import bs58 from 'bs58';
-import okxService from './okx.service.js';
+import okxService from './okxService.js';
 import {
   OkxParams,
   OkxSwapResponse,
@@ -20,7 +20,7 @@ import {
 import {
   bloxValidatorNodeService,
   jitoValidatorNodeService,
-} from './validator-node.service.js';
+} from './validatorNodeService.js';
 export class SwapTokenService {
   private readonly logger: Console;
   private readonly LAMPORTS_PER_SOL = 1000000000;

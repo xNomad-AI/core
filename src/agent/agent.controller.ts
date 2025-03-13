@@ -20,7 +20,7 @@ import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { CreateAgentDto, TradeSettingsDTO, validateTradeSettings } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
-import { CopyTrade } from '../shared/mongo/types';
+import { CopyTrade, DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
 
 @Controller('/agent')
 export class AgentController {
@@ -85,6 +85,16 @@ export class AgentController {
     await this.elizaManager.deleteAgentMemory(agentId, {
       memoryId: taskId,
     });
+  }
+
+  @Get('/trade/settings')
+  async getTradeSettings(
+    @Request() request,
+    @Query('agentId') agentId: string,
+  ) {
+    const {nftId} = await this.mongo.nfts.findOne({agentId});
+    const nftConfig = await this.mongo.nftConfigs.findOne({nftId});
+    return nftConfig?.trade || DEFAULT_TRADE_SETTINGS;
   }
 
   @UseGuards(AuthGuard)

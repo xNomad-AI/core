@@ -1,8 +1,6 @@
 import {
   getAccount,
   getAssociatedTokenAddress,
-  getOrCreateAssociatedTokenAccount,
-  TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import { type Connection, PublicKey } from '@solana/web3.js';
 import { elizaLogger, IAgentRuntime } from '@elizaos/core';
