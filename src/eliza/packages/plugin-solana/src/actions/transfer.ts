@@ -401,8 +401,7 @@ export const transfer: Action = {
 } as Action;
 
 function formatTransferInfo(from: string, content): string {
-  return `
-Please confirm the info below. If any adjustments are needed, let me know the updated details.
+  return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
 ————
 ➡️ Type: Transfer
 🪙 Token: ${content.tokenSymbol} (${content.tokenAddress})
@@ -410,6 +409,5 @@ Please confirm the info below. If any adjustments are needed, let me know the up
 💼 From: ${from}
 💼 To: ${content.recipient}
 ————
-Reply 'ok' or 'yes' to confirm.
-  `;
+Reply 'ok' or 'yes' to confirm.`;
 }

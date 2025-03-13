@@ -440,13 +440,13 @@ function formatConfirmSwapInfo(params: {
     params.outputTokenCA !== NATIVE_MINT.toBase58()
   ) {
     return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
-    ————
-    🔄 Type: Swap(swap $${params.inputTokenSymbol || params.inputTokenCA} for ${params.outputTokenSymbol || params.outputTokenCA})
-    🪙 $${params.inputTokenSymbol}: ${params.inputTokenCA}
-    🪙 $${params.outputTokenSymbol}: ${params.outputTokenCA}
-    💰 Swap amount: ${params.inputTokenAmount}
-    ————
-    Reply 'ok' or 'yes' to confirm.`;
+————
+🔄 Type: Swap(swap $${params.inputTokenSymbol || params.inputTokenCA} for ${params.outputTokenSymbol || params.outputTokenCA})
+🪙 $${params.inputTokenSymbol}: ${params.inputTokenCA}
+🪙 $${params.outputTokenSymbol}: ${params.outputTokenCA}
+💰 Swap amount: ${params.inputTokenAmount}
+————
+Reply 'ok' or 'yes' to confirm.`;
   }
   const swapType =
     params.outputTokenCA === NATIVE_MINT.toBase58() ? 'Sell' : 'Buy';
@@ -458,13 +458,11 @@ function formatConfirmSwapInfo(params: {
     params.outputTokenCA === NATIVE_MINT.toBase58()
       ? `$${params.inputTokenSymbol} (${params.inputTokenCA})`
       : `$${params.outputTokenSymbol} (${params.outputTokenCA})`;
-  return `
-  Please confirm the info below. If any adjustments are needed, let me know the updated details.
-  ————
-  ⬆️ Type: ${swapType}
-  🪙 Token: ${tokenDescription}
-  💰 ${swapType} Amount: ${amountDescription}
-  ————
-  Reply 'ok' or 'yes' to confirm.
-  `;
+  return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
+————
+⬆️ Type: ${swapType}
+🪙 Token: ${tokenDescription}
+💰 ${swapType} Amount: ${amountDescription}
+————
+Reply 'ok' or 'yes' to confirm.`;
 }

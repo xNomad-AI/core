@@ -215,8 +215,7 @@ function formatConfirmMessage(response: CopyTradeParameters): string {
   const buyInfo = Number.isFinite(response.fixedAmount)
     ? `💰 Buy amount: ${response.fixedAmount} SOL`
     : `💰 Buy percentage: ${response.percentage * 100}% of target order`;
-  return `
-Please confirm the info below. If any adjustments are needed, let me know the updated details.
+  return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
 ————
 👀 Type: copy trade
 💼 Target wallet address: ${response.targetAddress}
