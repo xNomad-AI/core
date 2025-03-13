@@ -29,34 +29,33 @@ export class SwapTokenService {
     this.logger = console;
   }
 
-  async swapToken(dto: SwapTokenDto): Promise<string> {
-    if (dto.inputTokenCA === NATIVE_MINT.toBase58()) {
-      dto.inputTokenCA = '11111111111111111111111111111111';
-    }
-    if (dto.outputTokenCA === NATIVE_MINT.toBase58()) {
-      dto.outputTokenCA = '11111111111111111111111111111111';
-    }
-
+  async swapToken({
+                    connection,
+                    amount,
+                    slippage,
+                    inputTokenCA,
+                    outputTokenCA,
+                    priorityFee,
+                    keyPair,
+                    tip,
+                    mode = 'FAST',
+                    userWalletAddress,
+                  }: SwapTokenDto): Promise<string> {
     try {
-      const {
-        connection,
-        amount,
-        slippage,
-        inputTokenCA,
-        outputTokenCA,
-        priorityFee,
-        keyPair,
-        tip = 0.001 * this.LAMPORTS_PER_SOL,
-        mode = 'FAST',
-        userWalletAddress,
-      } = dto;
+
+      if (inputTokenCA === NATIVE_MINT.toBase58()) {
+        inputTokenCA = '11111111111111111111111111111111';
+      }
+      if (outputTokenCA === NATIVE_MINT.toBase58()) {
+        outputTokenCA = '11111111111111111111111111111111';
+      }
+
+      if (!isFinite(tip) || tip < 0.001 * this.LAMPORTS_PER_SOL) {
+        tip = 0.001 * this.LAMPORTS_PER_SOL;
+      }
 
       if (!slippage || slippage < 0 || slippage > 1) {
         throw new Error('Invalid slippage, slippage should be between 0 and 1');
-      }
-
-      if (tip < 0.001 * this.LAMPORTS_PER_SOL) {
-        throw new Error('Invalid tip, tip should be greater than 0.001 SOL');
       }
 
       if (mode === 'ANTI_MEV' && priorityFee < 0.018) {
