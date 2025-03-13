@@ -176,7 +176,7 @@ export class CallbackController {
 
     // copy buy
     if (inputTokenCA === solAddress) {
-      const decimals = await solanaClient.getMintDecimals(outputTokenCA);
+      const decimals = await solanaClient.getMintDecimals(inputTokenCA);
       if (copyTradeTask.mode == 'fixedAmount') {
         swapTokenDto.amount = BigNumber(copyTradeTask.fixedAmount)
           .multipliedBy(10 ** decimals)
@@ -195,6 +195,11 @@ export class CallbackController {
         return;
       }
       swapTokenDto.amount = await solanaClient.getRawBalance(inputTokenCA);
+    }
+
+    if (Number(swapTokenDto.amount) == 0){
+      this.logger.log(`ignore zero amount, ${id}`);
+      return;
     }
 
     this.logger.log(`copy trade request: ${JSON.stringify({
