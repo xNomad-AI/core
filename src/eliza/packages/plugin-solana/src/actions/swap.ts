@@ -11,25 +11,24 @@ import {
   elizaLogger,
 } from '@elizaos/core';
 import {
-  Connection,
+  Connection, LAMPORTS_PER_SOL,
   PublicKey,
-  RpcResponseAndContext,
-  SignatureStatus,
-  VersionedTransaction,
 } from '@solana/web3.js';
 import { getWalletKey } from '../keypairUtils.js';
 import {
   isAgentAdmin,
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
-import { convertNullStrings, submitTransaction, swapToken } from '../providers/swapUtils.js';
+import { convertNullStrings, getTradeSettings } from '../providers/swapUtils.js';
 import { NATIVE_MINT } from '@solana/spl-token';
-import { getSolanaClient, sleep } from '../providers/solana-client.js';
+import { getSolanaClient, SolanaClient } from '../providers/solanaClient.js';
 import {
   getTokenCABySymbol,
   validateAndAssignCA,
 } from '../providers/tokenUtils.js';
 import { getRuntimeKey } from '../environment.js';
+import { SwapTokenService } from '../providers/swapTokenService';
+import { BigNumber } from 'bignumber.js';
 
 interface SwapTokenRequest {
   inputTokenSymbol: string;
@@ -213,17 +212,21 @@ async function handleExecuteSwap(
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
   const { keypair } = await getWalletKey(runtime, true);
-
-  const transaction = await swapToken({
+  const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(response.inputTokenCA);
+  const {slippage, priorityFee, tip, mode } = await getTradeSettings(runtime.agentId);
+  const txid = await new SwapTokenService().swapToken(
+    {
       connection,
+      userWalletAddress: keypair.publicKey.toBase58(),
       inputTokenCA : response.inputTokenCA,
       outputTokenCA: response.outputTokenCA,
-      amount: response.inputTokenAmount,
-      programId: response.programId,
-      keypair,
+      amount: BigNumber(response.inputTokenAmount).multipliedBy(10 ** decimals).integerValue(),
+      slippage,
+      priorityFee,
+      keyPair :keypair,
+      mode,
+      tip: tip * LAMPORTS_PER_SOL,
   });
-  elizaLogger.log(`Sending transaction...`);
-  const txid = await submitTransaction(connection, transaction);
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
   const responseMsg = {
     text: `Swap completed successfully! Transaction ID: ${txid}`,

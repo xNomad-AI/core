@@ -14,10 +14,7 @@ import {
 } from '@elizaos/core';
 import {
   Connection,
-  Keypair,
-  RpcResponseAndContext,
-  SignatureStatus,
-  VersionedTransaction,
+  Keypair, LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
 import { getWalletKey } from '../keypairUtils.js';
 import {
@@ -25,7 +22,7 @@ import {
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 import {
-  convertNullStrings,
+  convertNullStrings, getTradeSettings,
   md5sum,
   submitTransaction,
   swapToken,
@@ -38,11 +35,12 @@ import {
 } from '../providers/tokenUtils.js';
 import {
   getSolanaClient,
-  sleep,
   SolanaClient,
-} from '../providers/solana-client.js';
+} from '../providers/solanaClient.js';
 import { getRuntimeKey } from '../environment.js';
 import { NATIVE_MINT } from '@solana/spl-token';
+import { SwapTokenService } from '../providers/swapTokenService';
+import { BigNumber } from 'bignumber.js';
 
 export const AutoSwapTaskTable = 'AUTO_TOKEN_SWAP_TASK';
 export interface AutoSwapTask {
@@ -564,19 +562,21 @@ async function executeSwapTokenTx(
   );
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
-  const solanaClient = new SolanaClient(rpcUrl, keypair.publicKey);
-  const programId = await solanaClient.getTokenProgramId(inputTokenCA);
-  const transaction = await swapToken(
+  const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(inputTokenCA);
+  const {slippage, priorityFee, tip, mode } = await getTradeSettings(runtime.agentId);
+  const txid = await await new SwapTokenService().swapToken(
     {
       connection,
-      inputTokenCA: inputTokenCA as string,
-      outputTokenCA: outputTokenCA as string,
-      amount: amount as number,
-      programId,
-      keypair,
-    }
-  );
-  const txid = await submitTransaction(connection, transaction);
+      userWalletAddress: keypair.publicKey.toBase58(),
+      inputTokenCA,
+      outputTokenCA,
+      amount: BigNumber(amount).multipliedBy(new BigNumber(10).pow(decimals)).integerValue(),
+      keyPair :keypair,
+      slippage,
+      priorityFee,
+      tip: tip * LAMPORTS_PER_SOL,
+      mode,
+    });
   return txid;
 }
 

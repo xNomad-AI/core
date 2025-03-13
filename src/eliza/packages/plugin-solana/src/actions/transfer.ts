@@ -36,7 +36,7 @@ import { getRuntimeKey } from '../environment.js';
 import {
   SolanaClient,
   STANDARD_SOL_ADDRESS,
-} from '../providers/solana-client.js';
+} from '../providers/solanaClient.js';
 import { BigNumber } from 'bignumber.js';
 
 export interface TransferContent extends Content {
