@@ -18,7 +18,7 @@ import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { ElevenlabsService } from '../shared/elevenlabs.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { CreateAgentDto } from './agent.types.js';
+import { CreateAgentDto, TradeSettingsDTO, validateTradeSettings } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
 import { CopyTrade } from '../shared/mongo/types';
 
@@ -92,26 +92,17 @@ export class AgentController {
   async updateTradeSettings(
     @Request() request,
     @Query('agentId') agentId: string,
-    @Body()
-    {
-      slippage,
-      priorityFee,
-      tip,
-      mode,
-    }: {
-      slippage: number;
-      priorityFee: number;
-      tip: number;
-      mode: 'FAST' | 'ANTI_MEV';
-    },
+    @Body() tradeSettingsDTO: TradeSettingsDTO
   ) {
+    validateTradeSettings(tradeSettingsDTO);
+    const { slippage, priorityFee, tip, mode } = tradeSettingsDTO;
     await this.elizaManager.ensureAgentOwner(
       agentId,
       request['X-USER-ADDRESS'],
     );
     const { nftId } = await this.mongo.nfts.findOne({ agentId });
 
-    return await this.mongo.nftConfigs.updateOne(
+    await this.mongo.nftConfigs.updateOne(
       { nftId },
       {
         $set: {
@@ -121,6 +112,7 @@ export class AgentController {
       },
       { upsert: true },
     );
+    return { success: true };
   }
 
   @UseGuards(AuthGuard)

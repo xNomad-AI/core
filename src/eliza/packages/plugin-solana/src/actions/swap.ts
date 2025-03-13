@@ -22,7 +22,7 @@ import {
   isAgentAdmin,
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
-import { convertNullStrings, swapToken } from '../providers/swapUtils.js';
+import { convertNullStrings, submitTransaction, swapToken } from '../providers/swapUtils.js';
 import { NATIVE_MINT } from '@solana/spl-token';
 import { getSolanaClient, sleep } from '../providers/solana-client.js';
 import {
@@ -213,59 +213,18 @@ async function handleExecuteSwap(
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
   const { keypair } = await getWalletKey(runtime, true);
-  const walletPublicKey = keypair.publicKey;
 
-  const swapResult = await swapToken(
-    connection,
-    walletPublicKey,
-    response.inputTokenCA,
-    response.outputTokenCA,
-    response.inputTokenAmount,
-    runtime,
-    response.programId,
-  );
-
-  const transactionBuf = Buffer.from(swapResult.swapTransaction, 'base64');
-  const transaction = VersionedTransaction.deserialize(transactionBuf);
-  const estimateFee = await connection.getFeeForMessage(transaction.message);
-  transaction.sign([keypair]);
-  elizaLogger.log(`Sending transaction..., estimateFee: ${estimateFee.value}`);
-
-  let txid: string;
-  try {
-    txid = await connection.sendTransaction(transaction, {
-      skipPreflight: false,
-      maxRetries: 3,
-      preflightCommitment: 'confirmed',
-    });
-  } catch (error) {
-    if (error.toString().includes('insufficient lamports')) {
-      callback?.({
-        text: 'insufficient balance to execute swap',
-        isError: true,
-      });
-      return;
-    }
-    throw error;
-  }
-
-  elizaLogger.log('Transaction sent:', txid);
-
-  let confirmation: RpcResponseAndContext<SignatureStatus | null>;
-
-  for (let i = 0; i < 10; i++) {
-    await sleep(1000);
-    confirmation = await connection.getSignatureStatus(txid, {
-      searchTransactionHistory: false,
-    });
-
-    if (confirmation.value) {
-      break;
-    }
-  }
-
+  const transaction = await swapToken({
+      connection,
+      inputTokenCA : response.inputTokenCA,
+      outputTokenCA: response.outputTokenCA,
+      amount: response.inputTokenAmount,
+      programId: response.programId,
+      keypair,
+  });
+  elizaLogger.log(`Sending transaction...`);
+  const txid = await submitTransaction(connection, transaction);
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
-
   const responseMsg = {
     text: `Swap completed successfully! Transaction ID: ${txid}`,
   };

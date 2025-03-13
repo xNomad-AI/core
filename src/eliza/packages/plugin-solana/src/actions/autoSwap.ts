@@ -27,6 +27,7 @@ import {
 import {
   convertNullStrings,
   md5sum,
+  submitTransaction,
   swapToken,
 } from '../providers/swapUtils.js';
 import {
@@ -565,37 +566,17 @@ async function executeSwapTokenTx(
   const connection = new Connection(rpcUrl);
   const solanaClient = new SolanaClient(rpcUrl, keypair.publicKey);
   const programId = await solanaClient.getTokenProgramId(inputTokenCA);
-  const swapResult = await swapToken(
-    connection,
-    keypair.publicKey,
-    inputTokenCA as string,
-    outputTokenCA as string,
-    amount as number,
-    runtime,
-    programId,
-  );
-
-  const transactionBuf = Buffer.from(swapResult.swapTransaction, 'base64');
-  const transaction = VersionedTransaction.deserialize(transactionBuf);
-  transaction.sign([keypair]);
-  const txid = await connection.sendTransaction(transaction, {
-    skipPreflight: false,
-    maxRetries: 3,
-    preflightCommitment: 'confirmed',
-  });
-  elizaLogger.log('Transaction sent:', txid);
-  let confirmation: RpcResponseAndContext<SignatureStatus | null>;
-  for (let i = 0; i < 12; i++) {
-    await sleep(1000);
-    confirmation = await connection.getSignatureStatus(txid, {
-      searchTransactionHistory: false,
-    });
-
-    if (confirmation.value) {
-      break;
+  const transaction = await swapToken(
+    {
+      connection,
+      inputTokenCA: inputTokenCA as string,
+      outputTokenCA: outputTokenCA as string,
+      amount: amount as number,
+      programId,
+      keypair,
     }
-  }
-  elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
+  );
+  const txid = await submitTransaction(connection, transaction);
   return txid;
 }
 
