@@ -5,7 +5,7 @@ import { Body, Headers, HttpCode, UnauthorizedException } from '@nestjs/common';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { SwapTokenService } from '../utils/swap-token.service.js';
 import { SwapTokenDto } from '../utils/type.js';
-import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import {
   getWalletKeyFromWalletService,
   SolanaClient,
@@ -48,6 +48,8 @@ function getSwapInfo(callback: AddressCallbackDto) {
       : callback.transfers[0];
   return {
     inputTokenCA: inputTransfer.tokenAddress,
+    txSigner: callback.address,
+    txHash: callback.txHash,
     inputTokenAmount: inputTransfer.amount,
     outputTokenCA: outputTransfer.tokenAddress,
     outputTokenAmount: outputTransfer.amount,
@@ -113,7 +115,7 @@ export class CallbackController {
     @Headers('X-Monitor-ID') id: string,
     @Headers('api-key') apiKey: string,
   ) {
-    // this.validateApiKey(apiKey);
+    this.validateApiKey(apiKey);
     this.logger.log('Received address monitor callback', {
       ...callbackData,
       id,
@@ -121,7 +123,7 @@ export class CallbackController {
 
     const solAddress = this.appConfig.get<string>('SOL_ADDRESS');
 
-    const { inputTokenCA, inputTokenAmount, outputTokenCA } =
+    const { inputTokenCA, inputTokenAmount, outputTokenCA, txSigner, txHash } =
       getSwapInfo(callbackData);
     if (inputTokenCA != solAddress && outputTokenCA != solAddress) {
       this.logger.log(`ignore not SOL swap, ${id}`);
@@ -194,7 +196,12 @@ export class CallbackController {
         this.logger.log(`ignore copy sell, ${id}`);
         return;
       }
-      swapTokenDto.amount = await solanaClient.getRawBalance(inputTokenCA);
+      const tokenAccount = await new SolanaClient(connection.rpcEndpoint, new PublicKey(txSigner)).getTokenAccount(inputTokenCA);
+      const {preBalance, postBalance} = await SwapTokenService.getTokenBalanceChange(connection, txHash, tokenAccount);
+      const sellPercentage = preBalance == '0'? 1: BigNumber(preBalance).minus(postBalance).dividedBy(preBalance);
+      const balance = await solanaClient.getRawBalance(inputTokenCA);
+      this.logger.log(`copy sell tx ${txHash} sell percentage: ${sellPercentage}, balance: ${balance}`);
+      swapTokenDto.amount = BigNumber(balance).multipliedBy(sellPercentage).integerValue();
     }
 
     if (Number(swapTokenDto.amount) == 0){
@@ -210,6 +217,7 @@ export class CallbackController {
     const txId = await new SwapTokenService().swapToken(swapTokenDto);
     return {
       success: true,
+      txId,
       message: `copy trade callback processed successfully, ${txId}`,
     };
   }

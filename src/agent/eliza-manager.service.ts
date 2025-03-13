@@ -11,7 +11,7 @@ import {
   executeAutoTokenSwapTask,
 } from '@elizaos/plugin-solana';
 import { TEEMode } from '@elizaos/plugin-tee';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Timeout } from '@nestjs/schedule';
 import { Keypair } from '@solana/web3.js';
@@ -483,7 +483,7 @@ export class ElizaManagerService {
 
   async ensureAgentOwner(agentId: string, ownerAddress: string) {
     if (!(await this.isAgentOwner(agentId, ownerAddress))) {
-      throw new Error('You are not the owner of this Agent');
+      throw new ForbiddenException('You are not the owner of this Agent');
     }
   }
 }

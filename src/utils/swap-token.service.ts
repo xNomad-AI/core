@@ -297,4 +297,30 @@ export class SwapTokenService {
       );
     }
   }
+
+  static async getTokenBalanceChange(
+    connection: Connection,
+    txSignature: string,
+    tokenAccount: PublicKey,
+  ) {
+    const tx = await connection.getParsedTransaction(txSignature, {
+      commitment: 'finalized',
+      maxSupportedTransactionVersion: 0,
+    });
+
+    if (!tx || !tx.meta) {
+      throw new Error('Transaction not found or metadata missing');
+    }
+
+
+    const preBalance = tx.meta.preTokenBalances?.find(
+      (b) => tx.transaction.message.accountKeys[b.accountIndex].pubkey.toBase58() === tokenAccount.toBase58()
+    )?.uiTokenAmount.amount || '0';
+
+    const postBalance = tx.meta.postTokenBalances?.find(
+      (b) => tx.transaction.message.accountKeys[b.accountIndex].pubkey.toBase58() === tokenAccount.toBase58()
+    )?.uiTokenAmount.amount || '0';
+
+    return {preBalance, postBalance};
+  }
 }
