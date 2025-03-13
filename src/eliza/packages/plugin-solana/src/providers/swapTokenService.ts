@@ -303,12 +303,12 @@ export class SwapTokenService {
     tokenAccount: PublicKey,
   ) {
     const tx = await connection.getParsedTransaction(txSignature, {
-      commitment: 'finalized',
+      commitment: 'confirmed',
       maxSupportedTransactionVersion: 0,
     });
 
     if (!tx || !tx.meta) {
-      throw new Error('Transaction not found or metadata missing');
+      throw new Error(`Transaction not found or metadata missing, ${txSignature}`);
     }
 
 
