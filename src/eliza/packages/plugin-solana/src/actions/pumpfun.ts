@@ -2,18 +2,14 @@ import { AnchorProvider } from '@coral-xyz/anchor';
 import { Wallet } from '@coral-xyz/anchor';
 import axios from 'axios';
 import {
-  Commitment,
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
-  Transaction,
 } from '@solana/web3.js';
 import {
-  calculateWithSlippageBuy,
   CreateTokenMetadata,
   PriorityFee,
   PumpFunSDK,
-  sendTx,
   TransactionResult,
 } from 'pumpdotfun-sdk';
 
@@ -476,55 +472,8 @@ async function _uploadTokenMetadata(create: CreateTokenMetadata): Promise<any> {
   }
 }
 
-async function _createAndBuyWithUrl(
-  sdk: PumpFunSDK,
-  creator: Keypair,
-  mint: Keypair,
-  createTokenMetadata: CreateTokenMetadata,
-  buyAmountSol: bigint,
-  slippageBasisPoints?: bigint,
-  priorityFees?: PriorityFee,
-  commitment?: Commitment,
-  url?: string,
-): Promise<TransactionResult> {
-  const createTx = await sdk.getCreateInstructions(
-    creator.publicKey,
-    createTokenMetadata.name,
-    createTokenMetadata.symbol,
-    url,
-    mint,
-  );
-  const newTx = new Transaction().add(createTx);
-  if (buyAmountSol > 0) {
-    const globalAccount = await sdk.getGlobalAccount('confirmed');
-    const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
-    const buyAmountWithSlippage = calculateWithSlippageBuy(
-      buyAmountSol,
-      BigInt(slippageBasisPoints),
-    );
-    const buyTx = await sdk.getBuyInstructions(
-      creator.publicKey,
-      mint.publicKey,
-      globalAccount.feeRecipient,
-      buyAmount,
-      buyAmountWithSlippage,
-    );
-    newTx.add(buyTx);
-  }
-  const createResults = await sendTx(
-    sdk.connection,
-    newTx,
-    creator.publicKey,
-    [creator, mint],
-    priorityFees,
-    commitment,
-  );
-  return createResults;
-}
-
 function formatCreateTokenInfo(params: any): string {
-  return `
- Please confirm the info below. If any adjustments are needed, let me know the updated details.
+  return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
 ————
 🎟️ Type: issue token
 🪙 Token: $${params.symbol} (${params.name})
@@ -534,8 +483,7 @@ function formatCreateTokenInfo(params: any): string {
 🌐 Website: ${params.website || ''}
 💰 Buy amount: ${params.buyAmountSol || 0} SOL
 ————
-Reply 'ok' or 'yes' to confirm.
-  `;
+Reply 'ok' or 'yes' to confirm.`;
 }
 
 function getImageAccessUrl(imageUrl: string): string {
