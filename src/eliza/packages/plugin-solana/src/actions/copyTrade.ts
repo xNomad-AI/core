@@ -14,6 +14,7 @@ import { convertNullStrings } from '../providers/swapUtils.js';
 import { isValidAddress } from '../providers/tokenUtils.js';
 import { getWalletKey } from '../keypairUtils';
 import { SharedProvider } from '../index';
+import { isAgentAdmin, NotAgentAdminResponse } from '../providers/walletUtils';
 
 type CopyTradeParameters = {
   name: string;
@@ -123,6 +124,13 @@ export const copyTrade: Action = {
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
   ): Promise<boolean> => {
+    // check if the swap request is from agent owner or public chat
+    const isAdmin = await isAgentAdmin(runtime, message);
+    if (!isAdmin) {
+      callback?.(NotAgentAdminResponse);
+      return null;
+    }
+
     let response = convertNullStrings(
       state.actionParameters,
     ) as CopyTradeParameters;
