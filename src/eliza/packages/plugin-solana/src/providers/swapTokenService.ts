@@ -24,7 +24,7 @@ import {
 export class SwapTokenService {
   private readonly logger: Console;
   private readonly LAMPORTS_PER_SOL = 1000000000;
-
+  private readonly SOL_ADDRESS = '11111111111111111111111111111111';
   constructor() {
     this.logger = console;
   }
@@ -44,10 +44,10 @@ export class SwapTokenService {
     try {
 
       if (inputTokenCA === NATIVE_MINT.toBase58()) {
-        inputTokenCA = '11111111111111111111111111111111';
+        inputTokenCA = this.SOL_ADDRESS;
       }
       if (outputTokenCA === NATIVE_MINT.toBase58()) {
-        outputTokenCA = '11111111111111111111111111111111';
+        outputTokenCA = this.SOL_ADDRESS;
       }
 
       if (!isFinite(tip) || tip < 0.001 * this.LAMPORTS_PER_SOL) {
@@ -218,7 +218,9 @@ export class SwapTokenService {
   }
 
   private async getOKXCallData(params: OkxParams): Promise<OkxSwapResponse> {
-    params.directRoute = true;
+    if(params.fromTokenAddress === this.SOL_ADDRESS || params.toTokenAddress === this.SOL_ADDRESS) {
+      params.directRoute = true;
+    }
     return await okxService.getCallData(params);
   }
 
