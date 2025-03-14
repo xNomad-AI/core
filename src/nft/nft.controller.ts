@@ -267,7 +267,6 @@ export class NftController {
     };
   }
 
-  @CacheTTL(10)
   @Get('agent-created-tokens')
   async getAgentCreatedTokens(
     @Query('sortBy') sortBy: string,
