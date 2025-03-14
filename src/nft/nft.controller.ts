@@ -68,7 +68,6 @@ export class NftController {
     return await this.nftService.getCollectionMetrics(chain, collectionId);
   }
 
-  @CacheTTL(10)
   @Get('/:chain/collection/:id/nfts')
   async getNfts(
     @Param('chain') chain: string,
@@ -82,7 +81,6 @@ export class NftController {
     });
   }
 
-  @CacheTTL(5)
   @Get('/:chain/address/:address/nfts')
   async getNftsByOwner(
     @Param('chain') chain: string,
