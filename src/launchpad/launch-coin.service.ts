@@ -35,10 +35,11 @@ export class LaunchCoinService {
     this.logger.setContext(LaunchCoinService.name);
     this.connection = new Connection(
       this.config.get<string>('SOLANA_RPC_URL')!,
+      'processed',
     );
   }
 
-  @Interval(60 * 1000)
+  @Interval(2 * 1000)
   async launchCoins() {
     if (this.isProcessing) {
       return;
@@ -50,8 +51,8 @@ export class LaunchCoinService {
         .find({
           chain: 'solana',
           created: false,
-          // we assume that if coin is not created in the last 1 day, the NFT is not created
-          createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          // we assume that if coin is not created in the last 5 min, the NFT is not created
+          createdAt: { $gt: new Date(Date.now() - 10 * 60 * 1000) },
         })
         .toArray();
 
@@ -140,7 +141,9 @@ export class LaunchCoinService {
     });
 
     this.logger.log('Sending transaction');
-    const txid = await this.connection.sendTransaction(transaction);
+    const txid = await this.connection.sendTransaction(transaction, {
+      preflightCommitment: 'processed',
+    });
     this.logger.log(`Transaction sent, txid: ${txid}`);
     const confirmation = await this.connection.confirmTransaction({
       signature: txid,
@@ -242,8 +245,11 @@ export class LaunchCoinService {
   }
 
   async checkIfNftIndexed(nftId: string) {
-    const nft = await this.mongo.nfts.findOne({ nftId });
-    return nft !== null;
+    const address = nftId.split(':')[1];
+    const accountInfo = await this.connection.getAccountInfo(
+      new PublicKey(address),
+    );
+    return accountInfo !== null;
   }
 
   async checkIfCoinCreated(coin: NftPrimaryCoin) {
