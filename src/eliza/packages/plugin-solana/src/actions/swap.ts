@@ -214,19 +214,29 @@ async function handleExecuteSwap(
   const { keypair } = await getWalletKey(runtime, true);
   const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(response.inputTokenCA);
   const {slippage, priorityFee, tip, mode } = await getTradeSettings(runtime.agentId);
-  const txid = await new SwapTokenService().swapToken(
-    {
-      connection,
-      userWalletAddress: keypair.publicKey.toBase58(),
-      inputTokenCA : response.inputTokenCA,
-      outputTokenCA: response.outputTokenCA,
-      amount: BigNumber(response.inputTokenAmount).multipliedBy(10 ** decimals).integerValue(),
-      slippage,
-      priorityFee,
-      keyPair :keypair,
-      mode,
-      tip: tip * LAMPORTS_PER_SOL,
-  });
+  let txid: string;
+  try {
+    txid = await new SwapTokenService().swapToken(
+      {
+        connection,
+        userWalletAddress: keypair.publicKey.toBase58(),
+        inputTokenCA : response.inputTokenCA,
+        outputTokenCA: response.outputTokenCA,
+        amount: BigNumber(response.inputTokenAmount).multipliedBy(10 ** decimals).integerValue(),
+        slippage,
+        priorityFee,
+        keyPair :keypair,
+        mode,
+        tip: tip * LAMPORTS_PER_SOL,
+      });
+  }catch (e){
+    elizaLogger.error(`Error occurred while executing swap: ${e}`);
+    callback?.({
+      text: `Swap Failed: ${e}`,
+      isError: true,
+    });
+    return false;
+  }
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
   const responseMsg = {
     text: `Swap completed successfully! Transaction ID: ${txid}`,
