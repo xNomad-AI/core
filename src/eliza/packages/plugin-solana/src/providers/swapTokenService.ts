@@ -221,6 +221,10 @@ export class SwapTokenService {
     if(params.fromTokenAddress === this.SOL_ADDRESS || params.toTokenAddress === this.SOL_ADDRESS) {
       params.directRoute = true;
     }
+    if (params.slippage === '1'){
+      params.autoSlippage = true;
+      params.maxAutoSlippage = "0.99"; // okx max slippage should be less than 1
+    }
     return await okxService.getCallData(params);
   }
 
@@ -230,7 +234,7 @@ export class SwapTokenService {
   ): Promise<SwapTransaction> {
     const swapTransaction = swapData?.data?.[0]?.tx?.data;
     if (!swapTransaction) {
-      throw new Error(swapData?.msg || 'No swap transaction found');
+      throw new Error(swapData?.msg || 'Transaction router not found, please try again later');
     }
 
     const swapTransactionBuf = bs58.decode(swapTransaction);

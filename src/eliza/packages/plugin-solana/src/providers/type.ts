@@ -51,4 +51,7 @@ export interface OkxParams {
   fromTokenReferrerWalletAddress?: string; // buy
   toTokenReferrerWalletAddress?: string; // sell
   directRoute?: boolean;
+  autoSlippage?: boolean;
+  maxAutoSlippage?: string;
+
 }
