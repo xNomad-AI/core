@@ -165,7 +165,6 @@ export class SwapTokenService {
         };
       } else {
         const simulation = await connection.simulateTransaction(tx, [], true);
-
         return {
           value: {
             unitsConsumed: simulation.value.unitsConsumed || 0,
@@ -176,7 +175,12 @@ export class SwapTokenService {
       }
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(`Transaction simulation failed: ${error.message}`);
+        if (error?.message?.includes('ProgramFailedToComplete')){
+          throw new Error(`Transaction simulation failed: ${error.message}, The input value might be too low, which could lead to calculation issues or fail to cover fees.  
+Try increasing the swap value and try again.`);
+        }else{
+          throw new Error(`Transaction simulation failed: ${error.message}`);
+        }
       }
       throw new Error('Transaction simulation failed with unknown error');
     }

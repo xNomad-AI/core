@@ -38,6 +38,7 @@ import {
   STANDARD_SOL_ADDRESS,
 } from '../providers/solanaClient.js';
 import { BigNumber } from 'bignumber.js';
+import { trimTokenSymbol } from '../providers/tokenUtils';
 
 export interface TransferContent extends Content {
   tokenAddress: string | null;
@@ -401,10 +402,11 @@ export const transfer: Action = {
 } as Action;
 
 function formatTransferInfo(from: string, content): string {
+  const displayTokenSymbol = trimTokenSymbol(`$${content.tokenSymbol}`);
   return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
 ————
 ➡️ Type: Transfer
-🪙 Token: ${content.tokenSymbol} (${content.tokenAddress})
+🪙 Token: ${displayTokenSymbol} (${content.tokenAddress})
 💰 Amount: ${content.amount} (${content.transferPercentage}%)
 💼 From: ${from}
 💼 To: ${content.recipient}

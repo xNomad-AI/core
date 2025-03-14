@@ -32,6 +32,7 @@ import {
   validateAndAssignCA,
   getTokenCABySymbol,
   isValidSPLTokenAddress,
+  trimTokenSymbol,
 } from '../providers/tokenUtils.js';
 import {
   getSolanaClient,
@@ -276,7 +277,7 @@ export const autoTask: Action = {
       callback,
     );
     if (!task) {
-      return false;
+      return true;
     }
     try {
       const content: Content = {
@@ -391,7 +392,6 @@ async function checkResponse(
     if (!swapReq.inputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid inputToken CA you want to sell',
-        result: 'Invalid inputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -406,7 +406,6 @@ async function checkResponse(
     if (!swapReq.outputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid outputToken CA you want to buy',
-        result: 'Invalid outputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -421,7 +420,6 @@ async function checkResponse(
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
-      result: 'Specify the buy amount of a token is not supported now',
     });
   }
 
@@ -440,7 +438,6 @@ async function checkResponse(
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'AUTO_TASK',
-      result: 'Invalid input amount',
     };
     callback?.(responseMsg);
     return null;
@@ -450,7 +447,6 @@ async function checkResponse(
   if (!balance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
-      result: 'The user input balance is 0.',
     };
     callback?.(responseMsg);
   }
@@ -458,7 +454,6 @@ async function checkResponse(
   if (balance < swapReq.inputTokenAmount) {
     const responseMsg = {
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
-      result: 'Insufficient balance for swap',
     };
     callback?.(responseMsg);
     return null;
@@ -496,8 +491,6 @@ async function checkResponse(
   if (!swapReq.priceTarget && !swapReq.delay) {
     const responseMsg = {
       text: "If you’d like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
-      result:
-        'The user did not specify the target price for the swap or provide a time delay',
     };
     callback?.(responseMsg);
     return null;
@@ -533,7 +526,6 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'rejected') {
     const responseMsg = {
       text: 'ok. I will not set the autotask.',
-      result: 'The user rejected the autotask',
     };
     callback?.(responseMsg);
     return null;
@@ -545,7 +537,6 @@ async function checkResponse(
     const responseMsg = {
       text: `${swapInfo}`,
       action: 'AUTO_TASK',
-      result: 'The user is pending to confirm the autotask',
     };
     callback?.(responseMsg);
     return null;
@@ -603,18 +594,23 @@ function formatTaskInfo({
   startAt,
   expireAt,
 }: AutoSwapTask): string {
+
+  const displayedInputSymbol = trimTokenSymbol(`$${inputTokenSymbol || inputTokenCA}`);
+  const displayedOutputSymbol = trimTokenSymbol(`$${outputTokenSymbol || outputTokenCA}`);
+  const displayedTokenTarget =
+    tokenTarget === inputTokenCA ? displayedInputSymbol :
+      tokenTarget === outputTokenCA ? displayedOutputSymbol :
+        trimTokenSymbol(`$${tokenTarget}`);
+
   const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'buy' : 'sell';
-  const tokenInfo = swapType === 'sell' ? `$${inputTokenSymbol} (${inputTokenCA})` : `$${outputTokenSymbol} (${outputTokenCA})`;
-  const targetTokenSymbol =
-    tokenTarget === inputTokenCA ? inputTokenSymbol :
-      tokenTarget === outputTokenCA ? outputTokenSymbol :
-        tokenTarget;
+  const tokenInfo = swapType === 'sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
+
   const amountInfo =
     swapType === 'sell'
       ? `${inputTokenAmount}(${(inputTokenPercentage * 100)?.toFixed(1)}%)`
-      : `${inputTokenAmount} ${inputTokenSymbol || inputTokenCA}`;
+      : `${inputTokenAmount} ${displayedInputSymbol}`;
   const trigger = priceCondition
-    ? `${targetTokenSymbol} price ${priceCondition} $${priceTarget}`
+    ? `${displayedTokenTarget} price ${priceCondition} $${priceTarget}`
     : `At ${startAt.toUTCString()}`;
   let taskInfo =
     'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';
