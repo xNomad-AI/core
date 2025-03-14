@@ -272,6 +272,7 @@ export class NftController {
     @Query('offset') offset: number,
     @Query('limit') limit: number,
     @Query('creatorAddress') creatorAddress?: string,
+    @Query('onlyBound') onlyBound?: string,
   ) {
     const response = await this.tradeMonitorService.getAgentCreatedTokens({
       sortBy: sortBy as any,
@@ -279,7 +280,7 @@ export class NftController {
       offset,
       limit,
       creatorAddress,
-      onlyBound: true,
+      onlyBound: Boolean(onlyBound),
     });
 
     await Promise.all(
