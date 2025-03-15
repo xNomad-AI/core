@@ -58,11 +58,11 @@ const DEFAULT_CONFIG = {
   JUP_SWAP_FEE_BPS: 100,
 };
 
-function getJUP_SWAP_FEE_BPS() {
+export function getSWAP_FEE_BPS() {
   return settings.JUP_SWAP_FEE_BPS || DEFAULT_CONFIG.JUP_SWAP_FEE_BPS;
 }
 
-function getJUP_SWAP_FEE_ACCOUNT() {
+export function getSWAP_FEE_ACCOUNT() {
   const ret =
     settings.JUP_SWAP_FEE_ACCOUNT || DEFAULT_CONFIG.JUP_SWAP_FEE_ACCOUNT;
   return ret;
@@ -115,10 +115,10 @@ export async function swapToken(
     // auto slippage
     let url = `https://quote-api.jup.ag/v6/quote?inputMint=${inputTokenCA}&outputMint=${outputTokenCA}&amount=${adjustedAmount}&dynamicSlippage=true&autoSlippage=true&maxAccounts=64&onlyDirectRoutes=false&asLegacyTransaction=false`;
     if (
-      getJUP_SWAP_FEE_BPS() !== undefined &&
-      getJUP_SWAP_FEE_ACCOUNT() !== undefined
+      getSWAP_FEE_BPS() !== undefined &&
+      getSWAP_FEE_ACCOUNT() !== undefined
     ) {
-      url += `&platformFeeBps=${getJUP_SWAP_FEE_BPS()}`;
+      url += `&platformFeeBps=${getSWAP_FEE_BPS()}`;
     }
 
     const quoteResponse = await fetch(url);
@@ -158,14 +158,14 @@ export async function swapToken(
     // only add fee account if the token is not a 2022 token
     // https://station.jup.ag/docs/swap-api/add-fees-to-swap#important-notes
     if (
-      getJUP_SWAP_FEE_BPS() !== undefined &&
-      getJUP_SWAP_FEE_ACCOUNT() !== undefined &&
+      getSWAP_FEE_BPS() !== undefined &&
+      getSWAP_FEE_ACCOUNT() !== undefined &&
       !programId.equals(TOKEN_2022_PROGRAM_ID) &&
       !outProgramId.equals(TOKEN_2022_PROGRAM_ID)
     ) {
       elizaLogger.log(
         'get or creating fee account:',
-        getJUP_SWAP_FEE_ACCOUNT(),
+        getSWAP_FEE_ACCOUNT(),
         programId.toBase58(),
       );
       const FEE_ACCOUNT_INPUT_MINT_ACCOUNT = (
@@ -173,7 +173,7 @@ export async function swapToken(
           connection,
           keypair,
           new PublicKey(quoteData.inputMint),
-          new PublicKey(getJUP_SWAP_FEE_ACCOUNT()),
+          new PublicKey(getSWAP_FEE_ACCOUNT()),
           true,
           undefined,
           undefined,

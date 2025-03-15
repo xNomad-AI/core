@@ -21,6 +21,7 @@ import {
   bloxValidatorNodeService,
   jitoValidatorNodeService,
 } from './validatorNodeService.js';
+import { getSWAP_FEE_ACCOUNT, getSWAP_FEE_BPS } from './swapUtils';
 export class SwapTokenService {
   private readonly logger: Console;
   private readonly LAMPORTS_PER_SOL = 1000000000;
@@ -229,6 +230,16 @@ Try increasing the swap value and try again.`);
       params.autoSlippage = true;
       params.maxAutoSlippage = "0.99"; // okx max slippage should be less than 1
     }
+
+    const feePercent = Number(getSWAP_FEE_BPS()) / 100;
+    const feeAccount = getSWAP_FEE_ACCOUNT();
+    if (feePercent && feeAccount) {
+      params.feePercent = feePercent.toString();
+      params.toTokenAddress === this.SOL_ADDRESS ?
+        params.toTokenReferrerWalletAddress = feeAccount :
+        params.fromTokenReferrerWalletAddress = feeAccount;
+    }
+
     return await okxService.getCallData(params);
   }
 
