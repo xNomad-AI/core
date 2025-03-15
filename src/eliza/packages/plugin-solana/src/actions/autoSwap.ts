@@ -436,7 +436,7 @@ async function checkResponse(
     swapReq.inputTokenAmount <= 0
   ) {
     const responseMsg = {
-      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
+      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount to perform the swap`,
       action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
