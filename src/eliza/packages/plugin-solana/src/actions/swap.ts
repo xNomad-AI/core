@@ -24,6 +24,7 @@ import { NATIVE_MINT } from '@solana/spl-token';
 import { getSolanaClient, SolanaClient } from '../providers/solanaClient.js';
 import {
   getTokenCABySymbol,
+  trimTokenSymbol,
   validateAndAssignCA,
 } from '../providers/tokenUtils.js';
 import { getRuntimeKey } from '../environment.js';
@@ -232,7 +233,7 @@ async function handleExecuteSwap(
   }catch (e){
     elizaLogger.error(`Error occurred while executing swap: ${e}`);
     callback?.({
-      text: `Swap Failed: ${e}`,
+      text: `${e}`,
       isError: true,
     });
     return false;
@@ -445,15 +446,17 @@ function formatConfirmSwapInfo(params: {
   inputTokenAmount: number;
   inputPercentage: string;
 }): string {
+  const displayedInputSymbol = trimTokenSymbol(`$${params.inputTokenSymbol || params.inputTokenCA}`);
+  const displayedOutputSymbol = trimTokenSymbol(`$${params.outputTokenSymbol || params.outputTokenCA}`);
   if (
     params.inputTokenCA !== NATIVE_MINT.toBase58() &&
     params.outputTokenCA !== NATIVE_MINT.toBase58()
   ) {
     return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
 ————
-🔄 Type: Swap(swap $${params.inputTokenSymbol || params.inputTokenCA} for ${params.outputTokenSymbol || params.outputTokenCA})
-🪙 $${params.inputTokenSymbol}: ${params.inputTokenCA}
-🪙 $${params.outputTokenSymbol}: ${params.outputTokenCA}
+🔄 Type: Swap(swap ${displayedInputSymbol} for ${displayedOutputSymbol})
+🪙 ${displayedInputSymbol}: ${params.inputTokenCA}
+🪙 ${displayedOutputSymbol}: ${params.outputTokenCA}
 💰 Swap amount: ${params.inputTokenAmount}
 ————
 Reply 'ok' or 'yes' to confirm.`;
@@ -462,12 +465,12 @@ Reply 'ok' or 'yes' to confirm.`;
     params.outputTokenCA === NATIVE_MINT.toBase58() ? 'Sell' : 'Buy';
   const amountDescription =
     params.outputTokenCA === NATIVE_MINT.toBase58()
-      ? `${params.inputTokenAmount} (${params.inputPercentage}%)`
-      : `${params.inputTokenAmount} ${params.inputTokenSymbol}`;
+      ? `${displayedInputSymbol} (${params.inputPercentage}%)`
+      : `${params.inputTokenAmount} ${displayedInputSymbol}`;
   const tokenDescription =
     params.outputTokenCA === NATIVE_MINT.toBase58()
-      ? `$${params.inputTokenSymbol} (${params.inputTokenCA})`
-      : `$${params.outputTokenSymbol} (${params.outputTokenCA})`;
+      ? `${displayedInputSymbol} (${params.inputTokenCA})`
+      : `${displayedOutputSymbol} (${params.outputTokenCA})`;
   return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
 ————
 ⬆️ Type: ${swapType}

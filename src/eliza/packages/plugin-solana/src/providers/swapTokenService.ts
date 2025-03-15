@@ -21,6 +21,7 @@ import {
   bloxValidatorNodeService,
   jitoValidatorNodeService,
 } from './validatorNodeService.js';
+import { getSWAP_FEE_ACCOUNT, getSWAP_FEE_BPS } from './swapUtils';
 export class SwapTokenService {
   private readonly logger: Console;
   private readonly LAMPORTS_PER_SOL = 1000000000;
@@ -165,7 +166,6 @@ export class SwapTokenService {
         };
       } else {
         const simulation = await connection.simulateTransaction(tx, [], true);
-
         return {
           value: {
             unitsConsumed: simulation.value.unitsConsumed || 0,
@@ -176,7 +176,12 @@ export class SwapTokenService {
       }
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(`Transaction simulation failed: ${error.message}`);
+        if (error?.message?.includes('ProgramFailedToComplete')){
+          throw new Error(`Transaction simulation failed: ${error.message}, The input value might be too low, which could lead to calculation issues or fail to cover fees.  
+Try increasing the swap value and try again.`);
+        }else{
+          throw new Error(`Transaction simulation failed: ${error.message}`);
+        }
       }
       throw new Error('Transaction simulation failed with unknown error');
     }
@@ -225,6 +230,16 @@ export class SwapTokenService {
       params.autoSlippage = true;
       params.maxAutoSlippage = "0.99"; // okx max slippage should be less than 1
     }
+
+    const feePercent = Number(getSWAP_FEE_BPS()) / 100;
+    const feeAccount = getSWAP_FEE_ACCOUNT();
+    if (feePercent && feeAccount) {
+      params.feePercent = feePercent.toString();
+      params.toTokenAddress === this.SOL_ADDRESS ?
+        params.toTokenReferrerWalletAddress = feeAccount :
+        params.fromTokenReferrerWalletAddress = feeAccount;
+    }
+
     return await okxService.getCallData(params);
   }
 

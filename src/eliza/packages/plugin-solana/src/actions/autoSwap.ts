@@ -32,6 +32,7 @@ import {
   validateAndAssignCA,
   getTokenCABySymbol,
   isValidSPLTokenAddress,
+  trimTokenSymbol,
 } from '../providers/tokenUtils.js';
 import {
   getSolanaClient,
@@ -435,7 +436,7 @@ async function checkResponse(
     swapReq.inputTokenAmount <= 0
   ) {
     const responseMsg = {
-      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
+      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount to perform the swap`,
       action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
@@ -593,18 +594,23 @@ function formatTaskInfo({
   startAt,
   expireAt,
 }: AutoSwapTask): string {
+
+  const displayedInputSymbol = trimTokenSymbol(`$${inputTokenSymbol || inputTokenCA}`);
+  const displayedOutputSymbol = trimTokenSymbol(`$${outputTokenSymbol || outputTokenCA}`);
+  const displayedTokenTarget =
+    tokenTarget === inputTokenCA ? displayedInputSymbol :
+      tokenTarget === outputTokenCA ? displayedOutputSymbol :
+        trimTokenSymbol(`$${tokenTarget}`);
+
   const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'buy' : 'sell';
-  const tokenInfo = swapType === 'sell' ? `$${inputTokenSymbol} (${inputTokenCA})` : `$${outputTokenSymbol} (${outputTokenCA})`;
-  const targetTokenSymbol =
-    tokenTarget === inputTokenCA ? inputTokenSymbol :
-      tokenTarget === outputTokenCA ? outputTokenSymbol :
-        tokenTarget;
+  const tokenInfo = swapType === 'sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
+
   const amountInfo =
     swapType === 'sell'
       ? `${inputTokenAmount}(${(inputTokenPercentage * 100)?.toFixed(1)}%)`
-      : `${inputTokenAmount} ${inputTokenSymbol || inputTokenCA}`;
+      : `${inputTokenAmount} ${displayedInputSymbol}`;
   const trigger = priceCondition
-    ? `${targetTokenSymbol} price ${priceCondition} $${priceTarget}`
+    ? `${displayedTokenTarget} price ${priceCondition} $${priceTarget}`
     : `At ${startAt.toUTCString()}`;
   let taskInfo =
     'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';

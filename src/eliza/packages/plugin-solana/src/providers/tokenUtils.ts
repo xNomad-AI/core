@@ -188,3 +188,10 @@ export async function getSwapTokenPrice(
     return undefined;
   }
 }
+
+export function trimTokenSymbol(tokenSymbol: string) {
+  if (tokenSymbol.startsWith('$$')) {
+    return tokenSymbol.slice(1);
+  }
+  return tokenSymbol;
+}
