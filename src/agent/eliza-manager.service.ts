@@ -270,37 +270,6 @@ export class ElizaManagerService {
       .updateOne({ agentId, id }, { $set: { status } });
   }
 
-  async updateCopyTrade(
-    agentId: string,
-    id: number,
-    { name, copySell, mode, status, fixedAmount, percentage }: CopyTrade,
-  ) {
-    const filter: any = { agentId };
-    if (id) {
-      filter.id = id;
-    }
-
-    const copyTrade = await this.mongoService.copyTrades.findOne(filter);
-    if (!copyTrade?.id) {
-      throw new BadRequestException('Copy trade not exists');
-    }
-    await this.mongoService.copyTrades.updateOne(
-      filter,
-      {
-        $set: {
-          copySell,
-          name,
-          mode,
-          status,
-          fixedAmount,
-          percentage,
-        },
-        $setOnInsert: { agentId, id },
-      },
-      { upsert: true },
-    );
-  }
-
   async updateCopyTrade(agentId: string, id: number, {name, copySell, mode, status, fixedAmount, percentage}: CopyTrade){
     const filter: any = { agentId }
     if (id){

@@ -143,7 +143,6 @@ async function getTokenInfo(
 
     const data = await response.json();
 
-    // 检查返回数据的有效性
     if (!data) {
       throw new Error('No data received from server');
     }
@@ -153,10 +152,6 @@ async function getTokenInfo(
       data: data,
     };
   } catch (error) {
-    // 记录错误
-    console.error('Error in getTokenInfo:', error);
-
-    // 返回一个标准化的错误对象
     return {
       success: false,
       error:
