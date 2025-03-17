@@ -109,9 +109,9 @@ export interface TradeSettings {
 }
 
 export const DEFAULT_TRADE_SETTINGS: TradeSettings = {
-  slippage: 1,
-  priorityFee: 0,
-  tip: 0,
+  slippage: 0.25,
+  priorityFee: 0.006,
+  tip: 0.001,
   mode: 'FAST',
 };
 
@@ -176,6 +176,7 @@ export interface AddressNonce {
 }
 
 export interface CopyTrade {
+  _id?: string;
   id: number;
   agentId: string;
   name: string;

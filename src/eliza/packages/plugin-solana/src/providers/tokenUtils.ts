@@ -1,8 +1,6 @@
 import {
   getAccount,
   getAssociatedTokenAddress,
-  getOrCreateAssociatedTokenAccount,
-  TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import { type Connection, PublicKey } from '@solana/web3.js';
 import { elizaLogger, IAgentRuntime } from '@elizaos/core';
@@ -90,13 +88,13 @@ export async function getTokenCABySymbol(
   keyword: string,
 ): Promise<string | undefined> {
   let tokens = await getTokensBySymbol(runtime, keyword);
-  if (tokens?.[0].address) {
-    return tokens[0].address;
+  if (tokens?.[0]?.address) {
+    return tokens[0]?.address;
   }
   if (keyword.startsWith('$')) {
     tokens = await getTokensBySymbol(runtime, keyword.slice(1));
   }
-  return tokens?.[0].address;
+  return tokens?.[0]?.address;
 }
 
 export async function getTokensBySymbol(
@@ -189,4 +187,11 @@ export async function getSwapTokenPrice(
     elizaLogger.error(`Error fetching token price: ${error}`);
     return undefined;
   }
+}
+
+export function trimTokenSymbol(tokenSymbol: string) {
+  if (tokenSymbol.startsWith('$$')) {
+    return tokenSymbol.slice(1);
+  }
+  return tokenSymbol;
 }

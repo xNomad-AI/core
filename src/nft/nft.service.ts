@@ -138,9 +138,14 @@ export class NftService implements OnApplicationBootstrap {
       ignoreTwitterHttpProxy?: boolean;
     },
   ): Promise<NftConfig> {
-    const nftConfig = await this.mongo.nftConfigs.findOne({
+    let nftConfig: NftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
+
+    nftConfig = nftConfig || {nftId, chain: 'solana'};
+    if (!nftConfig?.trade){
+      nftConfig.trade =  DEFAULT_TRADE_SETTINGS;
+    }
 
     // default hiden the http proxy
     if (
@@ -471,6 +476,9 @@ export class NftService implements OnApplicationBootstrap {
     if (token.creatorAddress !== agentWallet) {
       throw new Error('agent is not the creator of the token');
     }
+    await this.tradeMonitorService.bindAgentCreatedTokenToNft({
+      address: token.address,
+    });
 
     await this.mongo.nftPrimaryCoins.insertOne({
       chain,
@@ -493,7 +501,9 @@ export class NftService implements OnApplicationBootstrap {
       updatedAt: new Date(),
     });
 
-    await this.tradeMonitorService.refreshAgentCreatedToken(address);
+    await this.tradeMonitorService
+      .refreshAgentCreatedToken(address)
+      .catch(() => {});
   }
 
   async getPrimaryCoin(nftId: string) {

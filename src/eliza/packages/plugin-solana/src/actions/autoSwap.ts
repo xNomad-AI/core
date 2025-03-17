@@ -14,10 +14,7 @@ import {
 } from '@elizaos/core';
 import {
   Connection,
-  Keypair,
-  RpcResponseAndContext,
-  SignatureStatus,
-  VersionedTransaction,
+  Keypair, LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
 import { getWalletKey } from '../keypairUtils.js';
 import {
@@ -25,8 +22,9 @@ import {
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 import {
-  convertNullStrings,
+  convertNullStrings, getTradeSettings,
   md5sum,
+  submitTransaction,
   swapToken,
 } from '../providers/swapUtils.js';
 import {
@@ -34,14 +32,16 @@ import {
   validateAndAssignCA,
   getTokenCABySymbol,
   isValidSPLTokenAddress,
+  trimTokenSymbol,
 } from '../providers/tokenUtils.js';
 import {
   getSolanaClient,
-  sleep,
   SolanaClient,
-} from '../providers/solana-client.js';
+} from '../providers/solanaClient.js';
 import { getRuntimeKey } from '../environment.js';
 import { NATIVE_MINT } from '@solana/spl-token';
+import { SwapTokenService } from '../providers/swapTokenService';
+import { BigNumber } from 'bignumber.js';
 
 export const AutoSwapTaskTable = 'AUTO_TOKEN_SWAP_TASK';
 export interface AutoSwapTask {
@@ -437,7 +437,7 @@ async function checkResponse(
     swapReq.inputTokenAmount <= 0
   ) {
     const responseMsg = {
-      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
+      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount to perform the swap`,
       action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
@@ -508,7 +508,7 @@ async function checkResponse(
     swapReq.startAt = new Date();
   }
 
-  swapReq.expireAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  swapReq.expireAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
   elizaLogger.info(`checking if user confirm to create task`);
 
@@ -533,6 +533,7 @@ async function checkResponse(
   }
 
   if (confirmResponse.userAcked == 'pending') {
+    swapReq.inputTokenPercentage = (swapReq.inputTokenAmount/balance);
     const swapInfo = formatTaskInfo(swapReq);
     const responseMsg = {
       text: `${swapInfo}`,
@@ -563,39 +564,21 @@ async function executeSwapTokenTx(
   );
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
-  const solanaClient = new SolanaClient(rpcUrl, keypair.publicKey);
-  const programId = await solanaClient.getTokenProgramId(inputTokenCA);
-  const swapResult = await swapToken(
-    connection,
-    keypair.publicKey,
-    inputTokenCA as string,
-    outputTokenCA as string,
-    amount as number,
-    runtime,
-    programId,
-  );
-
-  const transactionBuf = Buffer.from(swapResult.swapTransaction, 'base64');
-  const transaction = VersionedTransaction.deserialize(transactionBuf);
-  transaction.sign([keypair]);
-  const txid = await connection.sendTransaction(transaction, {
-    skipPreflight: false,
-    maxRetries: 3,
-    preflightCommitment: 'confirmed',
-  });
-  elizaLogger.log('Transaction sent:', txid);
-  let confirmation: RpcResponseAndContext<SignatureStatus | null>;
-  for (let i = 0; i < 12; i++) {
-    await sleep(1000);
-    confirmation = await connection.getSignatureStatus(txid, {
-      searchTransactionHistory: false,
+  const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(inputTokenCA);
+  const {slippage, priorityFee, tip, mode } = await getTradeSettings(runtime.agentId);
+  const txid = await await new SwapTokenService().swapToken(
+    {
+      connection,
+      userWalletAddress: keypair.publicKey.toBase58(),
+      inputTokenCA,
+      outputTokenCA,
+      amount: BigNumber(amount).multipliedBy(new BigNumber(10).pow(decimals)).integerValue(),
+      keyPair :keypair,
+      slippage,
+      priorityFee,
+      tip: tip * LAMPORTS_PER_SOL,
+      mode,
     });
-
-    if (confirmation.value) {
-      break;
-    }
-  }
-  elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
   return txid;
 }
 
@@ -604,28 +587,40 @@ function formatTaskInfo({
   inputTokenCA,
   inputTokenPercentage,
   inputTokenSymbol,
+  outputTokenSymbol,
+  outputTokenCA,
   priceCondition,
   priceTarget,
   tokenTarget,
   startAt,
   expireAt,
 }: AutoSwapTask): string {
-  const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'sell' : 'buy';
+
+  const displayedInputSymbol = trimTokenSymbol(`$${inputTokenSymbol || inputTokenCA}`);
+  const displayedOutputSymbol = trimTokenSymbol(`$${outputTokenSymbol || outputTokenCA}`);
+  const displayedTokenTarget =
+    tokenTarget === inputTokenCA ? displayedInputSymbol :
+      tokenTarget === outputTokenCA ? displayedOutputSymbol :
+        trimTokenSymbol(`$${tokenTarget}`);
+
+  const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'buy' : 'sell';
+  const tokenInfo = swapType === 'sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
+
   const amountInfo =
     swapType === 'sell'
-      ? `${inputTokenAmount}(${inputTokenPercentage}%)`
-      : `${inputTokenAmount} ${inputTokenSymbol || inputTokenCA}`;
+      ? `${inputTokenAmount}(${(inputTokenPercentage * 100)?.toFixed(1)}%)`
+      : `${inputTokenAmount} ${displayedInputSymbol}`;
   const trigger = priceCondition
-    ? `${inputTokenSymbol || inputTokenCA} price ${priceCondition} $${priceTarget}`
+    ? `${displayedTokenTarget} price ${priceCondition} $${priceTarget}`
     : `At ${startAt.toUTCString()}`;
   let taskInfo =
     'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';
   taskInfo += '————\n';
   taskInfo += `⬇️ Type: Limit ${swapType} order\n`;
-  taskInfo += `🪙 Token: $${inputTokenSymbol} ($${tokenTarget})\n`;
+  taskInfo += `🪙 Token: ${tokenInfo}\n`;
   taskInfo += `💰 ${swapType} Amount: ${amountInfo}\n`;
   taskInfo += `⚡️ Trigger: ${trigger}\n`;
-  taskInfo += `⏰ Expire time: ${expireAt ? expireAt.toUTCString() : 'Never'}\n`;
+  taskInfo += `⏰ Expire time: ${expireAt ? expireAt.toUTCString().replace('GMT', 'UTC') : 'Never'}\n`;
   taskInfo += `————\n`;
   taskInfo += `You can cancel your scheduled tasks on the [Tasks] subpage.\nReply 'ok' or 'yes' to confirm.`;
   return taskInfo;

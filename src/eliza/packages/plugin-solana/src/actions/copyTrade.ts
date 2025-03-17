@@ -14,6 +14,7 @@ import { convertNullStrings } from '../providers/swapUtils.js';
 import { isValidAddress } from '../providers/tokenUtils.js';
 import { getWalletKey } from '../keypairUtils';
 import { SharedProvider } from '../index';
+import { isAgentAdmin, NotAgentAdminResponse } from '../providers/walletUtils';
 
 type CopyTradeParameters = {
   name: string;
@@ -123,6 +124,13 @@ export const copyTrade: Action = {
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
   ): Promise<boolean> => {
+    // check if the swap request is from agent owner or public chat
+    const isAdmin = await isAgentAdmin(runtime, message);
+    if (!isAdmin) {
+      callback?.(NotAgentAdminResponse);
+      return null;
+    }
+
     let response = convertNullStrings(
       state.actionParameters,
     ) as CopyTradeParameters;
@@ -157,6 +165,17 @@ export const copyTrade: Action = {
     const wallet = await getWalletKey(runtime, true);
     response.walletAddress = wallet.keypair.publicKey.toBase58();
     response.agentId = runtime.agentId;
+    const records = await runtime.databaseAdapter.find?.('copyTrades', {
+      agentId: response.agentId,
+      targetAddress: response.targetAddress,
+      walletAddress: response.walletAddress,
+    });
+    if (records?.length > 0){
+      callback({
+        text: 'You have already set copy trade of this address. You can edit the copy trade on the [Tasks] subpage.'
+      });
+      return;
+    }
     elizaLogger.log('COPY_TRADE:', response);
 
     const confirmContext = composeContext({
@@ -213,17 +232,17 @@ export const copyTrade: Action = {
 
 function formatConfirmMessage(response: CopyTradeParameters): string {
   const buyInfo = Number.isFinite(response.fixedAmount)
-    ? `💰 Buy amount: ${response.fixedAmount} SOL`
-    : `💰 Buy percentage: ${response.percentage * 100}% of target order`;
-  return `
-Please confirm the info below. If any adjustments are needed, let me know the updated details.
+    ? `Buy amount: ${response.fixedAmount} SOL`
+    : `Buy percentage: ${response.percentage * 100}% of target order`;
+  return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
 ————
 👀 Type: copy trade
 💼 Target wallet address: ${response.targetAddress}
 🏷️ Name: ${response.name}
 🔆 Copy mode: ${response.mode}
-💰 Buy amount: ${buyInfo}
+💰 ${buyInfo}
 ⬆️ Copy sell: ${response.copySell ? 'yes' : 'no'}
 ————
-You can stop the copy trade on the [Tasks] subpage. Reply 'ok' or 'yes' to confirm.`;
+You can stop the copy trade on the [Tasks] subpage. 
+Reply 'ok' or 'yes' to confirm.`;
 }

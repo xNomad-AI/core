@@ -3,9 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { Body, Headers, HttpCode, UnauthorizedException } from '@nestjs/common';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { SwapTokenService } from '../utils/swap-token.service.js';
-import { SwapTokenDto } from '../utils/type.js';
-import { Connection } from '@solana/web3.js';
+import { SwapTokenService } from '@elizaos/plugin-solana';
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import {
   getWalletKeyFromWalletService,
   SolanaClient,
@@ -13,6 +12,7 @@ import {
 import { TEEMode } from '@elizaos/plugin-tee';
 import { BigNumber } from 'bignumber.js';
 import { DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
+import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 
 class BaseCallbackDto {
   monitorId: number;
@@ -47,6 +47,8 @@ function getSwapInfo(callback: AddressCallbackDto) {
       : callback.transfers[0];
   return {
     inputTokenCA: inputTransfer.tokenAddress,
+    txSigner: callback.address,
+    txHash: callback.txHash,
     inputTokenAmount: inputTransfer.amount,
     outputTokenCA: outputTransfer.tokenAddress,
     outputTokenAmount: outputTransfer.amount,
@@ -68,6 +70,7 @@ export class CallbackController {
   constructor(
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
+    private elizaManager: ElizaManagerService,
     private mongo: MongoService,
   ) {
     this.apikey = this.appConfig.get<string>('TRADE_MONITOR_SERVICE_API_KEY')!;
@@ -108,34 +111,29 @@ export class CallbackController {
   @HttpCode(200)
   async handleAddressCallback(
     @Body() callbackData: AddressCallbackDto,
-    @Headers('X-Monitor-ID') id: number,
-    @Headers('X-Agent-Address') walletAddress: string,
+    @Headers('X-Monitor-ID') id: string,
     @Headers('api-key') apiKey: string,
   ) {
     this.validateApiKey(apiKey);
     this.logger.log('Received address monitor callback', {
-      id,
-      walletAddress,
       ...callbackData,
+      id,
     });
 
     const solAddress = this.appConfig.get<string>('SOL_ADDRESS');
 
-    const { inputTokenCA, inputTokenAmount, outputTokenCA } =
+    const { inputTokenCA, inputTokenAmount, outputTokenCA, txSigner, txHash } =
       getSwapInfo(callbackData);
     if (inputTokenCA != solAddress && outputTokenCA != solAddress) {
       this.logger.log(`ignore not SOL swap, ${id}`);
       return;
     }
 
-    const copyTradeTask = await this.mongo.copyTrades.findOne({ id });
+    const copyTradeTask = await this.mongo.copyTrades.findOne({id: Number(id)});
     if (!copyTradeTask) {
       throw new Error('Copy trade not found');
     }
 
-    if (copyTradeTask.walletAddress !== walletAddress) {
-      throw new Error('Wallet address does not match');
-    }
     if (copyTradeTask.status !== 'running') {
       this.logger.log(`Copy trade is not running ${id}`);
       return;
@@ -152,7 +150,7 @@ export class CallbackController {
     );
     const keypairResult = await getWalletKeyFromWalletService({
       teeMode: this.appConfig.get<string>('TEE_MODE') as TEEMode,
-      walletSecretSalt: this.appConfig.get<string>('WALLET_SECRET_SALT'),
+      walletSecretSalt: this.elizaManager.getAgentSecretSalt('solana', nft.nftId),
       agentId,
       requirePrivateKey: true,
       endpoint: this.appConfig.get<string>('WALLET_SERVICE_ENDPOINT'),
@@ -164,22 +162,22 @@ export class CallbackController {
       this.appConfig.get<string>('SOLANA_RPC_URL'),
       keypairResult.keypair.publicKey,
     );
-    const swapTokenDto: SwapTokenDto = {
+    const swapTokenDto: any = {
       amount: '0',
       connection,
       inputTokenCA,
       keyPair: keypairResult.keypair,
       mode,
       outputTokenCA,
-      priorityFee,
+      priorityFee: priorityFee,
       slippage,
-      tip,
-      userWalletAddress: walletAddress,
+      tip: tip * LAMPORTS_PER_SOL,
+      userWalletAddress: copyTradeTask.walletAddress,
     };
 
     // copy buy
     if (inputTokenCA === solAddress) {
-      const decimals = await solanaClient.getMintDecimals(outputTokenCA);
+      const decimals = await solanaClient.getMintDecimals(inputTokenCA);
       if (copyTradeTask.mode == 'fixedAmount') {
         swapTokenDto.amount = BigNumber(copyTradeTask.fixedAmount)
           .multipliedBy(10 ** decimals)
@@ -197,14 +195,29 @@ export class CallbackController {
         this.logger.log(`ignore copy sell, ${id}`);
         return;
       }
-      swapTokenDto.amount = await solanaClient.getRawBalance(inputTokenCA);
+      const tokenAccount = await new SolanaClient(connection.rpcEndpoint, new PublicKey(txSigner)).getTokenAccount(inputTokenCA);
+      const {preBalance, postBalance} = await SwapTokenService.getTokenBalanceChange(connection, txHash, tokenAccount);
+      const sellPercentage = preBalance == '0'? 1: BigNumber(preBalance).minus(postBalance).dividedBy(preBalance);
+      const balance = await solanaClient.getRawBalance(inputTokenCA);
+      this.logger.log(`copy sell tx ${txHash} sell percentage: ${sellPercentage}, balance: ${balance}`);
+      swapTokenDto.amount = BigNumber(balance).multipliedBy(sellPercentage).integerValue();
     }
 
-    this.logger.log(`copy trade request: ${JSON.stringify(swapTokenDto)}`);
-    await new SwapTokenService().swapToken(swapTokenDto);
+    if (Number(swapTokenDto.amount) == 0){
+      this.logger.log(`ignore zero amount, ${id}`);
+      return;
+    }
+
+    this.logger.log(`copy trade request: ${JSON.stringify({
+      ...swapTokenDto,
+      connection: undefined,
+      keyPair: undefined,
+    })}`);
+    const txId = await new SwapTokenService().swapToken(swapTokenDto);
     return {
       success: true,
-      message: 'copy trade callback processed successfully',
+      txId,
+      message: `copy trade callback processed successfully, ${txId}`,
     };
   }
 

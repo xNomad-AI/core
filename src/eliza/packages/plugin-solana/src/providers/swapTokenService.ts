@@ -1,3 +1,4 @@
+import { NATIVE_MINT } from '@solana/spl-token';
 import {
   AddressLookupTableAccount,
   Connection,
@@ -9,7 +10,7 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import bs58 from 'bs58';
-import okxService from './okx.service.js';
+import okxService from './okxService.js';
 import {
   OkxParams,
   OkxSwapResponse,
@@ -19,29 +20,50 @@ import {
 import {
   bloxValidatorNodeService,
   jitoValidatorNodeService,
-} from './validator-node.service.js';
+} from './validatorNodeService.js';
+import { getSWAP_FEE_ACCOUNT, getSWAP_FEE_BPS } from './swapUtils';
 export class SwapTokenService {
   private readonly logger: Console;
   private readonly LAMPORTS_PER_SOL = 1000000000;
-
+  private readonly SOL_ADDRESS = '11111111111111111111111111111111';
   constructor() {
     this.logger = console;
   }
 
-  async swapToken(dto: SwapTokenDto): Promise<string> {
+  async swapToken({
+                    connection,
+                    amount,
+                    slippage,
+                    inputTokenCA,
+                    outputTokenCA,
+                    priorityFee,
+                    keyPair,
+                    tip,
+                    mode = 'FAST',
+                    userWalletAddress,
+                  }: SwapTokenDto): Promise<string> {
     try {
-      const {
-        connection,
-        amount,
-        slippage,
-        inputTokenCA,
-        outputTokenCA,
-        priorityFee,
-        keyPair,
-        tip = 0.001 * this.LAMPORTS_PER_SOL,
-        mode = 'FAST',
-        userWalletAddress,
-      } = dto;
+
+      if (inputTokenCA === NATIVE_MINT.toBase58()) {
+        inputTokenCA = this.SOL_ADDRESS;
+      }
+      if (outputTokenCA === NATIVE_MINT.toBase58()) {
+        outputTokenCA = this.SOL_ADDRESS;
+      }
+
+      if (!isFinite(tip) || tip < 0.001 * this.LAMPORTS_PER_SOL) {
+        tip = 0.001 * this.LAMPORTS_PER_SOL;
+      }
+
+      if (!slippage || slippage < 0 || slippage > 1) {
+        throw new Error('Invalid slippage, slippage should be between 0 and 1');
+      }
+
+      if (mode === 'ANTI_MEV' && priorityFee < 0.018) {
+        throw new Error(
+          'In ANTI_MEV mode, priority fee should be greater than 0.018',
+        );
+      }
 
       this.logger.info(
         `[swap token] Swapping ${amount} ${inputTokenCA} to ${outputTokenCA}`,
@@ -144,7 +166,6 @@ export class SwapTokenService {
         };
       } else {
         const simulation = await connection.simulateTransaction(tx, [], true);
-
         return {
           value: {
             unitsConsumed: simulation.value.unitsConsumed || 0,
@@ -155,7 +176,12 @@ export class SwapTokenService {
       }
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(`Transaction simulation failed: ${error.message}`);
+        if (error?.message?.includes('ProgramFailedToComplete')){
+          throw new Error(`Transaction simulation failed: ${error.message}, The input value might be too low, which could lead to calculation issues or fail to cover fees.  
+Try increasing the swap value and try again.`);
+        }else{
+          throw new Error(`Transaction simulation failed: ${error.message}`);
+        }
       }
       throw new Error('Transaction simulation failed with unknown error');
     }
@@ -197,6 +223,23 @@ export class SwapTokenService {
   }
 
   private async getOKXCallData(params: OkxParams): Promise<OkxSwapResponse> {
+    if(params.fromTokenAddress === this.SOL_ADDRESS || params.toTokenAddress === this.SOL_ADDRESS) {
+      params.directRoute = true;
+    }
+    if (params.slippage === '1'){
+      params.autoSlippage = true;
+      params.maxAutoSlippage = "0.99"; // okx max slippage should be less than 1
+    }
+
+    const feePercent = Number(getSWAP_FEE_BPS()) / 100;
+    const feeAccount = getSWAP_FEE_ACCOUNT();
+    if (feePercent && feeAccount) {
+      params.feePercent = feePercent.toString();
+      params.toTokenAddress === this.SOL_ADDRESS ?
+        params.toTokenReferrerWalletAddress = feeAccount :
+        params.fromTokenReferrerWalletAddress = feeAccount;
+    }
+
     return await okxService.getCallData(params);
   }
 
@@ -206,7 +249,7 @@ export class SwapTokenService {
   ): Promise<SwapTransaction> {
     const swapTransaction = swapData?.data?.[0]?.tx?.data;
     if (!swapTransaction) {
-      throw new Error(swapData?.msg || 'No swap transaction found');
+      throw new Error(swapData?.msg || 'Transaction router not found, please try again later');
     }
 
     const swapTransactionBuf = bs58.decode(swapTransaction);
@@ -273,5 +316,31 @@ export class SwapTokenService {
         `Transaction serialization failed: ${error instanceof Error ? error.message : 'unknown error'}`,
       );
     }
+  }
+
+  static async getTokenBalanceChange(
+    connection: Connection,
+    txSignature: string,
+    tokenAccount: PublicKey,
+  ) {
+    const tx = await connection.getParsedTransaction(txSignature, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0,
+    });
+
+    if (!tx || !tx.meta) {
+      throw new Error(`Transaction not found or metadata missing, ${txSignature}`);
+    }
+
+
+    const preBalance = tx.meta.preTokenBalances?.find(
+      (b) => tx.transaction.message.accountKeys[b.accountIndex].pubkey.toBase58() === tokenAccount.toBase58()
+    )?.uiTokenAmount.amount || '0';
+
+    const postBalance = tx.meta.postTokenBalances?.find(
+      (b) => tx.transaction.message.accountKeys[b.accountIndex].pubkey.toBase58() === tokenAccount.toBase58()
+    )?.uiTokenAmount.amount || '0';
+
+    return {preBalance, postBalance};
   }
 }

@@ -11,25 +11,25 @@ import {
   elizaLogger,
 } from '@elizaos/core';
 import {
-  Connection,
+  Connection, LAMPORTS_PER_SOL,
   PublicKey,
-  RpcResponseAndContext,
-  SignatureStatus,
-  VersionedTransaction,
 } from '@solana/web3.js';
 import { getWalletKey } from '../keypairUtils.js';
 import {
   isAgentAdmin,
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
-import { convertNullStrings, swapToken } from '../providers/swapUtils.js';
+import { convertNullStrings, getTradeSettings } from '../providers/swapUtils.js';
 import { NATIVE_MINT } from '@solana/spl-token';
-import { getSolanaClient, sleep } from '../providers/solana-client.js';
+import { getSolanaClient, SolanaClient } from '../providers/solanaClient.js';
 import {
   getTokenCABySymbol,
+  trimTokenSymbol,
   validateAndAssignCA,
 } from '../providers/tokenUtils.js';
 import { getRuntimeKey } from '../environment.js';
+import { SwapTokenService } from '../providers/swapTokenService';
+import { BigNumber } from 'bignumber.js';
 
 interface SwapTokenRequest {
   inputTokenSymbol: string;
@@ -207,65 +207,38 @@ async function handleExecuteSwap(
     callback,
   );
   if (!response) {
-    return true;
+    return false;
   }
 
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
   const { keypair } = await getWalletKey(runtime, true);
-  const walletPublicKey = keypair.publicKey;
-
-  const swapResult = await swapToken(
-    connection,
-    walletPublicKey,
-    response.inputTokenCA,
-    response.outputTokenCA,
-    response.inputTokenAmount,
-    runtime,
-    response.programId,
-  );
-
-  const transactionBuf = Buffer.from(swapResult.swapTransaction, 'base64');
-  const transaction = VersionedTransaction.deserialize(transactionBuf);
-  const estimateFee = await connection.getFeeForMessage(transaction.message);
-  transaction.sign([keypair]);
-  elizaLogger.log(`Sending transaction..., estimateFee: ${estimateFee.value}`);
-
+  const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(response.inputTokenCA);
+  const {slippage, priorityFee, tip, mode } = await getTradeSettings(runtime.agentId);
   let txid: string;
   try {
-    txid = await connection.sendTransaction(transaction, {
-      skipPreflight: false,
-      maxRetries: 3,
-      preflightCommitment: 'confirmed',
-    });
-  } catch (error) {
-    if (error.toString().includes('insufficient lamports')) {
-      callback?.({
-        text: 'insufficient balance to execute swap',
-        isError: true,
+    txid = await new SwapTokenService().swapToken(
+      {
+        connection,
+        userWalletAddress: keypair.publicKey.toBase58(),
+        inputTokenCA : response.inputTokenCA,
+        outputTokenCA: response.outputTokenCA,
+        amount: BigNumber(response.inputTokenAmount).multipliedBy(10 ** decimals).integerValue(),
+        slippage,
+        priorityFee,
+        keyPair :keypair,
+        mode,
+        tip: tip * LAMPORTS_PER_SOL,
       });
-      return;
-    }
-    throw error;
-  }
-
-  elizaLogger.log('Transaction sent:', txid);
-
-  let confirmation: RpcResponseAndContext<SignatureStatus | null>;
-
-  for (let i = 0; i < 10; i++) {
-    await sleep(1000);
-    confirmation = await connection.getSignatureStatus(txid, {
-      searchTransactionHistory: false,
+  }catch (e){
+    elizaLogger.error(`Error occurred while executing swap: ${e}`);
+    callback?.({
+      text: `${e}`,
+      isError: true,
     });
-
-    if (confirmation.value) {
-      break;
-    }
+    return false;
   }
-
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
-
   const responseMsg = {
     text: `Swap completed successfully! Transaction ID: ${txid}`,
   };
@@ -325,6 +298,7 @@ async function checkResponse(
     if (!swapReq.inputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid inputToken CA you want to sell',
+        result: 'Pending inputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -339,6 +313,7 @@ async function checkResponse(
     if (!swapReq.outputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid outputToken CA you want to buy',
+        result: 'Pending outputToken CA',
       };
       callback?.(responseMsg);
       return null;
@@ -354,6 +329,7 @@ async function checkResponse(
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
+      result: 'Pending outputToken Amount',
     });
   }
 
@@ -374,6 +350,7 @@ async function checkResponse(
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'EXECUTE_SWAP',
+      result: 'Pending inputToken Amount',
     };
     callback?.(responseMsg);
     return null;
@@ -383,6 +360,7 @@ async function checkResponse(
   if (!balance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
+      result: 'Insufficient inputToken Balance',
     };
     callback?.(responseMsg);
   }
@@ -390,6 +368,7 @@ async function checkResponse(
   if (balance < swapReq.inputTokenAmount) {
     const responseMsg = {
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
+      result: 'Insufficient balance for swap',
     };
     callback?.(responseMsg);
     return null;
@@ -407,6 +386,7 @@ async function checkResponse(
         text:
           `Insufficient balance for swap gas fee, required: ${GAS_BALANCE} SOL but only have: ` +
           balance,
+        result: 'Insufficient balance for swap gas fee',
       };
       callback?.(responseMsg);
       return null;
@@ -419,6 +399,7 @@ async function checkResponse(
       text:
         `Insufficient balance for swap gas fee, required: ${requiredAmount} SOL but only have: ` +
         WSOL_AMOUNT,
+      result: 'Insufficient balance for swap gas fee',
     };
     callback?.(responseMsg);
     return null;
@@ -441,6 +422,7 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'rejected') {
     const responseMsg = {
       text: 'ok. I will not execute this transaction.',
+      result: 'User rejected the swap',
     };
     callback?.(responseMsg);
     return null;
@@ -458,6 +440,7 @@ async function checkResponse(
     const responseMsg = {
       text: `${swapInfo}`,
       action: 'EXECUTE_SWAP',
+      result: 'User pending the swap',
     };
     callback?.(responseMsg);
     return null;
@@ -474,36 +457,36 @@ function formatConfirmSwapInfo(params: {
   inputTokenAmount: number;
   inputPercentage: string;
 }): string {
+  const displayedInputSymbol = trimTokenSymbol(`$${params.inputTokenSymbol || params.inputTokenCA}`);
+  const displayedOutputSymbol = trimTokenSymbol(`$${params.outputTokenSymbol || params.outputTokenCA}`);
   if (
     params.inputTokenCA !== NATIVE_MINT.toBase58() &&
     params.outputTokenCA !== NATIVE_MINT.toBase58()
   ) {
     return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
-    ————
-    🔄 Type: Swap(swap $${params.inputTokenSymbol || params.inputTokenCA} for ${params.outputTokenSymbol || params.outputTokenCA})
-    🪙 $${params.inputTokenSymbol}: ${params.inputTokenCA}
-    🪙 $${params.outputTokenSymbol}: ${params.outputTokenCA}
-    💰 Swap amount: ${params.inputTokenAmount}
-    ————
-    Reply 'ok' or 'yes' to confirm.`;
+————
+🔄 Type: Swap(swap ${displayedInputSymbol} for ${displayedOutputSymbol})
+🪙 ${displayedInputSymbol}: ${params.inputTokenCA}
+🪙 ${displayedOutputSymbol}: ${params.outputTokenCA}
+💰 Swap amount: ${params.inputTokenAmount}
+————
+Reply 'ok' or 'yes' to confirm.`;
   }
   const swapType =
     params.outputTokenCA === NATIVE_MINT.toBase58() ? 'Sell' : 'Buy';
   const amountDescription =
     params.outputTokenCA === NATIVE_MINT.toBase58()
-      ? `${params.inputTokenAmount} (${params.inputPercentage}%)`
-      : `${params.inputTokenAmount} ${params.inputTokenSymbol}`;
+      ? `${displayedInputSymbol} (${params.inputPercentage}%)`
+      : `${params.inputTokenAmount} ${displayedInputSymbol}`;
   const tokenDescription =
     params.outputTokenCA === NATIVE_MINT.toBase58()
-      ? `$${params.inputTokenSymbol} (${params.inputTokenCA})`
-      : `$${params.outputTokenSymbol} (${params.outputTokenCA})`;
-  return `
-  Please confirm the info below. If any adjustments are needed, let me know the updated details.
-  ————
-  ⬆️ Type: ${swapType}
-  🪙 Token: ${tokenDescription}
-  💰 ${swapType} Amount: ${amountDescription}
-  ————
-  Reply 'ok' or 'yes' to confirm.
-  `;
+      ? `${displayedInputSymbol} (${params.inputTokenCA})`
+      : `${displayedOutputSymbol} (${params.outputTokenCA})`;
+  return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
+————
+⬆️ Type: ${swapType}
+🪙 Token: ${tokenDescription}
+💰 ${swapType} Amount: ${amountDescription}
+————
+Reply 'ok' or 'yes' to confirm.`;
 }

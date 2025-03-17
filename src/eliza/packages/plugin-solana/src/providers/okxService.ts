@@ -1,4 +1,4 @@
-import * as CryptoJS from 'crypto-js';
+import CryptoJS from 'crypto-js';
 
 interface Config {
   OK_ACCESS_KEY: string;
@@ -7,7 +7,7 @@ interface Config {
   OK_ACCESS_PROJECT: string;
 }
 
-class OKXService {
+class OkxService {
   private readonly targetUrl = 'https://www.okx.com';
   private readonly logger: Console;
 
@@ -18,6 +18,11 @@ class OKXService {
     this.logger = logger || console;
   }
 
+  private preParams(params: any) {
+    const searchParams = new URLSearchParams(params).toString();
+    return searchParams ? `?${searchParams}` : '';
+  }
+
   private preHash(
     timestamp: string,
     method: string,
@@ -26,8 +31,7 @@ class OKXService {
   ): string {
     let queryString = '';
     if (method === 'GET' && params) {
-      const searchParams = new URLSearchParams(params).toString();
-      queryString = searchParams ? `?${searchParams}` : '';
+      queryString = this.preParams(params);
     } else if (method === 'POST' && params) {
       queryString = JSON.stringify(params);
     }
@@ -84,7 +88,7 @@ class OKXService {
       'OK-ACCESS-PASSPHRASE': this.config.OK_ACCESS_PASSPHRASE,
     };
 
-    const url = `${this.targetUrl}${path}`;
+    const url = `${this.targetUrl}${path}${this.preParams(query)}`;
     this.logger.log(`Request URL: ${url}`);
     this.logger.log(`Headers: ${JSON.stringify(headers)}`);
 
@@ -99,6 +103,6 @@ const config: Config = {
   OK_ACCESS_PROJECT: process.env.OK_ACCESS_PROJECT!,
 };
 
-const okxService = new OKXService(config);
+const okxService = new OkxService(config);
 
 export default okxService;

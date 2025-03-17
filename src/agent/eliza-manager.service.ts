@@ -11,7 +11,7 @@ import {
   executeAutoTokenSwapTask,
 } from '@elizaos/plugin-solana';
 import { TEEMode } from '@elizaos/plugin-tee';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Timeout } from '@nestjs/schedule';
 import { Keypair } from '@solana/web3.js';
@@ -270,35 +270,28 @@ export class ElizaManagerService {
       .updateOne({ agentId, id }, { $set: { status } });
   }
 
-  async updateCopyTrade(
-    agentId: string,
-    id: number,
-    { name, copySell, mode, status, fixedAmount, percentage }: CopyTrade,
-  ) {
-    const filter: any = { agentId };
-    if (id) {
-      filter.id = id;
+  async updateCopyTrade(agentId: string, id: number, {name, copySell, mode, status, fixedAmount, percentage}: CopyTrade){
+    const filter: any = { agentId }
+    if (id){
+      filter.id = id
     }
 
     const copyTrade = await this.mongoService.copyTrades.findOne(filter);
-    if (!copyTrade?.id) {
+    if (!copyTrade?.id){
       throw new BadRequestException('Copy trade not exists');
     }
-    await this.mongoService.copyTrades.updateOne(
-      filter,
-      {
-        $set: {
-          copySell,
-          name,
-          mode,
-          status,
-          fixedAmount,
-          percentage,
-        },
-        $setOnInsert: { agentId, id },
+    await this.mongoService.copyTrades.updateOne(filter, {
+      $set: {
+        copySell,
+        name,
+        mode,
+        status,
+        fixedAmount,
+        percentage,
       },
-      { upsert: true },
-    );
+      $setOnInsert: { agentId, id },
+    }, { upsert: true }  );
+
   }
 
   async getCopyTrades(agentId: string) {
@@ -483,7 +476,7 @@ export class ElizaManagerService {
 
   async ensureAgentOwner(agentId: string, ownerAddress: string) {
     if (!(await this.isAgentOwner(agentId, ownerAddress))) {
-      throw new Error('You are not the owner of this Agent');
+      throw new ForbiddenException('You are not the owner of this Agent');
     }
   }
 }

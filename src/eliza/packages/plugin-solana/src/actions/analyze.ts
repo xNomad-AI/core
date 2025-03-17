@@ -69,7 +69,7 @@ export const analyze: Action = {
       callback?.({
         text: `Please provide either token symbol or contract address to analyze.`,
       });
-      return;
+      return false;
     }
 
     const analyzeResult = await getTokenInfo(
@@ -78,12 +78,21 @@ export const analyze: Action = {
       response.analyze,
     );
 
+    const isSuccess = analyzeResult.success;
+    if (!isSuccess) {
+      callback?.({
+        text: `Failed to analyze the token: ${analyzeResult.error}`,
+      });
+      return false;
+    }
+
+    const data = analyzeResult.data;
     callback?.({
-      text: `token: ${response.tokenSymbol || response.tokenAddress}`,
+      text: `token: ${response.tokenSymbol || response.tokenAddress}\n${JSON.stringify(data)}`,
       action: `ANALYZE_TOKEN`,
       webAction: 'analyze',
       data: {
-        ...analyzeResult,
+        ...data,
       },
     });
     return true;
@@ -113,17 +122,41 @@ async function getTokenInfo(
   tokenAddress: string | null,
   analyzeTypes: ['info' | 'news' | 'twitter'],
 ) {
-  const params = new URLSearchParams();
-  if (tokenAddress) params.append('tokenAddress', tokenAddress);
-  if (analyzeTypes.length) params.append('type', analyzeTypes.join(','));
-  const response = await fetch(
-    `http://localhost:8080/token/analyze?${params.toString()}`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+  try {
+    const params = new URLSearchParams();
+    if (tokenAddress) params.append('tokenAddress', tokenAddress);
+    if (analyzeTypes.length) params.append('type', analyzeTypes.join(','));
+
+    const response = await fetch(
+      `http://localhost:8080/token/analyze?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    },
-  );
-  return await response.json();
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data) {
+      throw new Error('No data received from server');
+    }
+
+    return {
+      success: true,
+      data: data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      data: null,
+    };
+  }
 }

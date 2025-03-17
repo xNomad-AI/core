@@ -94,6 +94,17 @@ export class SolanaClient {
     }
   }
 
+  async getTokenAccount(mintTokenAddress: string){
+    const programId = await this.getTokenProgramId(mintTokenAddress);
+    const associatedAccount = getAssociatedTokenAddressSync(
+      new PublicKey(mintTokenAddress),
+      this.publicKey,
+      false,
+      programId,
+    );
+    return associatedAccount;
+  }
+
   async getTokenProgramId(mintTokenAddress: string) {
     const address = new PublicKey(mintTokenAddress);
     const accountInfo = await this.connection.getParsedAccountInfo(address);
