@@ -337,6 +337,7 @@ async function checkResponse(
     !Number.isFinite(swapReq.inputTokenAmount) &&
     Number.isFinite(swapReq.inputTokenPercentage) &&
     swapReq.inputTokenPercentage != 0
+
   ) {
     const balance = await client.getUIBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
