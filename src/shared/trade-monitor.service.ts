@@ -213,6 +213,7 @@ export class TradeMonitorService {
     address: string;
     creatorAddress: string;
     nftId: string;
+    bound: boolean; // whether the token is bound to an nft
   }) {
     try {
       const response = await firstValueFrom(
@@ -223,6 +224,7 @@ export class TradeMonitorService {
             address: params.address,
             creatorAddress: params.creatorAddress,
             nftId: params.nftId,
+            bound: params.bound,
           },
           {
             headers: {
@@ -246,11 +248,19 @@ export class TradeMonitorService {
     offset: number;
     limit: number;
     creatorAddress?: string;
+    onlyBound?: boolean;
   }): Promise<GetAgentCreatedTokensResponse> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.endpoint}/ai-agent-coin/coins`, {
-          params,
+          params: {
+            sortBy: params.sortBy,
+            sortOrder: params.sortOrder,
+            offset: params.offset,
+            limit: params.limit,
+            creatorAddress: params.creatorAddress,
+            ...(params.onlyBound ? { onlyBound: '1' } : {}),
+          },
           headers: {
             'Content-Type': 'application/json',
             'API-KEY': this.apikey,
@@ -289,9 +299,18 @@ export class TradeMonitorService {
   async refreshAgentCreatedToken(address: string) {
     try {
       const response = await firstValueFrom(
-        this.httpService.post(`${this.endpoint}/ai-agent-coin/refresh-coin`, {
-          address,
-        }),
+        this.httpService.post(
+          `${this.endpoint}/ai-agent-coin/refresh-coin`,
+          {
+            address,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'API-KEY': this.apikey,
+            },
+          },
+        ),
       );
       return response.data;
     } catch (e) {
@@ -302,7 +321,7 @@ export class TradeMonitorService {
 
   async setOverrideMetadataForAgentCreatedToken(params: {
     address: string;
-    metadata: {
+    override: {
       description: string;
       twitter: string;
       telegram: string;
@@ -327,6 +346,27 @@ export class TradeMonitorService {
       this.logger.error(
         `Failed to set override metadata for agent created token: ${e}`,
       );
+      throw e;
+    }
+  }
+
+  async bindAgentCreatedTokenToNft(params: { address: string }) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.endpoint}/ai-agent-coin/bind-to-nft`,
+          params,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'API-KEY': this.apikey,
+            },
+          },
+        ),
+      );
+      return response.data;
+    } catch (e) {
+      this.logger.error(`Failed to bind agent created token to nft: ${e}`);
       throw e;
     }
   }

@@ -154,7 +154,13 @@ export class NftService implements OnApplicationBootstrap {
     ) {
       nftConfig.characterConfig.settings.secrets.TWITTER_HTTP_PROXY = '';
     }
-    return nftConfig;
+    return (
+      nftConfig || {
+        nftId,
+        chain: 'solana',
+        trade: DEFAULT_TRADE_SETTINGS,
+      }
+    );
   }
 
   async getTwitterHttpProxy(nftId: string) {
@@ -470,6 +476,9 @@ export class NftService implements OnApplicationBootstrap {
     if (token.creatorAddress !== agentWallet) {
       throw new Error('agent is not the creator of the token');
     }
+    await this.tradeMonitorService.bindAgentCreatedTokenToNft({
+      address: token.address,
+    });
 
     await this.mongo.nftPrimaryCoins.insertOne({
       chain,
@@ -492,7 +501,9 @@ export class NftService implements OnApplicationBootstrap {
       updatedAt: new Date(),
     });
 
-    await this.tradeMonitorService.refreshAgentCreatedToken(address);
+    await this.tradeMonitorService
+      .refreshAgentCreatedToken(address)
+      .catch(() => {});
   }
 
   async getPrimaryCoin(nftId: string) {
