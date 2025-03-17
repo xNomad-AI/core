@@ -35,7 +35,7 @@
 		"solana-agent-kit": "^1.4.0",
 		"tsup": "8.3.5",
 		"tweetnacl": "^1.0.3",
-		"vitest": "2.1.4",
+		"vitest": ">=2.1.9",
 		"zod": "3.23.8"
 	},
 	"scripts": {

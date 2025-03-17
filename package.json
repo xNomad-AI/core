@@ -23,7 +23,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "preinstall": "/bin/bash ./scripts/github-build.sh feat/function-call"
+    "preinstall": "/bin/bash ./scripts/github-build.sh zg/agent-router"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
@@ -108,7 +108,12 @@
   },
   "pnpm": {
     "overrides": {
-      "@elizaos/core": "file:data/eliza/packages/core"
+      "@elizaos/core": "file:data/eliza/packages/core",
+      "elliptic": ">=6.6.1",
+      "ws": ">=7.5.10",
+      "node-fetch": ">=2.6.7",
+      "path-to-regexp": ">=0.1.12",
+      "express": ">=5.0.0"
     }
   },
   "jest": {

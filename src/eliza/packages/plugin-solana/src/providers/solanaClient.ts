@@ -36,6 +36,7 @@ export class SolanaClient {
     this.publicKey = publicKey;
   }
 
+
   async getMintDecimals(token: string): Promise<number | undefined> {
     if (token === STANDARD_SOL_ADDRESS) {
       return 9;
