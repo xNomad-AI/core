@@ -4,7 +4,7 @@ import {
   createAssociatedTokenAccountInstruction,
   ACCOUNT_SIZE,
 } from '@solana/spl-token';
-import { elizaLogger } from '@elizaos/core';
+import { ActionStatus, elizaLogger } from '@elizaos/core';
 import {
   Connection,
   LAMPORTS_PER_SOL,
@@ -123,7 +123,6 @@ export const transfer: Action = {
       required: ['tokenSymbol', 'tokenAddress', 'recipient', 'amount'],
     },
   },
-  similes: ['TRANSFER_TOKEN', 'TRANSFER', 'WITHDRAW_TOKEN', 'WITHDRAW'],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
@@ -135,11 +134,11 @@ export const transfer: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
       callback?.(NotAgentAdminResponse);
-      return false;
+      return 'rejected';
     }
     const content = convertNullStrings(
       state.actionParameters,
@@ -149,14 +148,14 @@ export const transfer: Action = {
       callback({
         text: `Please provide the amount of tokens to transfer`,
       });
-      return true;
+      return 'pending';
     }
 
     if (!content.recipient) {
       callback({
         text: `Please provide the address to transfer the tokens to`,
       });
-      return true;
+      return 'pending';
     }
 
     if (!content.tokenAddress && content.tokenSymbol?.toUpperCase() === 'SOL') {
@@ -176,7 +175,7 @@ export const transfer: Action = {
         callback({
           text: `Please provide the token CA to transfer`,
         });
-        return false;
+        return 'pending';
       }
     }
 
@@ -197,7 +196,7 @@ export const transfer: Action = {
         text: 'ok. I will not execute this transaction.',
       };
       callback?.(responseMsg);
-      return null;
+      return 'success';
     }
 
     const solanaClient = new SolanaClient(
@@ -244,7 +243,7 @@ export const transfer: Action = {
         callback({
           text: `Token ${content.tokenAddress} not found. Please provide a valid token address.`,
         });
-        return false;
+        return 'pending';
       }
       const mintAmount = BigInt(
         new BigNumber(content.amount)
@@ -262,7 +261,7 @@ export const transfer: Action = {
           callback({
             text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
           });
-          return;
+          return 'failed';
         }
         transaction.add(
           SystemProgram.transfer({
@@ -296,7 +295,7 @@ export const transfer: Action = {
           callback({
             text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
           });
-          return;
+          return 'failed';
         }
         const senderTokenBalance =
           await connection.getTokenAccountBalance(senderATA);
@@ -307,7 +306,7 @@ export const transfer: Action = {
           callback({
             text: `Insufficient token balance. Sender has ${senderTokenBalance.value.uiAmount} ${content.tokenSymbol}, but needs ${content.amount} to complete the transfer.`,
           });
-          return;
+          return 'failed';
         }
         const instructions = [];
         if (!recipientATAInfo) {
@@ -344,7 +343,7 @@ export const transfer: Action = {
         callback({
           text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
         });
-        return;
+        return 'failed';
       }
       const signature = await sendAndConfirmTransaction(
         connection,
@@ -368,8 +367,7 @@ export const transfer: Action = {
           },
         });
       }
-
-      return true;
+      return 'success';
     } catch (error) {
       elizaLogger.error('Error during token transfer:', error);
       if (callback) {
@@ -378,27 +376,11 @@ export const transfer: Action = {
           content: { error: error.message },
         });
       }
-      return false;
+      return 'failed';
     }
   },
 
-  examples: [
-    [
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'Send 69 EZSIS BieefG47jAHCGZBxi2q87RDuHyGZyYC3vAzxpyu8pump to 9jW8FPr6BSSsemWPV22UUCzSqkVdTp6HTyPqeqyuBbCa',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'Sending the tokens now...',
-          action: 'SEND_TOKEN',
-        },
-      },
-    ],
-  ] as ActionExample[][],
+  examples: [] as ActionExample[][],
 } as Action;
 
 function formatTransferInfo(from: string, content): string {

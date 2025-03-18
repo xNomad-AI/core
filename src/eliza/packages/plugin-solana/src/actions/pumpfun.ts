@@ -24,7 +24,7 @@ import {
   generateObjectDeprecated,
   composeContext,
   type Action,
-  elizaLogger,
+  elizaLogger, ActionStatus,
 } from '@elizaos/core';
 
 import {
@@ -212,7 +212,6 @@ export default {
     },
   },
   name: 'CREATE_TOKEN',
-  similes: ['CREATE_PUMPFUN_TOKEN'],
   suppressInitialMessage: true,
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
@@ -225,12 +224,12 @@ export default {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     elizaLogger.log('Starting CREATE_TOKEN handler...');
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
       callback?.(NotAgentAdminResponse);
-      return false;
+      return 'rejected';
     }
     const content = convertNullStrings(state.actionParameters) as any;
     if (content.symbol?.startsWith('$')) {
@@ -266,19 +265,19 @@ export default {
       callback({
         text: `Please provide an image for the token.`,
       });
-      return false;
+      return 'pending';
     }
     if (!name) {
       callback({
         text: `Please provide a name for the token.`,
       });
-      return false;
+      return 'pending';
     }
     if (!symbol) {
       callback({
         text: `Please provide a symbol for the token.`,
       });
-      return false;
+      return 'pending';
     }
 
     elizaLogger.info(`checking if user confirm to execute`);
@@ -300,7 +299,7 @@ export default {
         text: 'ok. I will cancel the task.',
       };
       callback?.(responseMsg);
-      return null;
+      return 'cancelled';
     }
 
     if (confirmResponse.userAcked == 'pending') {
@@ -316,7 +315,7 @@ export default {
         ],
       };
       callback?.(responseMsg);
-      return null;
+      return 'pending';
     }
     const file = imageUrl ? await fs.openAsBlob(imageUrl) : null;
     const fullTokenMetadata: CreateTokenMetadata = {
@@ -406,6 +405,7 @@ export default {
           },
         },
       });
+      return 'success';
     } else {
       callback({
         text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
@@ -415,62 +415,14 @@ export default {
           mintAddress: result.ca,
         },
       });
+      return 'failed';
     }
   },
 
   examples: [
-    [
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'Create a new token called GLITCHIZA with symbol GLITCHIZA and generate a description about it on pump.fun, with twitter https://x.com/elonmusk, with website https://x.com, with telegram https://t.me/+El39K_BrnIVhOWM1, buy 0.0.00009 SOL worth.',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'Token GLITCHIZA (GLITCHIZA) created successfully on pump.fun!\nContract Address: 3kD5DN4bbA3nykb1abjS66VF7cYZkKdirX8bZ6ShJjBB\nCreator: 9jW8FPr6BSSsemWPV22UUCzSqkVdTp6HTyPqeqyuBbCa\nView at: https://pump.fun/EugPwuZ8oUMWsYHeBGERWvELfLGFmA1taDtmY8uMeX6r',
-          action: 'CREATE_TOKEN',
-          content: {
-            tokenInfo: {
-              symbol: 'GLITCHIZA',
-              address: 'EugPwuZ8oUMWsYHeBGERWvELfLGFmA1taDtmY8uMeX6r',
-              creator: '9jW8FPr6BSSsemWPV22UUCzSqkVdTp6HTyPqeqyuBbCa',
-              name: 'GLITCHIZA',
-              description: 'A GLITCHIZA token',
-              twitter: 'https://x.com/elonmusk',
-              website: 'https://x.com',
-              telegram: 'https://t.me/+El39K_BrnIVhOWM1',
-            },
-          },
-        },
-      },
-    ],
+    [],
   ] as ActionExample[][],
 } as Action;
-
-async function _uploadTokenMetadata(create: CreateTokenMetadata): Promise<any> {
-  elizaLogger.log(`Uploading token metadata to IPFS... ${create.name}`);
-  const formData = new FormData();
-  formData.append('name', create.name);
-  formData.append('symbol', create.symbol);
-  formData.append('description', create.description || '');
-  formData.append('twitter', create.twitter || '');
-  formData.append('telegram', create.telegram || '');
-  formData.append('website', create.website || '');
-  formData.append('file', create.file);
-  formData.append('showName', 'true');
-  try {
-    const response = await axios.post('https://pump.fun/api/ipfs', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error(`Upload failed: ${error.message}`);
-  }
-}
 
 function formatCreateTokenInfo(params: any): string {
   return `Please confirm the info below. If any adjustments are needed, let me know the updated details.

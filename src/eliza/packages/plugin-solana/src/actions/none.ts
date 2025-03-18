@@ -7,7 +7,7 @@ import {
   type Memory,
   ModelClass,
   type State,
-  type Action,
+  type Action, ActionStatus,
 } from '@elizaos/core';
 
 const chatTemplate = `
@@ -53,7 +53,7 @@ export const none: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     const chatContext = composeContext({
       state,
       template: chatTemplate,
@@ -65,7 +65,7 @@ export const none: Action = {
       modelClass: ModelClass.MEDIUM,
     });
     callback?.(response);
-    return true;
+    return 'success';
   },
   examples: [
     [
