@@ -59,7 +59,7 @@
     "@types/dockerode": "^3.3.34",
     "@web3-storage/w3up-client": "^17.1.2",
     "@willsoto/nestjs-prometheus": "^6.0.2",
-    "agent-twitter-client": "github:xNomad-AI/agent-twitter-client#main",
+    "agent-twitter-client": "git+https://github.com/xNomad-AI/agent-twitter-client.git#main",
     "amqplib": "^0.10.5",
     "bignumber.js": "9.1.2",
     "async-retry": "^1.3.3",
