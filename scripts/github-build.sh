@@ -13,7 +13,7 @@ if [ -d "$TARGET_DIR" ]; then
   git fetch --all
   if [ "$CURRENT_BRANCH" == "$VERSION" ]; then
       git fetch --all
-      git pull origin "$VERSION"
+      git pull origin "$VERSION" --rebase
       echo "Latest changes pulled."
     else
       echo "Switching to branch $VERSION..."
