@@ -76,7 +76,11 @@ export const airdrop: Action = {
       return false;
     }
 
-    const airdrop = airdrops.find((a) => a.name === response.programName);
+    const airdrop =
+      airdrops.find((a) => a.name === response.programName) ||
+      airdrops.find((a) => a.name.toLowerCase() === response.programName.toLowerCase()) ||
+      airdrops.find((a) => a.name.toLowerCase().includes(response.programName.toLowerCase()));
+
     if (!airdrop) {
       const responseMsg = {
         text: `Airdrop [${response.programName ?? ''}] not found`,
