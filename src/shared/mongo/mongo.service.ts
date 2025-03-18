@@ -11,12 +11,13 @@ import {
   AINftActivity,
   AINftOwner,
   CollectionName,
+  CopyTrade,
+  CoreSettings,
   KeyStore,
   NftConfig,
   NftPrimaryCoin,
   NftPrologues,
-  CoreSettings,
-  CopyTrade,
+  Swarm,
 } from './types.js';
 
 @Injectable()
@@ -126,6 +127,10 @@ export class MongoService implements OnModuleInit {
 
   get nftPrimaryCoins() {
     return this.getCollection<NftPrimaryCoin>('nftPrimaryCoins');
+  }
+
+  get swarms() {
+    return this.getCollection<Swarm>('swarms');
   }
 
   get addressNonces() {
