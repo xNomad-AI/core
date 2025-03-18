@@ -8,7 +8,7 @@ import {
   elizaLogger,
   composeContext,
   generateObjectDeprecated,
-  ModelClass,
+  ModelClass, ActionStatus,
 } from '@elizaos/core';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { isValidAddress } from '../providers/tokenUtils.js';
@@ -123,12 +123,12 @@ export const copyTrade: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     // check if the swap request is from agent owner or public chat
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
       callback?.(NotAgentAdminResponse);
-      return null;
+      return 'rejected';
     }
 
     let response = convertNullStrings(
@@ -143,7 +143,7 @@ export const copyTrade: Action = {
         text: `Please provide a valid wallet address to copy trade.`,
         action: 'COPY_TRADE',
       });
-      return;
+      return 'pending';
     }
 
     if (Number.isFinite(response.fixedAmount) && response.fixedAmount > 0) {
@@ -159,7 +159,7 @@ export const copyTrade: Action = {
         text: `Please provide a valid input amount or percentage to copy trade.`,
         action: 'COPY_TRADE',
       });
-      return;
+      return 'pending';
     }
 
     const wallet = await getWalletKey(runtime, true);
@@ -174,7 +174,7 @@ export const copyTrade: Action = {
       callback({
         text: 'You have already set copy trade of this address. You can edit the copy trade on the [Tasks] subpage.'
       });
-      return;
+      return 'failed';
     }
     elizaLogger.log('COPY_TRADE:', response);
 
@@ -195,7 +195,7 @@ export const copyTrade: Action = {
         text: 'ok. I will not set this.',
       };
       callback?.(responseMsg);
-      return null;
+      return 'cancelled';
     }
 
     if (confirmResponse.userAcked == 'pending') {
@@ -203,7 +203,7 @@ export const copyTrade: Action = {
         text: `${formatConfirmMessage(response)}`,
       };
       callback?.(responseMsg);
-      return null;
+      return 'pending';
     }
 
     const {id} = await SharedProvider.get<any>(
@@ -224,7 +224,7 @@ export const copyTrade: Action = {
       text: `Copy trade created successfully.`,
       action: `COPY_TRADE`,
     });
-    return true;
+    return 'success';
   },
 
   examples: [] as ActionExample[][],
