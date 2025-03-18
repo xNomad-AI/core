@@ -11,6 +11,11 @@ import {
 } from '@elizaos/core';
 
 const chatTemplate = `
+# Task: Carefully analyze the conversation context and generate response message.
+**Format** 
+    { 
+    "text": "<string>"
+} 
 # Knowledge 
 {{knowledge}} 
  
@@ -21,13 +26,7 @@ About {{agentName}}:
 {{attachments}} 
   
 {{recentMessages}} 
-
-# Task: Carefully analyze the conversation context and generate response message.
-**Format** 
-    { 
-    "user": "{{agentName}}", 
-    "text": "<string>",  
-} `;
+`;
 export const none: Action = {
   functionCallSpec: {
     name: 'none',
