@@ -1,3 +1,4 @@
+import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module.js';
 import { LaunchCoinService } from './launch-coin.service.js';
@@ -8,7 +9,7 @@ import { SwarmController } from './swarm.controller.js';
 import { SwarmService } from './swarm.service.js';
 
 @Module({
-  imports: [AgentModule],
+  imports: [HttpModule, AgentModule],
   providers: [
     LaunchpadService,
     LaunchCoinService,
