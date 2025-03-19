@@ -7,7 +7,9 @@ export class AuthService {
 
   getAccessToken(payload: object): { accessToken: string } {
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken: this.jwtService.sign(payload, {
+        expiresIn: '2d',
+      }),
     };
   }
 }
