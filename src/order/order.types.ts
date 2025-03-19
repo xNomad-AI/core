@@ -14,6 +14,10 @@ export enum OrderType {
   CANCEL_OFFER = 'cancel_offer',
 }
 
+export enum Marketplace {
+  MAGIC_EDEN = 'magiceden',
+}
+
 export interface Order {
   _id?: string;
   txHash: string;
@@ -38,4 +42,50 @@ export interface ListNFTParams {
   tokenMintAddress: string;
   tokenAccountAddress: string;
   price: number;
+  sellerReferral?: string;
+  expiry?: number;
+  priorityFee?: number;
+}
+
+export interface BidNFTParams {
+  buyerAddress: string;
+  tokenMintAddress: string;
+  price: number;
+  buyerReferralAddress?: string;
+  expiry?: number;
+  priorityFee?: number;
+}
+
+export interface AcceptOfferParams {
+  buyerAddress: string;
+  sellerAddress: string;
+  tokenMintAddress: string;
+  tokenATAAddress: string;
+  price: number;
+  newPrice: number;
+  sellerExpiry: number;
+  buyerReferralAddress?: string;
+  sellerReferralAddress?: string;
+  buyerExpiry?: number;
+  priorityFee?: number;
+}
+
+
+export interface CancelListingParams {
+  sellerAddress: string;
+  tokenMintAddress: string;
+  tokenAccountAddress: string;
+  price: number;
+  sellerReferralAddress?: string;
+  expiry?: number;
+  priorityFee?: number;
+}
+
+export interface CancelOfferParams {
+  buyerAddress: string;
+  tokenMintAddress: string;
+  price: number;
+  buyerReferralAddress?: string;
+  expiry?: number;
+  priorityFee?: number;
 }

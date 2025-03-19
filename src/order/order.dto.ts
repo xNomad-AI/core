@@ -19,77 +19,47 @@ export class ListNFTDto {
 
   @IsNumber()
   @Min(0)
+  @IsNotEmpty()
   price: number;
-}
 
-export class BuyNFTDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  tokenMintAddress: string;
+  sellerReferralAddress?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  tokenAccountAddress: string;
-
-  @IsString()
-  @IsNotEmpty()
-  sellerAddress: string;
-
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  price: number;
+  expiry?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  priorityFee?: number;
 }
 
-export class MakeOfferDto {
+export class BidNFTDto {
   @IsString()
   @IsNotEmpty()
   tokenMintAddress: string;
 
   @IsNumber()
   @Min(0)
+  @IsNotEmpty()
   price: number;
-}
 
-export class AcceptOfferDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  tokenMintAddress: string;
+  buyerReferralAddress?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  tokenAccountAddress: string;
-
-  @IsString()
-  @IsNotEmpty()
-  buyerAddress: string;
-
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  price: number;
-}
+  expiry?: number;
 
-export class CancelListingDto {
-  @IsString()
-  @IsNotEmpty()
-  tokenMintAddress: string;
-
-  @IsString()
-  @IsNotEmpty()
-  tokenAccountAddress: string;
-
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  price: number;
-}
-
-export class CancelOfferDto {
-  @IsString()
-  @IsNotEmpty()
-  tokenMintAddress: string;
-
-  @IsNumber()
-  @Min(0)
-  price: number;
+  priorityFee?: number;
 }
 
 export class GetOrdersDto {
@@ -120,4 +90,120 @@ export class GetNFTOffersDto {
   @IsString()
   @IsNotEmpty()
   tokenMintAddress: string;
-} 
+}
+
+
+export class AcceptOfferDto {
+  @IsString()
+  @IsNotEmpty()
+  buyerAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  sellerAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tokenMintAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tokenATAAddress: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsNotEmpty()
+  price: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsNotEmpty()
+  newPrice: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsNotEmpty()
+  sellerExpiry: number;
+
+  @IsOptional()
+  @IsString()
+  buyerReferralAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  sellerReferralAddress?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  buyerExpiry?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  priorityFee?: number;
+}
+
+export class CancelListingDto {
+  @IsString()
+  @IsNotEmpty()
+  sellerAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tokenMintAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tokenAccountAddress: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsNotEmpty()
+  price: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  expiry?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  priorityFee?: number;
+
+  @IsOptional()
+  @IsString()
+  sellerReferralAddress?: string;
+}
+
+
+// core/src/order/order.dto.ts
+export class CancelOfferDto {
+  @IsString()
+  @IsNotEmpty()
+  buyerAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tokenMintAddress: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsNotEmpty()
+  price: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  expiry?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  priorityFee?: number;
+
+  @IsOptional()
+  @IsString()
+  buyerReferralAddress?: string;
+}
