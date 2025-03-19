@@ -13,6 +13,7 @@ import { NftModule } from './nft/nft.module.js';
 import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { TokenModule } from './token/token.module.js';
+import { OrderModule } from './order/order.module.js';
 EventEmitter.defaultMaxListeners = 10;
 
 @Module({
@@ -35,6 +36,7 @@ EventEmitter.defaultMaxListeners = 10;
     LaunchpadModule,
     MetricsModule,
     CallbackModule,
+    OrderModule,
   ],
   controllers: [],
   providers: [],

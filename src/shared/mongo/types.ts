@@ -1,5 +1,6 @@
 import { Character } from '@elizaos/core';
 import { COLLECTIONS } from './configs.js';
+import { OrderStatus, OrderType } from '../../order/order.types.js';
 
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
@@ -192,3 +193,22 @@ export interface CopyTrade {
 }
 
 export type NonceType = 'claim' | 'login';
+
+export interface Order {
+  _id?: string;
+  txHash: string;
+  nftId: string;
+  chain: string;
+  contractAddress: string;
+  tokenId: string;
+  type: OrderType;
+  status: OrderStatus;
+  price: number;
+  from: string;
+  to: string;
+  timestamp: Date;
+  marketplace: string;
+  blockNumber?: number;
+  updatedAt: Date;
+  createdAt: Date;
+}

@@ -146,4 +146,18 @@ export const COLLECTIONS = [
       },
     ],
   },
+  {
+    db: DB_NAME,
+    name: 'orders',
+    indexes: [
+      { txHash: 1 },
+      { nftId: 1 },
+      { 'from': 1 },
+      { 'to': 1 },
+      { timestamp: -1 }
+    ],
+    uniqueIndexes: [
+      { txHash: 1 }
+    ],
+  },
 ] as const;
