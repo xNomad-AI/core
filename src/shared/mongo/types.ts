@@ -1,4 +1,5 @@
 import { Character } from '@elizaos/core';
+import { ObjectId } from 'mongodb';
 import { COLLECTIONS } from './configs.js';
 import { OrderStatus, OrderType } from '../../order/order.types.js';
 
@@ -193,6 +194,56 @@ export interface CopyTrade {
 }
 
 export type NonceType = 'claim' | 'login';
+
+export type SwarmMintStageKind = 'public' | 'whitelist';
+
+export interface SwarmMintStage {
+  name: string;
+  price: number;
+  maxMintsPerAddress: number;
+  startTime: number;
+  endTime: number;
+  whitelistAddresses?: string[];
+}
+
+export interface Swarm {
+  _id: ObjectId;
+  chain: string;
+  name: string;
+  logo: string;
+  description: string;
+  creatorInfo: {
+    address: string;
+    email: string;
+    recipientAddress: string;
+    royaltyBps: number;
+  };
+  socialMedia: {
+    website: string;
+    discord: string;
+    twitter: string;
+  };
+  aiAgentSettings: {
+    background: string;
+    style: string[];
+  };
+  mintStages: SwarmMintStage[];
+  allowBindAgentToken: boolean;
+
+  collectionAddress: string;
+  candyMachine: {
+    prefixName: string;
+    prefixUri: string;
+    address: string;
+    itemsLoaded: number;
+  };
+  maxSupply: number;
+  collectionMetadataUri: string;
+  nftMetadataUploaded: boolean;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface Order {
   _id?: string;

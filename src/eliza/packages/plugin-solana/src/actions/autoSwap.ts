@@ -10,7 +10,7 @@ import {
   type Action,
   elizaLogger,
   Content,
-  stringToUuid,
+  stringToUuid, ActionStatus,
 } from '@elizaos/core';
 import {
   Connection,
@@ -251,11 +251,6 @@ export const autoTask: Action = {
     },
   },
   name: 'AUTO_TASK',
-  similes: [
-    'AUTO_BUY_TOKEN_TASK',
-    'AUTO_SELL_TOKEN_TASK',
-    'AUTO_SWAP_TOKEN_TASK',
-  ],
   suppressInitialMessage: true,
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
@@ -268,16 +263,16 @@ export const autoTask: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
-    const task = await checkResponse(
+  ): Promise<ActionStatus> => {
+    const {task, status} = await checkResponse(
       runtime,
       message,
       state,
       _options,
       callback,
     );
-    if (!task) {
-      return true;
+    if (!status || status != 'success') {
+      return status || 'failed';
     }
     try {
       const content: Content = {
@@ -301,51 +296,17 @@ export const autoTask: Action = {
         text: `AutoTask Created Successfully`,
       };
       callback?.(responseMsg);
-      return true;
+      return 'success';
     } catch (error) {
       elizaLogger.error(`Error during autotask create:, ${error}`);
       const responseMsg = {
         text: `Emm... something went wrong, please try again later`,
       };
       callback?.(responseMsg);
-      return true;
+      return 'failed';
     }
   },
-  examples: [
-    [
-      {
-        user: '{{user1}}',
-        content: {
-          inputTokenSymbol: 'SOL',
-          inputTokenCA: 'So11111111111111111111111111111111111111112',
-          outputTokenSymbol: 'USDC',
-          outputTokenCA: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-          inputTokenAmount: 0.1,
-          priceCondition: 'below',
-          priceTarget: 0.99,
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: "Please confirm the autotask by replying with 'yes' or 'confirm'.",
-        },
-      },
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'yes',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'AutoTask Created',
-        },
-      },
-    ],
-    // Add more examples as needed
-  ] as ActionExample[][],
+  examples: [] as ActionExample[][],
 } as Action;
 
 async function checkResponse(
@@ -354,12 +315,15 @@ async function checkResponse(
   state: State,
   _options: { [key: string]: unknown },
   callback?: HandlerCallback,
-): Promise<AutoSwapTask | null> {
+): Promise<{
+  status: ActionStatus;
+  task?: AutoSwapTask;
+}> {
   // check if the swap request is from agent owner or public chat
   const isAdmin = await isAgentAdmin(runtime, message);
   if (!isAdmin) {
     callback?.(NotAgentAdminResponse);
-    return null;
+    return {status: 'rejected'};
   }
 
   // generate formatted response from chat
@@ -394,7 +358,7 @@ async function checkResponse(
         text: 'Please provide a valid inputToken CA you want to sell',
       };
       callback?.(responseMsg);
-      return null;
+      return {status: 'pending'};
     }
   }
 
@@ -408,7 +372,7 @@ async function checkResponse(
         text: 'Please provide a valid outputToken CA you want to buy',
       };
       callback?.(responseMsg);
-      return null;
+      return {status: 'pending'};
     }
   }
 
@@ -421,6 +385,7 @@ async function checkResponse(
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
     });
+    return {status: 'pending'};
   }
 
   if (
@@ -441,7 +406,7 @@ async function checkResponse(
       action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
-    return null;
+    return {status: 'pending'};
   }
 
   const balance = await client.getUIBalance(swapReq.inputTokenCA);
@@ -450,6 +415,7 @@ async function checkResponse(
       text: 'Your input balance is 0.',
     };
     callback?.(responseMsg);
+    return {status: 'failed'};
   }
 
   if (balance < swapReq.inputTokenAmount) {
@@ -457,7 +423,7 @@ async function checkResponse(
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
     };
     callback?.(responseMsg);
-    return null;
+    return {status: 'failed'};
   }
 
   const WSOL_AMOUNT = await client.getUIBalance(NATIVE_MINT.toBase58());
@@ -474,7 +440,7 @@ async function checkResponse(
           balance,
       };
       callback?.(responseMsg);
-      return null;
+      return {status: 'failed'};
     }
   } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BANANCE) {
     // buy with SOL
@@ -486,7 +452,7 @@ async function checkResponse(
         WSOL_AMOUNT,
     };
     callback?.(responseMsg);
-    return null;
+    return {status: 'failed'};
   }
 
   if (!swapReq.priceTarget && !swapReq.delay) {
@@ -494,7 +460,7 @@ async function checkResponse(
       text: "If you’d like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
     };
     callback?.(responseMsg);
-    return null;
+    return {status: 'pending'};
   }
 
   if (swapReq.delay) {
@@ -529,7 +495,7 @@ async function checkResponse(
       text: 'ok. I will not set the autotask.',
     };
     callback?.(responseMsg);
-    return null;
+    return {status: 'cancelled'};
   }
 
   if (confirmResponse.userAcked == 'pending') {
@@ -540,7 +506,7 @@ async function checkResponse(
       action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
-    return null;
+    return {status: 'pending'};
   }
 
   if (!isValidSPLTokenAddress(swapReq.tokenTarget)) {
@@ -549,7 +515,7 @@ async function checkResponse(
         ? swapReq.inputTokenCA
         : swapReq.outputTokenCA;
   }
-  return swapReq;
+  return {status: 'success', task: swapReq};
 }
 
 async function executeSwapTokenTx(
