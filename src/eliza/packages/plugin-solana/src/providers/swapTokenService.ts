@@ -1,8 +1,8 @@
-import { NATIVE_MINT } from '@solana/spl-token';
+import { getOrCreateAssociatedTokenAccount, NATIVE_MINT, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import {
   AddressLookupTableAccount,
   Connection,
-  Keypair,
+  Keypair, LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
   TransactionInstruction,
@@ -22,6 +22,7 @@ import {
   jitoValidatorNodeService,
 } from './validatorNodeService.js';
 import { getSWAP_FEE_ACCOUNT, getSWAP_FEE_BPS } from './swapUtils';
+import { SolanaClient } from './solanaClient';
 export class SwapTokenService {
   private readonly logger: Console;
   private readonly LAMPORTS_PER_SOL = 1000000000;
@@ -30,7 +31,156 @@ export class SwapTokenService {
     this.logger = console;
   }
 
-  async swapToken({
+
+  async swapTokenJupiter(
+    {
+      connection,
+      amount,
+      slippage,
+      inputTokenCA,
+      outputTokenCA,
+      priorityFee,
+      keyPair,
+      tip,
+      mode = 'FAST',
+    }:SwapTokenDto
+  ): Promise<any> {
+    try {
+      const walletPublicKey = keyPair.publicKey;
+      const client = new SolanaClient(connection.rpcEndpoint, walletPublicKey);
+      const inputProgramId = await client.getTokenProgramId(inputTokenCA);
+      const outProgramId = await client.getTokenProgramId(outputTokenCA);
+      // get or create fee token account after check to prevent invalid token account creation
+      // only add fee account if the token is not a 2022 token
+      // https://station.jup.ag/docs/swap-api/add-fees-to-swap#important-notes
+      let tokenFeeAccount: PublicKey = undefined;
+      let url = `https://api.jup.ag/swap/v1/quote?inputMint=${inputTokenCA}&outputMint=${outputTokenCA}&amount=${amount.toString()}&dynamicSlippage=true&autoSlippage=true&maxAccounts=64&onlyDirectRoutes=false&asLegacyTransaction=false&restrictIntermediateTokens=true`;
+      if (
+        getSWAP_FEE_BPS() !== undefined &&
+        getSWAP_FEE_ACCOUNT() !== undefined &&
+        !inputProgramId.equals(TOKEN_2022_PROGRAM_ID) &&
+        !outProgramId.equals(TOKEN_2022_PROGRAM_ID)
+      ) {
+         tokenFeeAccount = (
+          await getOrCreateAssociatedTokenAccount(
+            connection,
+            keyPair,
+            new PublicKey(inputTokenCA),
+            new PublicKey(getSWAP_FEE_ACCOUNT()),
+            true,
+            undefined,
+            undefined,
+            inputProgramId,
+          )
+        ).address;
+        url += `&platformFeeBps=${getSWAP_FEE_BPS()}`;
+      }
+
+      const quoteResponse = await fetch(url);
+      const quoteData = await quoteResponse.json();
+
+      if (!quoteData || quoteData.error) {
+        throw new Error(
+          `Failed to get quote: ${quoteData?.error || 'Unknown error'}`,
+        );
+      }
+
+      this.logger.log('Quote received:', quoteData);
+
+      const swapRequestBody: any = {
+        quoteResponse: quoteData,
+        userPublicKey: walletPublicKey.toBase58(),
+        feeAccount: tokenFeeAccount?.toBase58(),
+        prioritizationFeeLamports: {
+          priorityLevelWithMaxLamports: {
+            global: false,
+            maxLamports: (priorityFee || 0) * LAMPORTS_PER_SOL,
+            priorityLevel: 'veryHigh',
+          },
+        },
+      };
+
+      if (slippage){
+        swapRequestBody.slippageBps = Math.round(slippage * 10000);
+      }else{
+        swapRequestBody.dynamicComputeUnitLimit = true;
+        swapRequestBody.dynamicSlippage = true;
+      }
+
+      this.logger.log('Requesting swap with body:', swapRequestBody);
+
+      const swapResponse = await fetch('https://api.jup.ag/swap/v1/swap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(swapRequestBody),
+      });
+
+      const swapData = await swapResponse.json();
+
+      if (!swapData || !swapData.swapTransaction) {
+        throw new Error(
+          `Failed to get swap transaction: ${swapData?.error || 'No swap transaction returned'}`,
+        );
+      }
+
+      const transactionBuf = Buffer.from(swapData.swapTransaction, 'base64');
+      const tx = VersionedTransaction.deserialize(transactionBuf);
+      const validatorNode =
+        mode === 'FAST' ? bloxValidatorNodeService : jitoValidatorNodeService;
+      if (tip && tip > 0) {
+        const transferInstructions = await validatorNode.makeTransferInstruction(
+          walletPublicKey,
+          tip,
+        );
+        await this.appendInstruction(tx, connection, ...transferInstructions);
+      }
+
+      const simulation = await this.simulateTransaction(tx, connection);
+      if (simulation.value.err) {
+        throw new Error(
+          `Transaction simulation failed: ${JSON.stringify(simulation.value.err)}`,
+        );
+      }
+
+      const signedTx = await this.signTransaction(keyPair, tx);
+      const serializedTx = this.serializeTransaction(signedTx);
+
+      return await validatorNode.postSubmit(serializedTx);
+    } catch (error) {
+      this.logger.error('Error in swapToken:', error);
+      throw error;
+    }
+  }
+
+
+  async swapToken(req : SwapTokenDto): Promise<string> {
+    if (!isFinite(req.tip) || req.tip < 0.001 * this.LAMPORTS_PER_SOL) {
+      req.tip = 0.001 * this.LAMPORTS_PER_SOL;
+    }
+
+    if (!req.slippage || req.slippage < 0 || req.slippage > 1) {
+      throw new Error('Invalid slippage, slippage should be between 0 and 1');
+    }
+
+    if (req.mode === 'ANTI_MEV' && req.priorityFee < 0.018) {
+      throw new Error(
+        'In ANTI_MEV mode, priority fee should be greater than 0.018',
+      );
+    }
+
+    this.logger.info(
+      `[swap token] Swapping ${req.amount} ${req.inputTokenCA} to ${req.outputTokenCA}`,
+    );
+
+    if (!req.connection || !req.userWalletAddress) {
+      throw new Error('Missing required parameters');
+    }
+    return await this.swapTokenJupiter(req);
+  }
+
+  async swapTokenOkx({
                     connection,
                     amount,
                     slippage,
@@ -42,37 +192,13 @@ export class SwapTokenService {
                     mode = 'FAST',
                     userWalletAddress,
                   }: SwapTokenDto): Promise<string> {
+    if (inputTokenCA === NATIVE_MINT.toBase58()) {
+      inputTokenCA = this.SOL_ADDRESS;
+    }
+    if (outputTokenCA === NATIVE_MINT.toBase58()) {
+      outputTokenCA = this.SOL_ADDRESS;
+    }
     try {
-
-      if (inputTokenCA === NATIVE_MINT.toBase58()) {
-        inputTokenCA = this.SOL_ADDRESS;
-      }
-      if (outputTokenCA === NATIVE_MINT.toBase58()) {
-        outputTokenCA = this.SOL_ADDRESS;
-      }
-
-      if (!isFinite(tip) || tip < 0.001 * this.LAMPORTS_PER_SOL) {
-        tip = 0.001 * this.LAMPORTS_PER_SOL;
-      }
-
-      if (!slippage || slippage < 0 || slippage > 1) {
-        throw new Error('Invalid slippage, slippage should be between 0 and 1');
-      }
-
-      if (mode === 'ANTI_MEV' && priorityFee < 0.018) {
-        throw new Error(
-          'In ANTI_MEV mode, priority fee should be greater than 0.018',
-        );
-      }
-
-      this.logger.info(
-        `[swap token] Swapping ${amount} ${inputTokenCA} to ${outputTokenCA}`,
-      );
-
-      if (!connection || !userWalletAddress) {
-        throw new Error('Missing required parameters');
-      }
-
       const validatorNode =
         mode === 'FAST' ? bloxValidatorNodeService : jitoValidatorNodeService;
 
