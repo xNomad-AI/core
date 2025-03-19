@@ -25,7 +25,10 @@ export class AuthGuard implements CanActivate {
       const { chain, address } = await this.jwtService.verifyAsync(token);
       request['X-USER-ADDRESS'] = address;
       request['X-USER-CHAIN'] = chain;
-    } catch {
+    } catch(error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token expired');
+      }
       throw new UnauthorizedException();
     }
     return true;
