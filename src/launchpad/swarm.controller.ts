@@ -78,19 +78,19 @@ export class SwarmController {
 
   @Post('upload-nft-metadata')
   // @UseInterceptors(FileInterceptor('file'))
-  async uploadNftMetadata(@Body() body: { swarmId: string; url: string }) {
+  async uploadNftMetadata(@Body() body: { swarmId: string; viewUrl: string }) {
     const swarm = await this.swarmService.getSwarmById(body.swarmId);
     if (!swarm) {
       throw new Error('Swarm not found');
     }
 
     const file = await firstValueFrom(
-      this.httpService.get(body.url, { responseType: 'arraybuffer' }),
+      this.httpService.get(body.viewUrl, { responseType: 'arraybuffer' }),
     )
       .then((resp) => Buffer.from(resp.data))
       .catch((err) => {
         throw new Error(
-          `Failed to download metadata file, swarmId: ${body.swarmId}, url: ${body.url}, error: ${err}`,
+          `Failed to download metadata file, swarmId: ${body.swarmId}, url: ${body.viewUrl}, error: ${err}`,
         );
       });
 

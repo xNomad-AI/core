@@ -24,8 +24,6 @@ import {
 import {
   convertNullStrings, getTradeSettings,
   md5sum,
-  submitTransaction,
-  swapToken,
 } from '../providers/swapUtils.js';
 import {
   getSwapTokenPrice,
