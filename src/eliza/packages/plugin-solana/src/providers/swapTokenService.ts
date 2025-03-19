@@ -91,14 +91,21 @@ export class SwapTokenService {
         quoteResponse: quoteData,
         userPublicKey: walletPublicKey.toBase58(),
         feeAccount: tokenFeeAccount?.toBase58(),
-        prioritizationFeeLamports: {
+      };
+
+      if (mode === 'ANTI_MEV'){
+        swapRequestBody.prioritizationFeeLamports = {
+          jitoTipLamports: (priorityFee) * LAMPORTS_PER_SOL
+        }
+      }else {
+        swapRequestBody.prioritizationFeeLamports = {
           priorityLevelWithMaxLamports: {
             global: false,
             maxLamports: (priorityFee || 0) * LAMPORTS_PER_SOL,
             priorityLevel: 'veryHigh',
           },
-        },
-      };
+        }
+      }
 
       if (slippage){
         swapRequestBody.slippageBps = Math.round(slippage * 10000);
