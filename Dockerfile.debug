@@ -1,6 +1,6 @@
 FROM node:23.5.0-bookworm AS base
 
-WORKDIR /app
+WORKDIR /opt/app
 
 RUN npm install -g pnpm@9.15.2
 RUN apt-get update && \
@@ -8,4 +8,5 @@ RUN apt-get update && \
 
 COPY . .
 
+# node_modules/, data/ will be mounted from host
 CMD [ "pnpm", "start:full" ]
