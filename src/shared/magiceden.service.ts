@@ -22,7 +22,7 @@ export class MagicEdenService {
     this.logger.setContext(MagicEdenService.name);
     this.baseUrl = this.configService.get<string>('MAGIC_EDEN_BASE_URL');
     this.connection = new Connection(this.configService.get<string>('SOLANA_RPC_URL'), 'confirmed');
-    this.auctionHouseAddress = this.configService.get<string>('MAGIC_EDEN_AUCTION_HOUSE_ADDRESS');
+    this.auctionHouseAddress = this.configService.get<string>('MAGIC_EDEN_AUCTION_HOUSE_ADDRESS') || 'E8cU1WiRWjanGxmn96ewBgk9vPTcL6AEZ1t6F6fkgUWe';
   }
 
   /**

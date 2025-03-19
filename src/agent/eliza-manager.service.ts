@@ -185,6 +185,10 @@ export class ElizaManagerService {
       .db('agent')
       .collection('memories')
       .deleteMany(filter);
+    await this.mongoService.client
+      .db('agent')
+      .collection('tasks')
+      .deleteMany(filter);
   }
 
   getElizaEnvs(): Record<string, string> {

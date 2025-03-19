@@ -160,4 +160,10 @@ export const COLLECTIONS = [
       { txHash: 1 }
     ],
   },
+  {
+    db: DB_NAME,
+    name: 'swarms',
+    indexes: [],
+    uniqueIndexes: [],
+  },
 ] as const;

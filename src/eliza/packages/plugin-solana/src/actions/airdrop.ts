@@ -7,6 +7,7 @@ import {
   type Memory,
   ModelClass,
   type State,
+  type ActionStatus,
   type Action,
   elizaLogger,
 } from '@elizaos/core';
@@ -50,11 +51,11 @@ export const airdrop: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
       callback?.(NotAgentAdminResponse);
-      return false;
+      return 'rejected';
     }
     const response = convertNullStrings(state.actionParameters);
     elizaLogger.log('Response:', response);
@@ -64,7 +65,7 @@ export const airdrop: Action = {
         action: 'CLAIM_AIRDROP',
       };
       callback?.(responseMsg);
-      return true;
+      return 'pending';
     }
 
     const airdrops = await getAirdrops(runtime, message);
@@ -73,24 +74,28 @@ export const airdrop: Action = {
         text: `It looks like you don’t have any airdrops available right now.`,
       };
       callback?.(responseMsg);
-      return false;
+      return 'rejected';
     }
 
-    const airdrop = airdrops.find((a) => a.name === response.programName);
+    const airdrop =
+      airdrops.find((a) => a.name === response.programName) ||
+      airdrops.find((a) => a.name.toLowerCase() === response.programName.toLowerCase()) ||
+      airdrops.find((a) => a.name.toLowerCase().includes(response.programName.toLowerCase()));
+
     if (!airdrop) {
       const responseMsg = {
         text: `Airdrop [${response.programName ?? ''}] not found`,
         action: 'CLAIM_AIRDROP',
       };
       callback?.(responseMsg);
-      return false;
+      return 'failed';
     }
     if (airdrop.rules.claimMethod != 'http' || !airdrop.rules.claimUrl) {
       const responseMsg = {
         text: `Only http claim method is supported now. Claim URL: ${response.airdrop.claimUrl}`,
       };
       callback?.(responseMsg);
-      return false;
+      return 'failed';
     }
 
     const { keypair } = await getWalletKey(runtime, true);
@@ -102,13 +107,13 @@ export const airdrop: Action = {
           text: `Airdrop claimed successfully. Please wait and check your wallet for the airdrop.`,
         };
         callback?.(responseMsg);
-        return true;
+        return 'success';
       } else {
         const responseMsg = {
           text: message ? message : `claim airdrop failed`,
         };
         callback?.(responseMsg);
-        return false;
+        return 'failed';
       }
     } catch (error) {
       elizaLogger.error(`Error during claim airdrop ${error}`);
@@ -116,26 +121,10 @@ export const airdrop: Action = {
         text: `Error during claim airdrop: ${error}`,
       };
       callback?.(responseMsg);
-      return false;
+      return 'failed';
     }
   },
-  examples: [
-    [
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'claim airdrop of [Xnomad AI Initial funds]',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: '[Xnomad AI Initial funds] Airdrop claimed successfully. 0.01 SOL will be transferred to your wallet.',
-          action: 'CLAIM_AIRDROP',
-        },
-      },
-    ],
-  ] as ActionExample[][],
+  examples: [] as ActionExample[][],
 } as Action;
 
 interface AirdropRegistry {

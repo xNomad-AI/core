@@ -9,7 +9,7 @@ import {
   composeContext,
   generateObjectDeprecated,
   ModelClass,
-  elizaLogger,
+  elizaLogger, ActionStatus,
 } from '@elizaos/core';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getTokensBySymbol } from '../providers/tokenUtils.js';
@@ -44,7 +44,6 @@ export const analyze: Action = {
   },
   name: 'ANALYZE_TOKEN',
   suppressInitialMessage: true,
-  similes: ['ANALYZE_TOKEN_INFO', 'TOKEN_REPORT'],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
@@ -56,7 +55,7 @@ export const analyze: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     let response = convertNullStrings(state.actionParameters) as any;
     elizaLogger.log('ANALYZE_TOKEN Response:', response);
 
@@ -69,7 +68,7 @@ export const analyze: Action = {
       callback?.({
         text: `Please provide either token symbol or contract address to analyze.`,
       });
-      return false;
+      return 'pending';
     }
 
     const analyzeResult = await getTokenInfo(
@@ -82,39 +81,24 @@ export const analyze: Action = {
     if (!isSuccess) {
       callback?.({
         text: `Failed to analyze the token: ${analyzeResult.error}`,
+
       });
-      return false;
+      return 'failed';
     }
 
     const data = analyzeResult.data;
     callback?.({
       text: `token: ${response.tokenSymbol || response.tokenAddress}\n${JSON.stringify(data)}`,
+      status: 'success',
       action: `ANALYZE_TOKEN`,
       webAction: 'analyze',
       data: {
         ...data,
       },
     });
-    return true;
+    return 'success';
   },
-
-  examples: [
-    [
-      {
-        user: '{{user1}}',
-        content: {
-          text: '$HOOD',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: '$HOOD, a memecoin inspired by Robinhood, aims to offer wealth and financial freedom. Its narrative focuses on empowering the average investor.',
-          action: 'ANALYZE_TOKEN',
-        },
-      },
-    ],
-  ] as ActionExample[][],
+  examples: [] as ActionExample[][],
 } as Action;
 
 async function getTokenInfo(

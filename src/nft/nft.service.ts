@@ -154,13 +154,7 @@ export class NftService implements OnApplicationBootstrap {
     ) {
       nftConfig.characterConfig.settings.secrets.TWITTER_HTTP_PROXY = '';
     }
-    return (
-      nftConfig || {
-        nftId,
-        chain: 'solana',
-        trade: DEFAULT_TRADE_SETTINGS,
-      }
-    );
+    return nftConfig;
   }
 
   async getTwitterHttpProxy(nftId: string) {

@@ -9,7 +9,7 @@ import {
   composeContext,
   generateObjectDeprecated,
   ModelClass,
-  elizaLogger,
+  elizaLogger, ActionStatus,
 } from '@elizaos/core';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getWalletPortfolio } from '../providers/walletUtils.js';
@@ -46,7 +46,6 @@ export const walletPortfolio: Action = {
   },
   name: 'WALLET_PORTFOLIO',
   suppressInitialMessage: true,
-  similes: ['WALLET_INFO'],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
@@ -58,7 +57,7 @@ export const walletPortfolio: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     const response = convertNullStrings(state.actionParameters) as any;
     elizaLogger.log('WALLET_PORTFOLIO Response:', response);
 
@@ -69,7 +68,7 @@ export const walletPortfolio: Action = {
         callback?.({
           text: `Your wallet balance is ${portfolio?.totalUsd} USD.`,
         });
-        return;
+        return 'success';
       case 'tokenBalance':
         const tokenInfo = portfolio?.items.find(
           (item) =>
@@ -79,13 +78,14 @@ export const walletPortfolio: Action = {
         callback?.({
           text: `${response.tokenSymbol} balance in my wallet is ${tokenInfo?.uiAmount}, it is worth $${tokenInfo?.valueUsd} now.`,
         });
-        return;
+        return 'success';
       default:
         callback?.({
           text: `Sorry, I don't support the query now`,
         });
+        return 'failed';
     }
-    return true;
+    return 'success';
   },
 
   examples: [
