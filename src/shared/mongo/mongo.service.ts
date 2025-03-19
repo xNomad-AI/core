@@ -17,6 +17,7 @@ import {
   NftPrologues,
   CoreSettings,
   CopyTrade,
+  Order,
 } from './types.js';
 
 @Injectable()
@@ -152,5 +153,9 @@ export class MongoService implements OnModuleInit {
   async getKeyStore(key: string, session?) {
     const result = await this.keyStore.findOne({ key }, { session });
     return result?.value;
+  }
+
+  get orders() {
+    return this.getCollection<Order>('orders');
   }
 }
