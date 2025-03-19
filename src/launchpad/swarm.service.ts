@@ -1,19 +1,27 @@
 import { createCollection, ruleSet } from '@metaplex-foundation/mpl-core';
 import {
   addConfigLines,
+  CANDY_GUARD_DATA,
+  CandyGuardProgram,
   create as createCandyMachine,
+  DefaultGuardSetArgs,
   DefaultGuardSetMintArgs,
   fetchCandyGuard,
   fetchCandyMachine,
+  getCandyGuardDataSerializer,
+  getCandyMachineSize,
   getMerkleProof,
   getMerkleRoot,
+  GuardGroupArgs,
   mintV1,
+  mplCandyMachine,
   route,
   safeFetchAllowListProofFromSeeds,
   safeFetchCandyMachine,
   safeFetchMintCounterFromSeeds,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import {
+  ACCOUNT_HEADER_SIZE,
   createSignerFromKeypair,
   dateTime,
   isSome,
@@ -37,12 +45,16 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import bs58 from 'bs58';
+import { randomUUID } from 'crypto';
 import JSZip from 'jszip';
 import { ObjectId } from 'mongodb';
 import { AmazonS3 } from '../shared/amazon-s3.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { Swarm, SwarmMintStage } from '../shared/mongo/types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+
+const NAME_LENGTH = 5;
+const URI_LENGTH = 12;
 
 export interface CreateSwarmParams {
   name: string;
@@ -182,10 +194,10 @@ export class SwarmService {
     });
   }
 
-  async processNftMetadataFile(file: Express.Multer.File) {
+  async processNftMetadataFile(file: Buffer) {
     const launchpadConfig = this.getSwarmLaunchpadConfig();
 
-    const zip = await new JSZip().loadAsync(file.buffer);
+    const zip = await new JSZip().loadAsync(file);
     const entries = Object.entries(zip.files).filter(([, file]) => !file.dir);
 
     const sortEntries = (entries: [string, JSZip.JSZipObject][]) => {
@@ -240,7 +252,6 @@ export class SwarmService {
     };
   }
 
-  // TODO: add instruction to transfer some funds to the collection authority from the payer
   async constructCreateCollectionTx({
     umi,
     name,
@@ -250,8 +261,9 @@ export class SwarmService {
     collectionAuthorityAddress,
     royaltyBps,
     royaltyRecipient,
+    postInstructions,
   }: {
-    umi: Umi;
+    umi?: Umi;
     name: string;
     uri: string;
     payer: string;
@@ -259,7 +271,14 @@ export class SwarmService {
     collectionAuthorityAddress: string;
     royaltyBps: number;
     royaltyRecipient: string;
+    postInstructions?: TransactionInstruction[];
   }) {
+    umi =
+      umi ??
+      createUmi(this.config.get<string>('SOLANA_RPC_URL')!, {
+        commitment: 'processed',
+      }).use(mplCandyMachine());
+
     collection = collection ?? Keypair.generate();
     const collectionSigner = createSignerFromKeypair(umi, {
       secretKey: collection.secretKey,
@@ -294,7 +313,10 @@ export class SwarmService {
     return {
       collection,
       signers: [collection],
-      instructions: this.extractUmiTxBuilderInstructions(txBuilder),
+      instructions: [
+        ...this.extractUmiTxBuilderInstructions(txBuilder),
+        ...(postInstructions ?? []),
+      ],
     };
   }
 
@@ -336,37 +358,12 @@ export class SwarmService {
       itemsAvailable: maxSupply,
       configLineSettings: some({
         prefixName,
-        nameLength: 5,
+        nameLength: NAME_LENGTH,
         prefixUri,
-        uriLength: 12,
+        uriLength: URI_LENGTH,
         isSequential: false,
       }),
-      groups:
-        mintStages.length > 0
-          ? mintStages.map((stage, index) => ({
-              label: String(index),
-              guards: {
-                startDate: some({ date: dateTime(new Date(stage.startTime)) }),
-                endDate: some({ date: dateTime(new Date(stage.endTime)) }),
-                solPayment:
-                  stage.price > 0
-                    ? some({
-                        lamports: sol(stage.price * LAMPORTS_PER_SOL),
-                        destination: publicKey(mintFeeRecipient),
-                      })
-                    : undefined,
-                mintLimit: some({
-                  id: index,
-                  limit: stage.maxMintsPerAddress,
-                }),
-                allowList: stage.whitelistAddresses?.length
-                  ? some({
-                      merkleRoot: getMerkleRoot(stage.whitelistAddresses),
-                    })
-                  : undefined,
-              },
-            }))
-          : undefined,
+      groups: this.constructCandyGuardGroups(mintStages, mintFeeRecipient),
     });
 
     return {
@@ -374,6 +371,82 @@ export class SwarmService {
       signers: [candyMachine, collectionUpdateAuthority],
       instructions: this.extractUmiTxBuilderInstructions(txBuilder),
     };
+  }
+
+  async constructChargeCandyMachineRentInstruction(swarm: Swarm) {
+    const launchpadConfig = this.getSwarmLaunchpadConfig();
+    const rent = await this.previewCandyMachineRent(
+      swarm.maxSupply,
+      swarm.mintStages,
+      swarm.creatorInfo.recipientAddress,
+    );
+    return SystemProgram.transfer({
+      fromPubkey: new PublicKey(swarm.creatorInfo.address),
+      toPubkey: launchpadConfig.collectionAuthority.publicKey,
+      lamports: rent,
+    });
+  }
+
+  async previewCandyMachineRent(
+    maxSupply: number,
+    mintStages: SwarmMintStage[],
+    mintFeeRecipient: string,
+  ) {
+    const umi = createUmi(this.config.get<string>('SOLANA_RPC_URL')!).use(
+      mplCandyMachine(),
+    );
+
+    const candyMachineSize = getCandyMachineSize(
+      maxSupply,
+      some({
+        nameLength: NAME_LENGTH,
+        uriLength: URI_LENGTH,
+      }),
+    );
+    const candyMachineRent = await umi.rpc.getRent(candyMachineSize);
+
+    const program = umi.programs.get<CandyGuardProgram>('mplCoreCandyGuard');
+    const serializer = getCandyGuardDataSerializer(umi, program);
+    const data = serializer.serialize({
+      guards: {},
+      groups:
+        this.constructCandyGuardGroups(mintStages, mintFeeRecipient) ?? [],
+    });
+    const candyGuardSize = ACCOUNT_HEADER_SIZE + CANDY_GUARD_DATA + data.length;
+    const candyGuardRent = await umi.rpc.getRent(candyGuardSize);
+
+    return Number(candyGuardRent.basisPoints + candyMachineRent.basisPoints);
+  }
+
+  private constructCandyGuardGroups(
+    mintStages: SwarmMintStage[],
+    mintFeeRecipient: string,
+  ): GuardGroupArgs<DefaultGuardSetArgs>[] | undefined {
+    return mintStages.length > 0
+      ? mintStages.map((stage, index) => ({
+          label: String(index),
+          guards: {
+            startDate: some({ date: dateTime(new Date(stage.startTime)) }),
+            endDate: some({ date: dateTime(new Date(stage.endTime)) }),
+            solPayment:
+              stage.price > 0
+                ? some({
+                    lamports: sol(stage.price * LAMPORTS_PER_SOL),
+                    destination: publicKey(mintFeeRecipient),
+                  })
+                : undefined,
+            mintLimit: some({
+              id: index,
+              limit: stage.maxMintsPerAddress,
+            }),
+            allowList: stage.whitelistAddresses?.length
+              ? some({
+                  merkleRoot: getMerkleRoot(stage.whitelistAddresses),
+                })
+              : undefined,
+          },
+        }))
+      : undefined;
   }
 
   async addNftsToCandyMachine(
@@ -772,6 +845,10 @@ export class SwarmService {
     const path = this.getCollectionMetadataPath(swarmId);
     await s3.addFileFromBuffer(buffer, path, 'application/json');
     return this.config.get('S3_URL') + '/' + path;
+  }
+
+  getTemporaryNftMetadataPath() {
+    return `metadata/tmp/${randomUUID()}`;
   }
 
   getCollectionMetadataPath(swarmId: string) {

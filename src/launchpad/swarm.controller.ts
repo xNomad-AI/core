@@ -1,4 +1,4 @@
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import { HttpService } from '@nestjs/axios';
 import {
   Body,
   Controller,
@@ -8,14 +8,13 @@ import {
   Query,
   Request,
   UnauthorizedException,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { ObjectId } from 'mongodb';
+import { firstValueFrom } from 'rxjs';
+import { AmazonS3 } from '../shared/amazon-s3.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { SwarmMintStage } from '../shared/mongo/types.js';
@@ -27,6 +26,7 @@ export class SwarmController {
     private readonly swarmService: SwarmService,
     private readonly config: ConfigService,
     private readonly mongo: MongoService,
+    private readonly httpService: HttpService,
   ) {}
 
   @Post('create-swarm')
@@ -59,16 +59,40 @@ export class SwarmController {
     };
   }
 
+  @Post('request-upload-nft-metadata-url')
+  async requestUploadNftMetadataUrl() {
+    const s3 = new AmazonS3(
+      this.config.get('S3_BUCKET'),
+      this.config.get('S3_ACCESS_KEY'),
+      this.config.get('S3_SECRET_KEY'),
+      this.config.get('S3_REGION'),
+    );
+    const path = this.swarmService.getTemporaryNftMetadataPath();
+    const uploadUrl = await s3.createPresignedUrl(path, 3600);
+    const viewUrl = this.config.get('S3_URL') + '/' + path;
+    return {
+      uploadUrl,
+      viewUrl,
+    };
+  }
+
   @Post('upload-nft-metadata')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadNftMetadata(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: { swarmId: string },
-  ) {
+  // @UseInterceptors(FileInterceptor('file'))
+  async uploadNftMetadata(@Body() body: { swarmId: string; url: string }) {
     const swarm = await this.swarmService.getSwarmById(body.swarmId);
     if (!swarm) {
       throw new Error('Swarm not found');
     }
+
+    const file = await firstValueFrom(
+      this.httpService.get(body.url, { responseType: 'arraybuffer' }),
+    )
+      .then((resp) => Buffer.from(resp.data))
+      .catch((err) => {
+        throw new Error(
+          `Failed to download metadata file, swarmId: ${body.swarmId}, url: ${body.url}, error: ${err}`,
+        );
+      });
 
     const { images, jsons } =
       await this.swarmService.processNftMetadataFile(file);
@@ -101,9 +125,6 @@ export class SwarmController {
     const connection = new Connection(
       this.config.get<string>('SOLANA_RPC_URL')!,
     );
-    const umi = createUmi(this.config.get<string>('SOLANA_RPC_URL')!, {
-      commitment: 'confirmed',
-    });
 
     if (swarm.collectionAddress) {
       const collectionAccount = await connection.getAccountInfo(
@@ -121,7 +142,6 @@ export class SwarmController {
 
     const { collection, signers, instructions } =
       await this.swarmService.constructCreateCollectionTx({
-        umi,
         name: swarm.name,
         uri: swarm.collectionMetadataUri,
         payer: swarm.creatorInfo.address,
@@ -129,6 +149,11 @@ export class SwarmController {
           launchpadConfig.collectionAuthority.publicKey.toBase58(),
         royaltyBps: swarm.creatorInfo.royaltyBps,
         royaltyRecipient: swarm.creatorInfo.recipientAddress,
+        postInstructions: [
+          await this.swarmService.constructChargeCandyMachineRentInstruction(
+            swarm,
+          ),
+        ],
       });
     const tx = await this.swarmService.createSerializedTx(
       connection,
