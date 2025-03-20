@@ -70,6 +70,7 @@
     "crypto-js": "^4.2.0",
     "dockerode": "^4.0.3",
     "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
     "https-proxy-agent": "^7.0.6",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.12.0",
