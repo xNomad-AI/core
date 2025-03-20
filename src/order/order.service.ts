@@ -7,6 +7,11 @@ import {
   OrderStatus,
   OrderType,
   ListNFTParams,
+  BidNFTParams,
+  AcceptOfferParams,
+  Marketplace,
+  CancelListingParams,
+  CancelOfferParams,
 } from './order.types.js';
 
 @Injectable()
@@ -136,7 +141,7 @@ export class OrderService {
         params.price,
         params.sellerAddress,
         '',
-        'magiceden',
+        Marketplace.MAGIC_EDEN,
       );
 
       return txData;
@@ -145,4 +150,97 @@ export class OrderService {
       throw error;
     }
   }
+
+
+    /**
+   * Place an offer on a single SOL NFT on the ME marketplace
+   */
+    async createOffer(params: BidNFTParams, nftId: string, tokenId: string, chain: string): Promise<any> {
+      try {
+        const txData = await this.magicEdenService.bidNFT(params);
+  
+        // Record the order in the database
+        await this.recordOrder(
+          txData.txHash,
+          nftId,
+          chain,
+          params.tokenMintAddress,
+          tokenId,
+          OrderType.LIST,
+          params.price,
+          '',
+          params.buyerAddress,
+          Marketplace.MAGIC_EDEN,
+        );
+  
+        return txData;
+      } catch (error) {
+        this.logger.error(`Failed to list NFT: ${error.message}`);
+        throw error;
+      }
+    }
+
+
+   /**
+   * Accepts an offer on an NFT on Magic Eden
+   */
+    async acceptOffer(params: AcceptOfferParams, nftId: string, tokenId: string, chain: string): Promise<any> {
+      try {
+        const txData = await this.magicEdenService.sellNow(params);
+    
+        // Record the order in the database
+        await this.recordOrder(
+          txData.txHash,
+          nftId,
+          chain,
+          params.tokenMintAddress,
+          tokenId,
+          OrderType.ACCEPT_OFFER,
+          params.newPrice,
+          params.sellerAddress,
+          params.buyerAddress,
+          Marketplace.MAGIC_EDEN,
+        );
+    
+        return txData;
+      } catch (error) {
+        this.logger.error(`Failed to accept offer: ${error.message}`);
+        throw error;
+      }
+    }
+
+    /**
+     * Cancels a sell on Magic Eden
+     */
+    async cancelListing(params: CancelListingParams): Promise<any> {
+      try {
+        const txData = await this.magicEdenService.cancelSell(params);
+    
+        // Update the order status in the database
+        await this.updateOrderStatus(txData.txHash, OrderStatus.FAILED);
+    
+        return txData;
+      } catch (error) {
+        this.logger.error(`Failed to cancel sell: ${error.message}`);
+        throw error;
+      }
+    }
+
+    /**
+     * Cancels a buy on Magic Eden
+     */
+    async cancelOffer(params: CancelOfferParams): Promise<any> {
+      try {
+        const txData = await this.magicEdenService.cancelBuy(params);
+    
+        // Update the order status in the database
+        await this.updateOrderStatus(txData.txHash, OrderStatus.FAILED);
+    
+        return txData;
+      } catch (error) {
+        this.logger.error(`Failed to cancel buy: ${error.message}`);
+        throw error;
+      }
+    }
+  
 } 

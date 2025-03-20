@@ -2,16 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { TransientLoggerService } from './transient-logger.service.js';
 import {
   ListNFTParams,
+  BidNFTParams,
+  AcceptOfferParams,
+  CancelListingParams,
+  CancelOfferParams,
 } from '../order/order.types.js';
 
 @Injectable()
 export class MagicEdenService {
   private readonly baseUrl: string;
-  private readonly connection: Connection;
   private readonly auctionHouseAddress: string;
 
   constructor(
@@ -21,7 +23,6 @@ export class MagicEdenService {
   ) {
     this.logger.setContext(MagicEdenService.name);
     this.baseUrl = this.configService.get<string>('MAGIC_EDEN_BASE_URL');
-    this.connection = new Connection(this.configService.get<string>('SOLANA_RPC_URL'), 'confirmed');
     this.auctionHouseAddress = this.configService.get<string>('MAGIC_EDEN_AUCTION_HOUSE_ADDRESS');
   }
 
@@ -60,4 +61,76 @@ export class MagicEdenService {
 
     return this.fetchOrderData(endpoint);
   }
+
+   /**
+   * Bids on an NFT on Magic Eden
+   */
+   async bidNFT(params: BidNFTParams): Promise<any> {
+    const { buyerAddress, tokenMintAddress, price } = params;
+    const endpoint = `${this.baseUrl}/buy?buyer=${buyerAddress}&tokenMint=${tokenMintAddress}&price=${price}&auctionHouseAddress=${this.auctionHouseAddress}`;
+    this.logger.log(`Bidding on NFT on Magic Eden: ${endpoint}`);
+
+    return this.fetchOrderData(endpoint);
+  }
+
+  /**
+   * Accepts an offer on an NFT on Magic Eden
+   */
+  async sellNow(params: AcceptOfferParams): Promise<any> {
+    const {
+      buyerAddress,
+      sellerAddress,
+      tokenMintAddress,
+      tokenATAAddress,
+      price,
+      newPrice,
+      sellerExpiry,
+    } = params;
+  
+    const endpoint = `${this.baseUrl}/sell_now?buyer=${buyerAddress}&seller=${sellerAddress}&tokenMint=${tokenMintAddress}&tokenATA=${tokenATAAddress}&price=${price}&newPrice=${newPrice}&sellerExpiry=${sellerExpiry}`;
+  
+    this.logger.log(`Accepting offer on Magic Eden: ${endpoint}`);
+    return this.fetchOrderData(endpoint);
+  }
+
+
+
+
+  /**
+   * Cancels a sell on Magic Eden
+   */
+  async cancelSell(params: CancelListingParams): Promise<any> {
+    const {
+      sellerAddress,
+      tokenMintAddress,
+      tokenAccountAddress,
+      price,
+    } = params;
+  
+    const endpoint = `${this.baseUrl}/sell_cancel?seller=${sellerAddress}&tokenMint=${tokenMintAddress}&tokenAccount=${tokenAccountAddress}&price=${price}`;
+  
+    this.logger.log(`Canceling sell on Magic Eden: ${endpoint}`);
+  
+    return this.fetchOrderData(endpoint);
+  }
+
+
+
+  // core/src/shared/magiceden.service.ts
+async cancelBuy(params: CancelOfferParams): Promise<any> {
+  const {
+    buyerAddress,
+    tokenMintAddress,
+    price,
+  } = params;
+
+  const endpoint = `${this.baseUrl}/buy_cancel?buyer=${buyerAddress}&tokenMint=${tokenMintAddress}&price=${price}`;
+
+  this.logger.log(`Canceling buy on Magic Eden: ${endpoint}`);
+
+  return this.fetchOrderData(endpoint);
+}
+
+
+
 }
