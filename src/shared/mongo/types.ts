@@ -5,6 +5,11 @@ import { OrderStatus, OrderType } from '../../order/order.types.js';
 
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
+export interface CollectionConfig {
+  id: string;
+  chain: string;
+}
+
 export interface AICollection {
   id: string;
   chain: string;
