@@ -2,8 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { AddressNonce, NonceType } from '../shared/mongo/types.js';
 import { SolanaService } from '../shared/solana.service.js';
-import { EvmService } from '../shared/evm.service.js';
-import { ChainUtils } from '../shared/chain.utils.js';
 
 @Injectable()
 export class AddressService {
@@ -44,12 +42,6 @@ export class AddressService {
     if (!nonce || nonce.expiration.getTime() < Date.now()) {
       throw new BadRequestException('Nonce expired');
     }
-    if (chain === 'solana') {
-      return SolanaService.verifySignature(nonce.message, signature, address);
-    } else if (ChainUtils.isEvm(chain)) {
-      return EvmService.verifySignature(nonce.message, signature, address);
-    } else {
-      throw new BadRequestException(`Unsupported chain: ${chain}`);
-    }
+    return SolanaService.verifySignature(nonce.message, signature, address);
   }
 }

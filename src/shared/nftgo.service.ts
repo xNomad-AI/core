@@ -245,11 +245,11 @@ export class NftgoService {
   }
 
   // ids: comma separated collection ids
-  async getAICollections(chain: string, cids: string[]): Promise<Collection[]> {
+  async getAICollections(chain: string, cids: string): Promise<Collection[]> {
     const config = {
       headers: this.defaultHeaders,
       params: {
-        cids: cids.join(','),
+        cids,
       },
     };
     return (await this.request(`/${chain}/v1/collections/ids`, config))

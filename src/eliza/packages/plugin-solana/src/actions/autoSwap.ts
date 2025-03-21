@@ -250,7 +250,6 @@ export const autoTask: Action = {
   },
   name: 'AUTO_TASK',
   suppressInitialMessage: true,
-  similes: [],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },

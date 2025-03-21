@@ -4,12 +4,6 @@ export const AGENT_DB_NAME = 'agent';
 export const COLLECTIONS = [
   {
     db: DB_NAME,
-    name: 'collectionConfigs',
-    indexes: [],
-    uniqueIndexes: [{ id: 1 }],
-  },
-  {
-    db: DB_NAME,
     name: 'collections',
     indexes: [],
     uniqueIndexes: [{ id: 1 }],

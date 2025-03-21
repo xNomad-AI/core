@@ -159,7 +159,7 @@ export class NftController {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
 
-    const httpProxy = await this.nftService.getTwitterHttpProxy(nftId, chain);
+    const httpProxy = await this.nftService.getTwitterHttpProxy(nftId);
     await this.nftService.updateNftConfig({
       nftId,
       characterConfig: {
@@ -213,7 +213,7 @@ export class NftController {
     ) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
-    return await this.nftService.getNftConfig(nftId, chain);
+    return await this.nftService.getNftConfig(nftId);
   }
 
   @UseGuards(AuthGuard)

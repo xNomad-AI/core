@@ -18,7 +18,7 @@ import {
   NftPrimaryCoin,
   NftPrologues,
   Swarm,
-  Order, CollectionConfig,
+  Order,
 } from './types.js';
 
 @Injectable()
@@ -96,10 +96,6 @@ export class MongoService implements OnModuleInit {
     }
 
     return this.client.db(collection.db).collection<T>(collection.name);
-  }
-
-  get collectionConfigs() {
-    return this.getCollection<CollectionConfig>('collectionConfigs');
   }
 
   get collections() {

@@ -40,7 +40,7 @@ export class WalletService {
       'evm',
       agentId,
     );
-    return { address: deriveKeyResult.keypair.address, privateKey: deriveKeyResult.privateKey };
+    return { address: deriveKeyResult.keypair.address };
   }
 
   async signSolanaTransaction({

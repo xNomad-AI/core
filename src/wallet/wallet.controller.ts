@@ -24,7 +24,7 @@ export class WalletController {
       requirePrivateKey: boolean;
     },
   ) {
-    const [{ secretKey, publicKey }, { address: evmAddress, privateKey: evmPrivateKey }] =
+    const [{ secretKey, publicKey }, { address: evmAddress }] =
       await Promise.all([
         this.walletService.getWallet({
           walletSecretSalt,
@@ -41,7 +41,6 @@ export class WalletController {
       ...(requirePrivateKey ? { secretKey: bs58.encode(secretKey) } : {}),
       publicKey: publicKey.toBase58(),
       evmAddress,
-      evmPrivateKey,
     };
   }
 
