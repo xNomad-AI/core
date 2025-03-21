@@ -35,7 +35,12 @@ export class OrderController {
     @Param('chain') chain: string,
     @Param('nftId') nftId: string,
     @Body() dto: ListNFTDto, @Request() request) {
-
+    
+    const address = request['X-USER-ADDRESS'];
+    
+    // Verify NFT ownership
+    // await this.orderService.verifyNftOwnership(chain, address, nftId);
+    
     if (chain !== 'solana') {
       throw new NotFoundException('Only Solana chain is supported for now.');
     }
@@ -49,7 +54,7 @@ export class OrderController {
 
     // Use MagicEdenService to fetch order data
     const tx = await this.orderService.listNFT({
-      sellerAddress: dto.sellerAddress,
+      sellerAddress: address,
       tokenMintAddress: dto.tokenMintAddress,
       tokenAccountAddress: dto.tokenAccountAddress,
       price: dto.price,
