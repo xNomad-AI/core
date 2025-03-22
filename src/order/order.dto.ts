@@ -9,7 +9,6 @@ import {
 import { OrderType } from './order.types.js';
 
 export class ListNFTDto {
-
   @IsString()
   @IsNotEmpty()
   sellerAddress: string;
