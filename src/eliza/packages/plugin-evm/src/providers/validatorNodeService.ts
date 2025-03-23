@@ -1,7 +1,5 @@
-import { createPublicClient, createWalletClient, Hex, http, WalletClient } from 'viem';
+import { keccak256, toBytes, WalletClient } from 'viem';
 import { base, bsc, mainnet } from 'viem/chains';
-import { privateKeyToAccount } from 'viem/accounts';
-
 abstract class ValidatorNodeService {
     abstract postTransaction(
         {
@@ -9,7 +7,7 @@ abstract class ValidatorNodeService {
             serializedTransaction,
         }: {
             walletClient: WalletClient;
-            serializedTransaction: string;
+            serializedTransaction: `0x${string}`;
         }
     ): Promise<string>;
 }
@@ -34,8 +32,12 @@ class JsonRPCNodeService extends ValidatorNodeService {
         }
     }
 }
+class BloxValidatorNodeService extends ValidatorNodeService {
+    private readonly bloxApiUrl =
+        'https://api.blxrbdn.com';
 
-class MevNodeService extends ValidatorNodeService {
+    private readonly apikey = process.env.BLOX_API_KEY;
+
     async postTransaction(
         {
             walletClient,
@@ -46,10 +48,48 @@ class MevNodeService extends ValidatorNodeService {
         }
     ): Promise<string> {
         try {
-            const hash = await walletClient.sendRawTransaction({
-                serializedTransaction,
-            })
-            return hash;
+            const blockNumber = await walletClient.request({
+                method: 'eth_blockNumber',
+                params: [],
+            });
+
+            let body;
+            switch (walletClient.chain) {
+                case mainnet:
+                    throw new Error(`Unsupport chain: ${mainnet.name}`);
+                case base:
+                    throw new Error(`Unsupport chain: ${base.name}`);
+                case bsc:
+                    body = {
+                        id: 1,
+                        method: 'blxr_submit_bundle',
+                        params: {
+                            "transaction": [serializedTransaction],
+                            "blockchain_network": "BSC-Mainnet",
+                            "block_number": blockNumber as string,
+                            "mev_builders": {
+                                "all": ""
+                            }
+                        },
+                    };
+                    break;
+                default:
+                    throw new Error(`Unsupport chain name ${walletClient.chain.name}`);
+            }
+            const response = await fetch(
+                this.bloxApiUrl,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': this.apikey,
+                    },
+                    body: JSON.stringify(body),
+                },
+            );
+            const responseData = await response.json();
+            // return responseData.result.bundleHash;
+            return keccak256(toBytes(serializedTransaction));
         } catch (error) {
             return error.message;
         }
@@ -57,6 +97,6 @@ class MevNodeService extends ValidatorNodeService {
 }
 
 const jsonRpcNodeService = new JsonRPCNodeService();
-const mevNodeService = new MevNodeService();
+const bloxValidatorNodeService = new BloxValidatorNodeService();
 
-export { jsonRpcNodeService, mevNodeService };
+export { jsonRpcNodeService, bloxValidatorNodeService };

@@ -1,4 +1,3 @@
-import { PublicClient } from "viem";
 import { BigNumber } from 'bignumber.js';
 
 export interface SwapTokenDto {
@@ -9,7 +8,6 @@ export interface SwapTokenDto {
   outputTokenCA: string;
   amount: string | BigNumber;
   slippage: number; // 0.01 = 1%
-  maxFee: string | BigNumber;
   mode?: 'FAST' | 'ANTI_MEV';
   privateKey: string;
   userWalletAddress: string;

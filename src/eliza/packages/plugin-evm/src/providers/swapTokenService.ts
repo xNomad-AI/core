@@ -1,16 +1,14 @@
-import { BigNumber } from 'bignumber.js';
 import { OkxParams, OkxSwapResponse, SwapTokenDto } from './type';
 import { createWalletClient, ethAddress, Hex, http, zeroAddress } from 'viem';
-import { jsonRpcNodeService, mevNodeService } from './validatorNodeService';
-import okxService from './okxService';
-import { getSWAP_FEE_ACCOUNT, getSWAP_FEE_BPS } from './swapUtils';
+import { bloxValidatorNodeService, jsonRpcNodeService } from './validatorNodeService.js';
+import okxService from './okxService.js';
+import { getSWAP_FEE_ACCOUNT, getSWAP_FEE_BPS } from './swapUtils.js';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base, bsc, mainnet } from 'viem/chains';
 
 export class SwapTokenService {
     private readonly logger: Console;
-    private readonly WEI_PER_ETH = new BigNumber('1000000000000000000');
-    private readonly SOL_ADDRESS = '11111111111111111111111111111111';
+    private readonly ETH_ADDRESS = ethAddress;
     constructor() {
         this.logger = console;
     }
@@ -29,10 +27,10 @@ export class SwapTokenService {
     }: SwapTokenDto): Promise<string> {
         try {
 
-            if (inputTokenCA === zeroAddress) {
+            if (inputTokenCA.toLowerCase() === zeroAddress) {
                 inputTokenCA = ethAddress;
             }
-            if (outputTokenCA === zeroAddress) {
+            if (outputTokenCA.toLowerCase() === zeroAddress) {
                 outputTokenCA = ethAddress;
             }
 
@@ -44,12 +42,12 @@ export class SwapTokenService {
                 `[swap token] Swapping ${amount} ${inputTokenCA} to ${outputTokenCA}`,
             );
 
-            if (!rpcUrl || chainId || !userWalletAddress) {
+            if (!rpcUrl || !chainId || !userWalletAddress) {
                 throw new Error('Missing required parameters');
             }
 
             const validatorNode =
-                mode === 'FAST' ? jsonRpcNodeService : mevNodeService;
+                mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
 
             const okxParams: OkxParams = {
                 chainId,
@@ -85,15 +83,14 @@ export class SwapTokenService {
                 account,
             });
 
-            const request = await walletClient.prepareTransactionRequest({                
+            const request = await walletClient.prepareTransactionRequest({
                 account,
                 chain,
                 to: tx.to,
                 data: tx.data,
                 value: BigInt(tx.value),
                 gas: BigInt(tx.gas),
-                gasPrice: tx.gasPrice,
-                maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
+                gasPrice: BigInt(tx.gasPrice),
                 kzg: undefined,
             })
             const serializedTransaction = await account.signTransaction(request)
@@ -110,7 +107,7 @@ export class SwapTokenService {
 
 
     private async getOKXCallData(params: OkxParams): Promise<OkxSwapResponse> {
-        if (params.fromTokenAddress === this.SOL_ADDRESS || params.toTokenAddress === this.SOL_ADDRESS) {
+        if (params.fromTokenAddress === this.ETH_ADDRESS || params.toTokenAddress === this.ETH_ADDRESS) {
             params.directRoute = true;
         }
         if (params.slippage === '1') {
