@@ -24,7 +24,6 @@
 		"@elizaos/plugin-tee": "file:../../../../data/eliza/packages/plugin-tee",
 		"@solana/spl-token": "0.4.9",
 		"@solana/web3.js": "1.95.8",
-		"@types/bignumber.js": "^5.0.4",
 		"axios": "^1.7.9",
 		"bignumber.js": "9.1.2",
 		"bs58": "6.0.0",
