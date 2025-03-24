@@ -245,6 +245,10 @@ async function checkResponse(
     parameters: { [key: string]: unknown };
   };
   let swapReq = convertNullStrings(state.actionParameters) as SwapTokenRequest;
+  // strip $ from inputTokenSymbol and outputTokenSymbol
+  swapReq.inputTokenSymbol = swapReq.inputTokenSymbol?.replace('$', '');
+  swapReq.outputTokenSymbol = swapReq.outputTokenSymbol?.replace('$', '');
+
   elizaLogger.log('Swap request:', swapReq);
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);

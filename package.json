@@ -23,7 +23,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "preinstall": "/bin/bash ./scripts/github-build.sh zg/agent-router"
+    "preinstall": "/bin/bash ./scripts/github-build.sh eug/agent-router"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",

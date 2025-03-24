@@ -150,6 +150,9 @@ export const transfer: Action = {
       state.actionParameters,
     ) as TransferContent;
 
+    // strip $ from content.tokenSymbol
+    content.tokenSymbol = content.tokenSymbol?.replace('$', '');
+
     if (!content.amount || isNaN(content.amount as number)) {
       callback({
         text: `Please provide the amount of tokens to transfer`,

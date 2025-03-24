@@ -329,6 +329,10 @@ async function checkResponse(
     parameters: { [key: string]: unknown };
   };
   let swapReq = convertNullStrings(state.actionParameters) as AutoSwapTask;
+  // strip $ from inputTokenSymbol and outputTokenSymbol
+  swapReq.inputTokenSymbol = swapReq.inputTokenSymbol?.replace('$', '');
+  swapReq.outputTokenSymbol = swapReq.outputTokenSymbol?.replace('$', '');
+
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
 
