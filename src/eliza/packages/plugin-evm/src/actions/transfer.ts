@@ -30,7 +30,7 @@ export interface TransferContent extends Content {
 const userConfirmTemplate = `
 {{recentMessages}}
 
-Analyzing the user’s response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
+Analyzing the user's response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
 Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
 Respond with a JSON:  
 \`\`\`json
@@ -77,7 +77,7 @@ export const transfer: Action = {
     strict: true,
     additionalProperties: false,
     description:
-      'Transfer ERC20 tokens from agent wallet to another address',
+      'EVM transfers: Transfer native or ERC20 tokens from agent wallet to another address, if tokenSymbol is native token of the chain, tokenAddress should be 0x0000000000000000000000000000000000000000',
     parameters: {
       type: 'object',
       properties: {
@@ -139,7 +139,7 @@ export const transfer: Action = {
     }
     
     const chain = getRuntimeKey(runtime, 'NFT_CHAIN');
-    const rpcUrl = getRuntimeKey(runtime, `${chain}_RPC_URL`);
+    const rpcUrl = getRuntimeKey(runtime, `${'chain'.toUpperCase()}_RPC_URL`);
     const { address, privateKey } = await getWalletKey(runtime, true);
 
     if (!content.tokenAddress) {
@@ -189,7 +189,7 @@ export const transfer: Action = {
       privateKey: privateKey,
       recipient: content.recipient,
       tokenAddress: content.tokenAddress,
-      chainName: chain,
+      chainName: 'bsc',
     });
 
     callback?.({
