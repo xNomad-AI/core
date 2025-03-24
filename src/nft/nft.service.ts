@@ -135,6 +135,7 @@ export class NftService implements OnApplicationBootstrap {
 
   async getNftConfig(
     nftId: string,
+    chain: string,
     options?: {
       ignoreTwitterHttpProxy?: boolean;
     },
@@ -143,7 +144,7 @@ export class NftService implements OnApplicationBootstrap {
       nftId,
     });
 
-    nftConfig = nftConfig || {nftId, chain: 'solana'};
+    nftConfig = nftConfig || {nftId, chain,};
     if (!nftConfig?.trade){
       nftConfig.trade =  DEFAULT_TRADE_SETTINGS;
     }
@@ -158,14 +159,14 @@ export class NftService implements OnApplicationBootstrap {
     return (
       nftConfig || {
         nftId,
-        chain: 'solana',
+        chain,
         trade: DEFAULT_TRADE_SETTINGS,
       }
     );
   }
 
-  async getTwitterHttpProxy(nftId: string) {
-    const nftConfig = await this.getNftConfig(nftId, {
+  async getTwitterHttpProxy(nftId: string, chain: string) {
+    const nftConfig = await this.getNftConfig(nftId, chain, {
       ignoreTwitterHttpProxy: false,
     });
     return nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
