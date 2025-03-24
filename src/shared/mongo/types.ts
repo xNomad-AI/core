@@ -1,7 +1,13 @@
 import { Character } from '@elizaos/core';
 import { COLLECTIONS } from './configs.js';
+import exp from 'node:constants';
 
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
+
+export interface CollectionConfig {
+  id: string;
+  chain: string;
+}
 
 export interface AICollection {
   id: string;
