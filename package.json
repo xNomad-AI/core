@@ -38,6 +38,7 @@
     "@elizaos/core": "file:data/eliza/packages/core",
     "@elizaos/plugin-evm": "workspace:*",
     "@elizaos/plugin-solana": "workspace:*",
+    "@elizaos/plugin-chat": "workspace:*",
     "@elizaos/plugin-tee": "file:data/eliza/packages/plugin-tee",
     "@ipld/dag-ucan": "3.4.5",
     "@metaplex-foundation/mpl-core": "1.2.0",

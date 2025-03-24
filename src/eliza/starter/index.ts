@@ -12,6 +12,7 @@ import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
 import { solanaPlugin } from '@elizaos/plugin-solana';
+import { chatPlugin } from '@elizaos/plugin-chat';
 import { evmPlugin } from '@elizaos/plugin-evm';
 import { MongoClient } from 'mongodb';
 
@@ -36,7 +37,7 @@ export async function createAgent(
     throw new Error('Invalid TEE configuration');
   }
 
-  const plugins = [];
+  const plugins = [chatPlugin];
   const nftChain = getSecret(character, 'NFT_CHAIN');
   nftChain === 'solana' ? plugins.push(solanaPlugin) : plugins.push(evmPlugin);
 
