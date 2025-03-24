@@ -240,6 +240,12 @@ export const transfer: Action = {
         };
         callback?.(responseMsg);
         return 'success';
+      } else if (confirmResponse.userAcked !== 'confirmed') {
+        const responseMsg = {
+          text: 'Something went wrong with the confirmation. Please try again.',
+        };
+        callback?.(responseMsg);
+        return 'failed';
       }
     } else {
       const balance = await solanaClient.getUIBalance(content.tokenAddress);

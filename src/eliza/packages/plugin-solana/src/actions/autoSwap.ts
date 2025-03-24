@@ -62,18 +62,16 @@ Consider the latest messages from the conversation history above. Determine the 
 Respond with a JSON:  
 \`\`\`json
 {
-    "userAcked": "confirmed" | "rejected" | "pending"
+    "userAcked": "confirmed" | "rejected"
 }
 \`\`\`  
 
 **Confirmation Criteria:**  
 - \`"confirmed"\` → The user has explicitly confirmed using words like **"yes"**, **"confirm"**, **"okay"**, **"sure"**, or similar.  
 - \`"rejected"\` → The user responded with anything other than a confirmation after User2 send confirmation message.
-- \`"pending"\` → The user has provided a complete autotask request, but User2 has not yet sent the confirmation prompt.  
 
 **Additional Rules:**  
 •If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as "pending".
-•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
 •If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
 
@@ -94,9 +92,6 @@ Respond with a JSON:
 - User2: "AutoTask:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM when price below 0.016543.  
   Please confirm the swap by replying with 'yes' or 'confirm'."  
 - User1: "no"  
-
- **Should return \`"pending"\`**  
-- User1: "create autotask swap 0.0001 SOL for USDC when price below 0.99"  
 `;
 
 export async function executeAutoTokenSwapTask(
@@ -523,26 +518,27 @@ async function checkResponse(
       };
       callback?.(responseMsg);
       return { status: 'cancelled' };
+    } else if (confirmResponse.userAcked == 'confirmed') {
+      if (!isValidSPLTokenAddress(swapReq.tokenTarget)) {
+        swapReq.tokenTarget =
+          swapReq.tokenTarget === swapReq.inputTokenSymbol
+            ? swapReq.inputTokenCA
+            : swapReq.outputTokenCA;
+      }
+      return { status: 'success', task: swapReq };
     }
   } else {
-    const swapInfo = formatTaskInfo(swapReq);
-    const responseMsg = {
+      const swapInfo = formatTaskInfo(swapReq);
+      const responseMsg = {
       text: `${swapInfo}`,
       action: 'AUTO_TASK',
       result: 'Pending user confirmation for auto task',
-    };
-    callback?.(responseMsg);
-    return { status: 'pending' };
-  }
-
-  if (!isValidSPLTokenAddress(swapReq.tokenTarget)) {
-    swapReq.tokenTarget =
-      swapReq.tokenTarget === swapReq.inputTokenSymbol
-        ? swapReq.inputTokenCA
-        : swapReq.outputTokenCA;
-  }
-  return { status: 'success', task: swapReq };
+      };
+      callback?.(responseMsg);
+      return { status: 'pending' };
+    }
 }
+
 
 async function executeSwapTokenTx(
   runtime: IAgentRuntime,

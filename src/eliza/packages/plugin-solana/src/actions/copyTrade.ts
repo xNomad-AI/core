@@ -37,19 +37,17 @@ Consider the latest messages from the conversation history above. Determine the 
 Respond with a JSON:  
 \`\`\`json
 {
-    "userAcked": "confirmed" | "rejected" | "pending"
+    "userAcked": "confirmed" | "rejected"
 }
 \`\`\`  
 
 Decision Criteria:
 •"confirmed" → The user has explicitly confirmed the transfer using words like “yes”, “confirm”, “okay”, “sure”, etc.
 •"rejected" → The user has responded with anything other than a confirmation.
-•"pending" → The user has provided a complete transfer request, but User2 has not yet sent the confirmation prompt.
 
 Additional Rules:
 •If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
 •Analyze the last five messages to understand the user’s intent in context.
-•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
 •If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
 
@@ -62,12 +60,7 @@ Additional Rules:
 
 ❌ **Should return \`"rejected"\`**  
 - User2: "Please confirm by replying with 'yes' or 'confirm'"  
-- User1: "no"  
-
-❓ **Should return \`"pending"\`**  
-- User1: "copy trade 3CpQxMsS846eB8Dxee488fLwx5Xbnd45sA2dNuphYWV7"  
-
-- User1: "chat"  
+- User1: "no"    
 
 Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
 
@@ -231,6 +224,12 @@ export const copyTrade: Action = {
         };
         callback?.(responseMsg);
         return 'cancelled';
+      } else if (confirmResponse.userAcked !== 'confirmed') {
+        const responseMsg = {
+          text: 'Something went wrong with the confirmation. Please try again.',
+        };
+        callback?.(responseMsg);
+        return 'failed';
       }
     } else {
       const responseMsg = {

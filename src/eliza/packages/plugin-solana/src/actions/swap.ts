@@ -50,18 +50,15 @@ Consider the latest messages from the conversation history above. Determine the 
 Respond with a JSON:  
 \`\`\`json
 {
-    "userAcked": "confirmed" | "rejected" | "pending"
+    "userAcked": "confirmed" | "rejected" 
 }
 \`\`\`  
 
 **Decision Criteria:**  
 "confirmed" → The user has explicitly confirmed the swap using words like "yes", "confirm", "okay", "sure", etc.
 "rejected" → The user has responded with anything other than a confirmation.
-"pending" → The user has provided a complete swap request, but User2 has not yet sent the confirmation prompt.
 
 **Additional Rules:**  
-•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as "pending".
-•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
 •If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
 
@@ -80,12 +77,8 @@ Respond with a JSON:
 - User2: "Swap 0.1 SOL for ELIZA. Please confirm by replying with 'yes' or 'confirm'."  
 - User1: "cancel"  
 
-❓ **Should return \`"pending"\`**  
-- User1: "swap 0.0001 SOL for USDC"  
 
-- User1: "buy 0.1 SOL ELIZA"  
-
-Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
+Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\` or  \`"rejected"\` based on the **immediate** response following the confirmation request.`;
 
 export const executeSwap: Action = {
   functionCallSpec: {
@@ -197,6 +190,7 @@ async function handleExecuteSwap(
       mode,
       tip: tip * LAMPORTS_PER_SOL,
     });
+    // txid = '2KJX2c5ThDkf4wDKVyCQngmJsyzx8Ht3EAATM8Jz8phHcbjJJuBot4pbWi6Fnx7zHjWtrrnarAwWmME5oZ838vED';
   } catch (e) {
     elizaLogger.error(`Error occurred while executing swap: ${e}`);
     callback?.({
@@ -427,6 +421,11 @@ async function checkResponse(
       };
       callback?.(responseMsg);
       return { status: 'cancelled' };
+    } else if (confirmResponse.userAcked == 'confirmed') {
+      return {
+        status: 'success',
+        parameters: { ...swapReq, programId },
+      };
     }
   } else {
     const swapInfo = formatConfirmSwapInfo({
@@ -445,11 +444,6 @@ async function checkResponse(
     callback?.(responseMsg);
     return { status: 'pending' };
   }
-
-  return {
-    status: 'success',
-    parameters: { ...swapReq, programId },
-  };
 }
 
 function formatConfirmSwapInfo(params: {
