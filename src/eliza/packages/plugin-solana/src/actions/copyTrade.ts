@@ -8,7 +8,8 @@ import {
   elizaLogger,
   composeContext,
   generateObjectDeprecated,
-  ModelClass, ActionStatus,
+  ModelClass,
+  ActionStatus,
 } from '@elizaos/core';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { isValidAddress } from '../providers/tokenUtils.js';
@@ -131,6 +132,11 @@ export const copyTrade: Action = {
       return 'rejected';
     }
 
+    const lastAction = state.lastAction as {
+      action: string;
+      result: string;
+      parameters: { [key: string]: unknown };
+    };
     let response = convertNullStrings(
       state.actionParameters,
     ) as CopyTradeParameters;
@@ -170,37 +176,67 @@ export const copyTrade: Action = {
       targetAddress: response.targetAddress,
       walletAddress: response.walletAddress,
     });
-    if (records?.length > 0){
+    if (records?.length > 0) {
       callback({
-        text: 'You have already set copy trade of this address. You can edit the copy trade on the [Tasks] subpage.'
+        text: 'You have already set copy trade of this address. You can edit the copy trade on the [Tasks] subpage.',
       });
       return 'failed';
     }
     elizaLogger.log('COPY_TRADE:', response);
 
-    const confirmContext = composeContext({
-      state,
-      template: userConfirmTemplate,
-    });
+    let pendingAck = false;
 
-    const confirmResponse = await generateObjectDeprecated({
-      runtime,
-      context: confirmContext,
-      modelClass: ModelClass.LARGE,
-    });
-    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+    if (
+      lastAction?.action === 'COPY_TRADE' &&
+      lastAction?.result &&
+      lastAction.result.toLowerCase().includes('pending')
+    ) {
+      Object.entries(response).forEach(([key, value]) => {
+        console.log(`  ${key}: ${value}`);
+      });
 
-    if (confirmResponse.userAcked == 'rejected') {
-      const responseMsg = {
-        text: 'ok. I will not set this.',
-      };
-      callback?.(responseMsg);
-      return 'cancelled';
+      Object.entries(lastAction.parameters).forEach(([key, value]) => {
+        console.log(`  ${key}: ${value}`);
+      });
+
+      const matchResults = Object.entries(response).map(([key, value]) => {
+        const isKeyExcluded = false;
+        const isValueMatched = lastAction.parameters[key] === value;
+        const isBothInvalid = !value && !lastAction.parameters[key];
+        return isKeyExcluded || isValueMatched || isBothInvalid;
+      });
+
+      const isSameAction = matchResults.every((result) => result === true);
+      pendingAck = isSameAction;
     }
 
-    if (confirmResponse.userAcked == 'pending') {
+    if (pendingAck) {
+      const confirmContext = composeContext({
+        state,
+        template: userConfirmTemplate,
+      });
+
+      const confirmResponse = await generateObjectDeprecated({
+        runtime,
+        context: confirmContext,
+        modelClass: ModelClass.LARGE,
+      });
+      elizaLogger.info(
+        `User confirm check: ${JSON.stringify(confirmResponse)}`,
+      );
+
+      if (confirmResponse.userAcked == 'rejected') {
+        const responseMsg = {
+          text: 'ok. I will not set this.',
+        };
+        callback?.(responseMsg);
+        return 'cancelled';
+      }
+    } else {
       const responseMsg = {
         text: `${formatConfirmMessage(response)}`,
+        action: 'COPY_TRADE',
+        result: 'Pending user confirmation for copy trade',
       };
       callback?.(responseMsg);
       return 'pending';

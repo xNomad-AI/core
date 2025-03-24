@@ -140,6 +140,12 @@ export const transfer: Action = {
       callback?.(NotAgentAdminResponse);
       return 'rejected';
     }
+
+    const lastAction = state.lastAction as {
+      action: string;
+      result: string;
+      parameters: { [key: string]: unknown };
+    };
     const content = convertNullStrings(
       state.actionParameters,
     ) as TransferContent;
@@ -179,31 +185,60 @@ export const transfer: Action = {
       }
     }
 
-    const confirmContext = composeContext({
-      state,
-      template: userConfirmTemplate,
-    });
-
-    const confirmResponse = await generateObjectDeprecated({
-      runtime,
-      context: confirmContext,
-      modelClass: ModelClass.LARGE,
-    });
-    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
-
-    if (confirmResponse.userAcked == 'rejected') {
-      const responseMsg = {
-        text: 'ok. I will not execute this transaction.',
-      };
-      callback?.(responseMsg);
-      return 'success';
-    }
-
     const solanaClient = new SolanaClient(
       getRuntimeKey(runtime, 'SOLANA_RPC_URL'),
       senderKeypair.publicKey,
     );
-    if (confirmResponse.userAcked == 'pending') {
+
+    let pendingAck = false;
+    console.log(`lastAction: ${JSON.stringify(lastAction)}`);
+    console.log(`content: ${JSON.stringify(content)}`);
+    if (
+      lastAction?.action === 'SEND_TOKEN' &&
+      lastAction?.result &&
+      lastAction.result.toLowerCase().includes('pending')
+    ) {
+      Object.entries(content).forEach(([key, value]) => {
+        console.log(`  ${key}: ${value}`);
+      });
+
+      Object.entries(lastAction.parameters).forEach(([key, value]) => {
+        console.log(`  ${key}: ${value}`);
+      });
+
+      const matchResults = Object.entries(content).map(([key, value]) => {
+        const isKeyExcluded = false;
+        const isValueMatched = lastAction.parameters[key] === value;
+        const isBothInvalid = !value && !lastAction.parameters[key];
+        return isKeyExcluded || isValueMatched || isBothInvalid;
+      });
+
+      const isSameAction = matchResults.every((result) => result === true);
+      pendingAck = isSameAction;
+    }
+    if (pendingAck) {
+      const confirmContext = composeContext({
+        state,
+        template: userConfirmTemplate,
+      });
+
+      const confirmResponse = await generateObjectDeprecated({
+        runtime,
+        context: confirmContext,
+        modelClass: ModelClass.LARGE,
+      });
+      elizaLogger.info(
+        `User confirm check: ${JSON.stringify(confirmResponse)}`,
+      );
+
+      if (confirmResponse.userAcked == 'rejected') {
+        const responseMsg = {
+          text: 'ok. I will not execute this transaction.',
+        };
+        callback?.(responseMsg);
+        return 'success';
+      }
+    } else {
       const balance = await solanaClient.getUIBalance(content.tokenAddress);
       const transferPercentage = (
         (Number(content.amount) / balance) *
@@ -218,9 +253,11 @@ export const transfer: Action = {
       );
       const responseMsg = {
         text: `${transferInfo}`,
+        action: 'SEND_TOKEN',
+        result: 'Pending user confirmation for sending token',
       };
       callback?.(responseMsg);
-      return null;
+      return 'pending';
     }
 
     try {
