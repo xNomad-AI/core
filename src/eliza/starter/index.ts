@@ -17,7 +17,7 @@ import { evmPlugin } from '@elizaos/plugin-evm';
 import { MongoClient } from 'mongodb';
 
 function getSecret(character: Character, secret: string) {
-  return character.settings?.secrets?.[secret] || process.env[secret];
+  return character.settings?.secrets?.[secret] || character.settings?.[secret] ||  process.env[secret];
 }
 
 export async function createAgent(

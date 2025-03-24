@@ -10,7 +10,6 @@ import { CollectionTxs, NftgoService } from '../shared/nftgo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { stringToUuid } from '@elizaos/core';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { AICollection } from '../shared/mongo/types';
@@ -26,7 +25,6 @@ export class NftSyncService implements OnApplicationBootstrap {
     private readonly mongo: MongoService,
     private readonly config: ConfigService,
     private readonly elizaManager: ElizaManagerService,
-    private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(NftSyncService.name);
   }

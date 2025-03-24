@@ -10,14 +10,16 @@ import {
 import { mainnet, base,bsc } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
+const nativeTokenAddress = '0x0000000000000000000000000000000000000000';
+
 export async function transferToken({
-                                 rpcUrl,
-                                 privateKey,
-                                 tokenAddress,
-                                 recipient,
-                                 amount,
-                                 chainName,
-                               }: {
+  rpcUrl,
+  privateKey,
+  tokenAddress,
+  recipient,
+  amount,
+  chainName,
+}: {
   rpcUrl: string;
   privateKey: string;
   tokenAddress: string;
@@ -46,35 +48,54 @@ export async function transferToken({
     account,
   });
 
-  const publicClient = createPublicClient({
-    transport: http(rpcUrl),
-  });
 
+  if (tokenAddress === nativeTokenAddress) {
+    // Send native token transaction
+    const amountInWei = parseUnits(amount, 18);
+    const txHash = await walletClient.sendTransaction({
+      to: recipient as `0x${string}`,
+      value: amountInWei,
+      account,
+      kzg: {
+        blobToKzgCommitment: (blob: Uint8Array) => new Uint8Array(),
+        computeBlobKzgProof: (blob: Uint8Array, commitment: Uint8Array) => new Uint8Array(),
+      },
+      chain,
+    });
+    return txHash;
+  } else {
+    const publicClient = createPublicClient({
+      transport: http(rpcUrl),
+    });
 
-  // Read wallet balance
-  const balance = await publicClient.readContract({
-    address: tokenAddress as `0x${string}`,
-    abi: erc20Abi,
-    functionName: 'balanceOf',
-    args: [account.address],
-  });
+    // Read wallet balance
+    const balance = await publicClient.readContract({
+      address: tokenAddress as `0x${string}`,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [account.address],
+    });
 
-  console.log(`Current balance: ${balance}`);
+    const decimals = await publicClient.readContract({
+      address: tokenAddress as `0x${string}`,
+      abi: erc20Abi,
+      functionName: 'decimals',
+    });
+    const amountInWei = parseUnits(amount, decimals);
 
-  const amountInWei = parseUnits(amount, 18); // Ensure correct unit conversion
-  if (BigInt(balance) < amountInWei) {
-    throw new Error('Insufficient balance');
+    if (BigInt(balance) < amountInWei) {
+      throw new Error('Insufficient balance');
+    }
+
+    // Send ERC20 token transaction
+    const txHash = await walletClient.writeContract({
+      chain,
+      address: tokenAddress as `0x${string}`,
+      abi: erc20Abi,
+      functionName: 'transfer',
+      args: [recipient as `0x${string}`, amountInWei],
+      account,
+    });
+    return txHash;
   }
-
-  // Send transaction
-  const txHash = await walletClient.writeContract({
-    chain,
-    address: tokenAddress as `0x${string}`,
-    abi: erc20Abi,
-    functionName: 'transfer',
-    args: [recipient as `0x${string}`, amountInWei],
-    account,
-  });
-
-  return txHash;
 }

@@ -11,6 +11,7 @@ import { mainnet, base, bsc } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
 export class EVMClient {
+  static nativeTokenAddress = '0x0000000000000000000000000000000000000000';
   private publicClient;
   private chain;
 
@@ -40,6 +41,13 @@ export class EVMClient {
       default:
         throw new Error('Invalid chain');
     }
+  }
+
+  isNativeToken(tokenSymbol: string) {
+    return 
+    ( this.chain === mainnet && tokenSymbol === 'ETH' ) ||
+    ( this.chain === base && tokenSymbol === 'ETH' ) ||
+    ( this.chain === bsc && tokenSymbol === 'BNB' );
   }
 
   /**

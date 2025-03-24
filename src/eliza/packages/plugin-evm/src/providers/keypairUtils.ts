@@ -90,13 +90,13 @@ export async function getAccountFromWalletService({
     );
     account = {
       address: deriveKeyResult.keypair.address,
-      privateKey: deriveKeyResult.keypair.sign as unknown as string,
+      privateKey: deriveKeyResult.privateKey,
     }
   }
   elizaLogger.info(`get tee address, ${account.address}`);
   return requirePrivateKey
-    ? { address: account.address, privateKey: undefined }
-    : { address: account.address, privateKey: account.privateKey };
+    ? { address: account.address, privateKey: account.privateKey }
+    : { address: account.address, privateKey: undefined };
 }
 
 export async function signMessage(message: string, privateKey: string, rpcUrl: string): Promise<string> {
