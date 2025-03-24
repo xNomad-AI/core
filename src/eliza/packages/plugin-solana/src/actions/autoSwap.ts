@@ -22,9 +22,7 @@ import {
 import {
   convertNullStrings,
   getTradeSettings,
-  md5sum,
-  submitTransaction,
-  swapToken,
+  md5sum
 } from '../providers/swapUtils.js';
 import {
   getSwapTokenPrice,
