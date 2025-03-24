@@ -1,5 +1,5 @@
 {
-	"name": "@elizaos/plugin-evm",
+	"name": "@elizaos/plugin-chat",
 	"version": "0.1.9",
 	"type": "module",
 	"main": "dist/index.js",
@@ -19,7 +19,6 @@
 		"dist"
 	],
 	"dependencies": {
-		"viem": "^2.23.13"
 	},
 	"scripts": {
 		"build": "tsc",
