@@ -475,13 +475,17 @@ async function checkResponse(
   swapReq.inputTokenPercentage = swapReq.inputTokenAmount / balance;
   elizaLogger.info(`checking if user confirm to create task`);
 
+  if (!isValidSPLTokenAddress(swapReq.tokenTarget)) {
+        swapReq.tokenTarget =
+          swapReq.tokenTarget === swapReq.inputTokenSymbol
+            ? swapReq.inputTokenCA
+            : swapReq.outputTokenCA;
+  }
+
   let pendingAck = false;
 
-  if (lastAction?.result) {
-    elizaLogger.info(
-      `lastAction.result.toLowerCase().includes('pending'): ${lastAction.result.toLowerCase().includes('pending')}`,
-    );
-  }
+  console.log('lastAction', lastAction);
+  console.log('swapReq', swapReq);
 
   if (
     lastAction?.action === 'AUTO_TASK' &&
@@ -499,6 +503,9 @@ async function checkResponse(
     const isSameAction = matchResults.every((result) => result === true);
     pendingAck = isSameAction;
   }
+
+  console.log('pendingAck', pendingAck);
+
   if (pendingAck) {
     const confirmContext = composeContext({
       state,
@@ -519,12 +526,7 @@ async function checkResponse(
       callback?.(responseMsg);
       return { status: 'cancelled' };
     } else if (confirmResponse.userAcked == 'confirmed') {
-      if (!isValidSPLTokenAddress(swapReq.tokenTarget)) {
-        swapReq.tokenTarget =
-          swapReq.tokenTarget === swapReq.inputTokenSymbol
-            ? swapReq.inputTokenCA
-            : swapReq.outputTokenCA;
-      }
+      
       return { status: 'success', task: swapReq };
     }
   } else {
