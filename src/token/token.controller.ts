@@ -17,32 +17,33 @@ export class TokenController {
   ) {}
 
   @Get('/basic-info')
-  async getTokenBasicInfo(@Query('tokenAddress') tokenAddress: string) {
-    return await this.tokenInfo.getTokenBasicInfo(tokenAddress);
+  async getTokenBasicInfo(@Query('tokenAddress') tokenAddress: string, @Query('chain') chain: string) {
+    return await this.tokenInfo.getTokenBasicInfo(tokenAddress, chain);
   }
 
   @Get('/info')
   @CacheTTL(60)
-  async getTokenInfo(@Query('tokenAddress') tokenAddress: string) {
-    return await this.tokenInfo.getTokenInfo(tokenAddress);
+  async getTokenInfo(@Query('tokenAddress') tokenAddress: string, @Query('chain') chain: string) {
+    return await this.tokenInfo.getTokenInfo(tokenAddress, chain);
   }
 
   @Get('/twitter-info')
   @CacheTTL(3600)
-  async getTokenTwitterInfo(@Query('tokenAddress') tokenAddress: string) {
-    return await this.tokenInfo.getTokenTwitterInfo(tokenAddress);
+  async getTokenTwitterInfo(@Query('tokenAddress') tokenAddress: string, @Query('chain') chain: string) {
+    return await this.tokenInfo.getTokenTwitterInfo(tokenAddress, chain);
   }
 
   @Get('/news')
   @CacheTTL(60)
-  async getTokenNews(@Query('tokenAddress') tokenAddress: string) {
-    return await this.tokenInfo.getTokenNews(tokenAddress);
+  async getTokenNews(@Query('tokenAddress') tokenAddress: string, @Query('chain') chain: string) {
+    return await this.tokenInfo.getTokenNews(tokenAddress, chain);
   }
 
   @Get('/analyze')
   @CacheTTL(60)
   async getTokenAnalyze(
     @Query('tokenAddress') tokenAddress: string,
+    @Query('chain') chain: string,
     @Query('type') type: string | string[],
   ) {
     const typeArray = Array.isArray(type) ? type : type?.split(',') || [];
@@ -51,13 +52,13 @@ export class TokenController {
       typeArray.map(async (t) => {
         switch (t) {
           case 'news':
-            return { news: await this.tokenInfo.getTokenNews(tokenAddress) };
+            return { news: await this.tokenInfo.getTokenNews(tokenAddress, chain) };
           case 'twitter':
             return {
-              twitter: await this.tokenInfo.getTokenTwitterInfo(tokenAddress),
+              twitter: await this.tokenInfo.getTokenTwitterInfo(tokenAddress, chain),
             };
           case 'info':
-            return { info: await this.tokenInfo.getTokenInfo(tokenAddress) };
+            return { info: await this.tokenInfo.getTokenInfo(tokenAddress, chain) };
           default:
             return {};
         }

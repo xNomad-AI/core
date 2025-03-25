@@ -2,9 +2,28 @@ import { OkxParams, OkxSwapResponse, SwapTokenDto } from './type';
 import { createWalletClient, ethAddress, Hex, http, zeroAddress } from 'viem';
 import { bloxValidatorNodeService, jsonRpcNodeService } from './validatorNodeService.js';
 import okxService from './okxService.js';
-import { getSWAP_FEE_ACCOUNT, getSWAP_FEE_BPS } from './swapUtils.js';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base, bsc, mainnet } from 'viem/chains';
+
+
+
+const DEFAULT_CONFIG = {
+    EVM_SWAP_FEE_ACCOUNT: '0x1b455ab558518b7c32bafaff4661ede24cef005c',
+    EVM_SWAP_FEE_BPS: 100,
+  };
+  
+  export function getSWAP_FEE_BPS() {
+    return DEFAULT_CONFIG.EVM_SWAP_FEE_BPS;
+  }
+  
+  export function getSWAP_FEE_ACCOUNT() {
+    return DEFAULT_CONFIG.EVM_SWAP_FEE_ACCOUNT;
+  }
+  
+  export async function getTradeSettings(agentId: string) {
+    const result = await fetch(`http://localhost:8080/agent/trade/settings?agentId=${agentId}`);
+    return await result.json() as {priorityFee, tip, slippage, mode};
+  }
 
 export class SwapTokenService {
     private readonly logger: Console;
@@ -15,7 +34,6 @@ export class SwapTokenService {
 
     async swapToken({
         rpcUrl,
-        chainId,
         chainName,
         amount,
         slippage,
@@ -25,30 +43,47 @@ export class SwapTokenService {
         privateKey,
         userWalletAddress,
     }: SwapTokenDto): Promise<string> {
+        let chain;
+        let chainId;
+        switch (chainName) {
+            case 'ethereum':
+                chain = mainnet;
+                chainId = 1;
+                break;
+            case 'base':
+                chain = base;
+                chainId = 8453;
+                break;
+            case 'bsc':
+                chain = bsc;
+                chainId = 56;
+                break;
+            default:
+                throw new Error(`Invalid chain name ${chainName}`);
+        }
+
+        if (inputTokenCA.toLowerCase() === zeroAddress) {
+            inputTokenCA = ethAddress;
+        }
+        if (outputTokenCA.toLowerCase() === zeroAddress) {
+            outputTokenCA = ethAddress;
+        }
+
+        if (!slippage || slippage < 0 || slippage > 1) {
+            throw new Error('Invalid slippage, slippage should be between 0 and 1');
+        }
+
+        if (!rpcUrl || !chainId || !userWalletAddress) {
+            throw new Error('Missing required parameters');
+        }
+
+        this.logger.info(
+          `[swap token] ${chainName} Swapping ${amount} ${inputTokenCA} to ${outputTokenCA}`,
+        );
+
         try {
-
-            if (inputTokenCA.toLowerCase() === zeroAddress) {
-                inputTokenCA = ethAddress;
-            }
-            if (outputTokenCA.toLowerCase() === zeroAddress) {
-                outputTokenCA = ethAddress;
-            }
-
-            if (!slippage || slippage < 0 || slippage > 1) {
-                throw new Error('Invalid slippage, slippage should be between 0 and 1');
-            }
-
-            this.logger.info(
-                `[swap token] Swapping ${amount} ${inputTokenCA} to ${outputTokenCA}`,
-            );
-
-            if (!rpcUrl || !chainId || !userWalletAddress) {
-                throw new Error('Missing required parameters');
-            }
-
             const validatorNode =
                 mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
-
             const okxParams: OkxParams = {
                 chainId,
                 amount: amount.toString(),
@@ -60,23 +95,11 @@ export class SwapTokenService {
             this.logger.info('okxParams', JSON.stringify(okxParams));
 
             const okxResponse = await this.getOKXCallData(okxParams);
-
-            const tx = okxResponse.data[0].tx;
-            const account = privateKeyToAccount(privateKey as Hex);
-            let chain;
-            switch (chainName) {
-                case 'ethereum':
-                    chain = mainnet;
-                    break;
-                case 'base':
-                    chain = base;
-                    break;
-                case 'bsc':
-                    chain = bsc;
-                    break;
-                default:
-                    throw new Error(`Invalid chain name ${chainName}`);
+            const tx = okxResponse.data?.[0]?.tx;
+            if (!tx) {
+                throw new Error(`Failed to generate transaction: ${okxResponse?.msg}`);
             }
+            const account = privateKeyToAccount(privateKey as Hex);
             const walletClient = createWalletClient({
                 chain,
                 transport: http(rpcUrl),

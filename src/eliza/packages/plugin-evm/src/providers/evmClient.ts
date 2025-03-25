@@ -6,14 +6,16 @@ import {
   http,
   parseUnits,
   formatUnits,
+  Chain,
+  ethAddress,
 } from 'viem';
 import { mainnet, base, bsc } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
+export const nativeTokenAddress = ethAddress;
 export class EVMClient {
-  static nativeTokenAddress = '0x0000000000000000000000000000000000000000';
   private publicClient;
-  private chain;
+  private chain: Chain;
 
   constructor({
     rpcUrl,
@@ -22,15 +24,14 @@ export class EVMClient {
     rpcUrl: string;
     chainName: string;
   }) {
-    this.chain = this.getChain(chainName);
-    
+    this.chain = this.getChainConfig(chainName);
     this.publicClient = createPublicClient({
       chain: this.chain,
       transport: http(rpcUrl),
     });
   }
 
-  private getChain(chainName: string) {
+  private getChainConfig(chainName: string): Chain {
     switch (chainName) {
       case 'ethereum':
         return mainnet;
@@ -44,10 +45,7 @@ export class EVMClient {
   }
 
   isNativeToken(tokenSymbol: string) {
-    return 
-    ( this.chain === mainnet && tokenSymbol === 'ETH' ) ||
-    ( this.chain === base && tokenSymbol === 'ETH' ) ||
-    ( this.chain === bsc && tokenSymbol === 'BNB' );
+    return this.chain.nativeCurrency.symbol === tokenSymbol.toUpperCase() || this.chain.nativeCurrency.name === tokenSymbol.toUpperCase();
   }
 
   /**
@@ -56,10 +54,14 @@ export class EVMClient {
    * @returns number of decimals
    */
   async getTokenDecimals(tokenAddress: string): Promise<number> {
-      const decimals = await this.publicClient.readContract({
-        address: tokenAddress,
-        abi: erc20Abi,
-        functionName: 'decimals',
+    // For native currency (ETH, BNB etc), get decimals directly
+    if (tokenAddress.toLowerCase() === nativeTokenAddress) {
+      return this.chain.nativeCurrency.decimals;
+    }
+    const decimals = await this.publicClient.readContract({
+      address: tokenAddress,
+      abi: erc20Abi,
+      functionName: 'decimals',
       });
       return Number(decimals);
   }
@@ -68,14 +70,19 @@ export class EVMClient {
    * Get token balance for an address
    * @param tokenAddress ERC20 token address
    * @param walletAddress Address to check balance for
-   * @param formatted Whether to return formatted balance with decimals
-   * @returns Token balance (raw bigint or formatted string)
+   * @returns Token balance (raw bigint)
    */
   async getTokenBalance(
     tokenAddress: string, 
     walletAddress: string,
-    formatted: boolean = false
   ): Promise<bigint> {
+    // For native currency (ETH, BNB etc), get balance directly
+    if (tokenAddress.toLowerCase() === nativeTokenAddress) {
+      return await this.publicClient.getBalance({
+        address: walletAddress,
+      });
+    }
+    // For ERC20 tokens
     return await this.publicClient.readContract({
       address: tokenAddress,
       abi: erc20Abi,

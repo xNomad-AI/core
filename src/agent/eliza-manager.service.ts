@@ -366,6 +366,8 @@ export class ElizaManagerService {
     character.settings.secrets['WALLET_SECRET_SALT'] = salt;
     character.settings.secrets['NFT_CHAIN'] = chain;
     character.settings.secrets['NFT_ID'] = nftId;
+    character.settings['WALLET_SECRET_SALT'] = salt;
+    character.settings['TEE_MODE'] = teeMode;
     character.settings.modelConfig = {
       ...character.settings.modelConfig,
       temperature: 0.2,

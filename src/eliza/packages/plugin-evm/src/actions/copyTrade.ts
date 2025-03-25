@@ -10,11 +10,12 @@ import {
   generateObjectDeprecated,
   ModelClass, ActionStatus,
 } from '@elizaos/core';
-import { convertNullStrings } from '../providers/swapUtils.js';
+import { convertNullStrings } from '../providers/environment.js';
 import { isValidAddress } from '../providers/tokenUtils.js';
-import { getWalletKey } from '../keypairUtils';
-import { SharedProvider } from '../index';
-import { isAgentAdmin, NotAgentAdminResponse } from '../providers/walletUtils';
+import { getWalletKey } from '../providers/keypairUtils.js';
+import { isAgentAdmin, NotAgentAdminResponse } from '../providers/walletUtils.js';
+import { SharedProvider } from '../index.js';
+import { userConfirmTemplate } from '../providers/type.js';
 
 type CopyTradeParameters = {
   name: string;
@@ -28,47 +29,6 @@ type CopyTradeParameters = {
   agentId: string;
 };
 
-const userConfirmTemplate = `
-{{recentMessages}}
-
-Analyzing the user's response to the confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
-Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
-Respond with a JSON:  
-\`\`\`json
-{
-    "userAcked": "confirmed" | "rejected" | "pending"
-}
-\`\`\`  
-
-Decision Criteria:
-•"confirmed" → The user has explicitly confirmed the transfer using words like “yes”, “confirm”, “okay”, “sure”, etc.
-•"rejected" → The user has responded with anything other than a confirmation.
-•"pending" → The user has provided a complete transfer request, but User2 has not yet sent the confirmation prompt.
-
-Additional Rules:
-•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
-•Analyze the last five messages to understand the user's intent in context.
-•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
-•If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
-**Examples:**  
-
-✅ **Should return \`"confirmed"\`**  
-- User2: "Please confirm by replying with 'yes' or 'confirm'."  
-- User1: "yes"  
-
-- User2: "Please confirm."  
-- User1: "okay"  
-
-❌ **Should return \`"rejected"\`**  
-- User2: "Please confirm by replying with 'yes' or 'confirm'"  
-- User1: "no"  
-
-❓ **Should return \`"pending"\`**  
-- User1: "copy trade 3CpQxMsS846eB8Dxee488fLwx5Xbnd45sA2dNuphYWV7"  
-
-- User1: "chat"  
-
-Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
 
 export const copyTrade: Action = {
   functionCallSpec: {
@@ -99,7 +59,7 @@ export const copyTrade: Action = {
         fixedAmount: {
           type: ['number', 'null'],
           description:
-            'The fixed input SOL amount to copy trade, Either this or "percentage" must be provided ',
+            'The fixed input native token amount to copy trade, Either this or "percentage" must be provided ',
         },
         percentage: {
           type: ['number', 'null'],
@@ -162,8 +122,8 @@ export const copyTrade: Action = {
       return 'pending';
     }
 
-    const wallet = await getWalletKey(runtime, true);
-    response.walletAddress = wallet.keypair.publicKey.toBase58();
+    const {address, privateKey} = await getWalletKey(runtime, true);
+    response.walletAddress = address;
     response.agentId = runtime.agentId;
     const records = await runtime.databaseAdapter.find?.('copyTrades', {
       agentId: response.agentId,
@@ -232,7 +192,7 @@ export const copyTrade: Action = {
 
 function formatConfirmMessage(response: CopyTradeParameters): string {
   const buyInfo = Number.isFinite(response.fixedAmount)
-    ? `Buy amount: ${response.fixedAmount} SOL`
+    ? `Buy amount: ${response.fixedAmount}`
     : `Buy percentage: ${response.percentage * 100}% of target order`;
   return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
 ————

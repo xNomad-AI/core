@@ -60,9 +60,9 @@ export class SolanaClient {
         token.toUpperCase() === 'SOL' ||
         token.toUpperCase() === 'WSOL'
       ) {
-        return this.getSOLBalance();
+        return await this.getSOLBalance();
       }
-      return this.getSPLBalance(token);
+      return await this.getSPLBalance(token);
     } catch (e) {
       if (e.message?.includes('Invalid param: could not find account')) {
         return 0;
