@@ -55,19 +55,13 @@ export class EVMClient {
    * @param tokenAddress ERC20 token address
    * @returns number of decimals
    */
-  async getTokenDecimals(tokenAddress: `0x${string}`): Promise<number> {
-    try {
+  async getTokenDecimals(tokenAddress: string): Promise<number> {
       const decimals = await this.publicClient.readContract({
         address: tokenAddress,
         abi: erc20Abi,
         functionName: 'decimals',
       });
-      
       return Number(decimals);
-    } catch (error) {
-      console.error('Error fetching token decimals:', error);
-      return 18; // Default to 18 if failed
-    }
   }
 
   /**
@@ -78,28 +72,22 @@ export class EVMClient {
    * @returns Token balance (raw bigint or formatted string)
    */
   async getTokenBalance(
-    tokenAddress: `0x${string}`, 
-    walletAddress: `0x${string}`,
+    tokenAddress: string, 
+    walletAddress: string,
     formatted: boolean = false
-  ): Promise<bigint | string> {
-    try {
-      const balance = await this.publicClient.readContract({
-        address: tokenAddress,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [walletAddress],
-      }) as bigint;
+  ): Promise<bigint> {
+    return await this.publicClient.readContract({
+      address: tokenAddress,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [walletAddress],
+    }) as bigint;
+  }
 
-      if (formatted) {
-        const decimals = await this.getTokenDecimals(tokenAddress);
-        return formatUnits(balance, decimals);
-      }
-      
-      return balance;
-    } catch (error) {
-      console.error('Error fetching token balance:', error);
-      return formatted ? "0" : BigInt(0);
-    }
+  async getTokenUIBalance(tokenAddress: string, walletAddress: string): Promise<string> {
+    const balance = await this.getTokenBalance(tokenAddress, walletAddress);
+    const decimals = await this.getTokenDecimals(tokenAddress);
+    return formatUnits(balance, decimals);
   }
 
   /**

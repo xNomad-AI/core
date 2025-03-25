@@ -39,8 +39,16 @@ export async function createAgent(
 
   const plugins = [chatPlugin];
   const nftChain = getSecret(character, 'NFT_CHAIN');
-  nftChain === 'solana' ? plugins.push(solanaPlugin) : plugins.push(evmPlugin);
+  
+  if (nftChain === 'solana') {
+    plugins.push(solanaPlugin);
+  } else {
+    plugins.push(evmPlugin);
+  }
 
+  elizaLogger.info(
+    `Agent: ${character.name} | Chain: ${nftChain} | Plugins: ${plugins.map(p => p.name).join(', ')}`
+  );
 
   const runtime = new AgentRuntime({
     databaseAdapter: db,

@@ -19,12 +19,14 @@ import {
 } from '../providers/walletUtils.js';
 import { convertNullStrings, getRuntimeKey, trimTokenSymbol } from '../providers/environment.js';
 import { transferToken } from '../providers/transferUtils.js';
+import { EVMClient } from '../providers/evmClient.js';
 
-export interface TransferContent extends Content {
+export interface TransferContent {
   tokenAddress: string | null;
   tokenSymbol: string | null;
   recipient: string;
   amount: number | null;
+  percentage?: number | string;
 }
 
 const userConfirmTemplate = `
@@ -77,7 +79,7 @@ export const transfer: Action = {
     strict: true,
     additionalProperties: false,
     description:
-      'EVM transfers: Transfer native or ERC20 tokens from agent wallet to another address, if tokenSymbol is native token of the chain, tokenAddress should be 0x0000000000000000000000000000000000000000',
+      'EVM Token transfers: Transfer native or ERC20 tokens from agent wallet to another address.',
     parameters: {
       type: 'object',
       properties: {
@@ -89,7 +91,7 @@ export const transfer: Action = {
         tokenAddress: {
           type: ['string', 'null'],
           description:
-            'The token contract address to transfer, at lease one of tokenSymbol or tokenAddress is provided',
+            'The token contract address to transfer, at lease one of tokenSymbol or tokenAddress is provided. Set it null if you are not sure.',
         },
         recipient: {
           type: 'string',
@@ -139,7 +141,11 @@ export const transfer: Action = {
     }
     
     const chain = getRuntimeKey(runtime, 'NFT_CHAIN');
-    const rpcUrl = getRuntimeKey(runtime, `${'chain'.toUpperCase()}_RPC_URL`);
+    const rpcUrl = getRuntimeKey(runtime, `${chain.toUpperCase()}_RPC_URL`);
+    const evmClient = new EVMClient({
+      rpcUrl,
+      chainName: chain,
+    });
     const { address, privateKey } = await getWalletKey(runtime, true);
 
     if (!content.tokenAddress) {
@@ -157,6 +163,15 @@ export const transfer: Action = {
       }
     }
 
+    const uiBalance = await evmClient.getTokenUIBalance(content.tokenAddress, address);
+    if (Number(uiBalance) < content.amount) {
+      callback({
+        text: `Insufficient balance for transfer`,
+      });
+      return 'pending';
+    }
+    content.percentage = ((content.amount / Number(uiBalance)) * 100).toFixed(3);
+
     const confirmContext = composeContext({
       state,
       template: userConfirmTemplate,
@@ -168,6 +183,13 @@ export const transfer: Action = {
       modelClass: ModelClass.LARGE,
     });
     elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+
+    if (confirmResponse.userAcked == 'pending') {
+      callback({
+        text: formatTransferInfo(address, content),
+      });
+      return 'pending';
+    }
 
     if (confirmResponse.userAcked == 'rejected') {
       const responseMsg = {
@@ -185,11 +207,11 @@ export const transfer: Action = {
 
     const txHash = await transferToken({
       rpcUrl: rpcUrl,
-      amount: content.amount.toString(),
+      uiAmount: content.amount.toString(),
       privateKey: privateKey,
       recipient: content.recipient,
       tokenAddress: content.tokenAddress,
-      chainName: 'bsc',
+      chainName: chain,
     });
 
     callback?.({
