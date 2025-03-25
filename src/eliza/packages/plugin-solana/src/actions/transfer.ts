@@ -218,6 +218,8 @@ export const transfer: Action = {
       );
       const responseMsg = {
         text: `${transferInfo}`,
+        result: 'Pending user confirmation',
+        action: 'SEND_TOKEN',
       };
       callback?.(responseMsg);
       return null;

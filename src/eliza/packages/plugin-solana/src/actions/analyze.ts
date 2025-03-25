@@ -89,6 +89,9 @@ export const analyze: Action = {
     const data = analyzeResult.data;
     callback?.({
       text: `token: ${response.tokenSymbol || response.tokenAddress}\n${JSON.stringify(data)}`,
+      result: `Successfully analyzed the token: ${response.tokenSymbol ? 
+        (response.tokenAddress ? `${response.tokenSymbol} (${response.tokenAddress})` : response.tokenSymbol) 
+        : response.tokenAddress}`,
       status: 'success',
       action: `ANALYZE_TOKEN`,
       webAction: 'analyze',
