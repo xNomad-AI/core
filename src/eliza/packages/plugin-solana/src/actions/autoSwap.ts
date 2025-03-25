@@ -10,20 +10,19 @@ import {
   type Action,
   elizaLogger,
   Content,
-  stringToUuid, ActionStatus,
+  stringToUuid,
+  ActionStatus,
 } from '@elizaos/core';
-import {
-  Connection,
-  Keypair, LAMPORTS_PER_SOL,
-} from '@solana/web3.js';
+import { Connection, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getWalletKey } from '../keypairUtils.js';
 import {
   isAgentAdmin,
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 import {
-  convertNullStrings, getTradeSettings,
-  md5sum,
+  convertNullStrings,
+  getTradeSettings,
+  md5sum
 } from '../providers/swapUtils.js';
 import {
   getSwapTokenPrice,
@@ -32,10 +31,7 @@ import {
   isValidSPLTokenAddress,
   trimTokenSymbol,
 } from '../providers/tokenUtils.js';
-import {
-  getSolanaClient,
-  SolanaClient,
-} from '../providers/solanaClient.js';
+import { getSolanaClient, SolanaClient } from '../providers/solanaClient.js';
 import { getRuntimeKey } from '../environment.js';
 import { NATIVE_MINT } from '@solana/spl-token';
 import { SwapTokenService } from '../providers/swapTokenService';
@@ -61,23 +57,21 @@ export interface AutoSwapTask {
 const userConfirmAutoTaskTemplate = `
 {{recentMessages}}
 
-Analyzing the user’s response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
+Analyzing the user's response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
 Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
 Respond with a JSON:  
 \`\`\`json
 {
-    "userAcked": "confirmed" | "rejected" | "pending"
+    "userAcked": "confirmed" | "rejected"
 }
 \`\`\`  
 
 **Confirmation Criteria:**  
 - \`"confirmed"\` → The user has explicitly confirmed using words like **"yes"**, **"confirm"**, **"okay"**, **"sure"**, or similar.  
 - \`"rejected"\` → The user responded with anything other than a confirmation after User2 send confirmation message.
-- \`"pending"\` → The user has provided a complete autotask request, but User2 has not yet sent the confirmation prompt.  
 
 **Additional Rules:**  
-•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
-•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
+•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as "pending".
 •If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
 
@@ -98,9 +92,6 @@ Respond with a JSON:
 - User2: "AutoTask:: Swap 0.1 SOL for ELIZA 5voS9evDjxF589WuEub5i4ti7FWQmZCsAsyD5ucbuRqM when price below 0.016543.  
   Please confirm the swap by replying with 'yes' or 'confirm'."  
 - User1: "no"  
-
- **Should return \`"pending"\`**  
-- User1: "create autotask swap 0.0001 SOL for USDC when price below 0.99"  
 `;
 
 export async function executeAutoTokenSwapTask(
@@ -262,7 +253,7 @@ export const autoTask: Action = {
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
   ): Promise<ActionStatus> => {
-    const {task, status} = await checkResponse(
+    const { task, status } = await checkResponse(
       runtime,
       message,
       state,
@@ -321,11 +312,20 @@ async function checkResponse(
   const isAdmin = await isAgentAdmin(runtime, message);
   if (!isAdmin) {
     callback?.(NotAgentAdminResponse);
-    return {status: 'rejected'};
+    return { status: 'rejected' };
   }
 
   // generate formatted response from chat
+  const lastAction = state.lastAction as {
+    action: string;
+    result: string;
+    parameters: { [key: string]: unknown };
+  };
   let swapReq = convertNullStrings(state.actionParameters) as AutoSwapTask;
+  // strip $ from inputTokenSymbol and outputTokenSymbol
+  swapReq.inputTokenSymbol = swapReq.inputTokenSymbol?.replace('$', '');
+  swapReq.outputTokenSymbol = swapReq.outputTokenSymbol?.replace('$', '');
+
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
 
@@ -356,7 +356,7 @@ async function checkResponse(
         text: 'Please provide a valid inputToken CA you want to sell',
       };
       callback?.(responseMsg);
-      return {status: 'pending'};
+      return { status: 'pending' };
     }
   }
 
@@ -370,7 +370,7 @@ async function checkResponse(
         text: 'Please provide a valid outputToken CA you want to buy',
       };
       callback?.(responseMsg);
-      return {status: 'pending'};
+      return { status: 'pending' };
     }
   }
 
@@ -383,13 +383,12 @@ async function checkResponse(
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
     });
-    return {status: 'pending'};
+    return { status: 'pending' };
   }
 
   if (
     Number.isFinite(swapReq.inputTokenPercentage) &&
     swapReq.inputTokenPercentage != 0
-
   ) {
     const balance = await client.getUIBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
@@ -404,7 +403,7 @@ async function checkResponse(
       action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
-    return {status: 'pending'};
+    return { status: 'pending' };
   }
 
   const balance = await client.getUIBalance(swapReq.inputTokenCA);
@@ -413,7 +412,7 @@ async function checkResponse(
       text: 'Your input balance is 0.',
     };
     callback?.(responseMsg);
-    return {status: 'failed'};
+    return { status: 'failed' };
   }
 
   if (balance < swapReq.inputTokenAmount) {
@@ -421,7 +420,7 @@ async function checkResponse(
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
     };
     callback?.(responseMsg);
-    return {status: 'failed'};
+    return { status: 'failed' };
   }
 
   const WSOL_AMOUNT = await client.getUIBalance(NATIVE_MINT.toBase58());
@@ -438,7 +437,7 @@ async function checkResponse(
           balance,
       };
       callback?.(responseMsg);
-      return {status: 'failed'};
+      return { status: 'failed' };
     }
   } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BANANCE) {
     // buy with SOL
@@ -450,15 +449,15 @@ async function checkResponse(
         WSOL_AMOUNT,
     };
     callback?.(responseMsg);
-    return {status: 'failed'};
+    return { status: 'failed' };
   }
 
   if (!swapReq.priceTarget && !swapReq.delay) {
     const responseMsg = {
-      text: "If you’d like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
+      text: "If you'd like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
     };
     callback?.(responseMsg);
-    return {status: 'pending'};
+    return { status: 'pending' };
   }
 
   if (swapReq.delay) {
@@ -473,48 +472,75 @@ async function checkResponse(
   }
 
   swapReq.expireAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
+  swapReq.inputTokenPercentage = swapReq.inputTokenAmount / balance;
   elizaLogger.info(`checking if user confirm to create task`);
 
-  const confirmContext = composeContext({
-    state,
-    template: userConfirmAutoTaskTemplate,
-  });
-
-  const confirmResponse = await generateObjectDeprecated({
-    runtime,
-    context: confirmContext,
-    modelClass: ModelClass.LARGE,
-  });
-  elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
-
-  if (confirmResponse.userAcked == 'rejected') {
-    const responseMsg = {
-      text: 'ok. I will not set the autotask.',
-    };
-    callback?.(responseMsg);
-    return {status: 'cancelled'};
+  if (!isValidSPLTokenAddress(swapReq.tokenTarget)) {
+        swapReq.tokenTarget =
+          swapReq.tokenTarget === swapReq.inputTokenSymbol
+            ? swapReq.inputTokenCA
+            : swapReq.outputTokenCA;
   }
 
-  if (confirmResponse.userAcked == 'pending') {
-    swapReq.inputTokenPercentage = (swapReq.inputTokenAmount/balance);
-    const swapInfo = formatTaskInfo(swapReq);
-    const responseMsg = {
+  let pendingAck = false;
+
+  console.log('lastAction', lastAction);
+  console.log('swapReq', swapReq);
+
+  if (
+    lastAction?.action === 'AUTO_TASK' &&
+    lastAction?.result &&
+    lastAction.result.toLowerCase().includes('pending')
+  ) {
+    const matchResults = Object.entries(swapReq).map(([key, value]) => {
+      const isKeyExcluded = key === 'startAt' || key === 'expireAt';
+      const isValueMatched = lastAction.parameters[key] === value;
+      const isBothInvalid = !value && !lastAction.parameters[key];
+
+      return isKeyExcluded || isValueMatched || isBothInvalid;
+    });
+
+    const isSameAction = matchResults.every((result) => result === true);
+    pendingAck = isSameAction;
+  }
+
+  console.log('pendingAck', pendingAck);
+
+  if (pendingAck) {
+    const confirmContext = composeContext({
+      state,
+      template: userConfirmAutoTaskTemplate,
+    });
+
+    const confirmResponse = await generateObjectDeprecated({
+      runtime,
+      context: confirmContext,
+      modelClass: ModelClass.LARGE,
+    });
+    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+
+    if (confirmResponse.userAcked == 'rejected') {
+      const responseMsg = {
+        text: 'ok. I will not set the autotask.',
+      };
+      callback?.(responseMsg);
+      return { status: 'cancelled' };
+    } else if (confirmResponse.userAcked == 'confirmed') {
+      
+      return { status: 'success', task: swapReq };
+    }
+  } else {
+      const swapInfo = formatTaskInfo(swapReq);
+      const responseMsg = {
       text: `${swapInfo}`,
       action: 'AUTO_TASK',
-    };
-    callback?.(responseMsg);
-    return {status: 'pending'};
-  }
-
-  if (!isValidSPLTokenAddress(swapReq.tokenTarget)) {
-    swapReq.tokenTarget =
-      swapReq.tokenTarget === swapReq.inputTokenSymbol
-        ? swapReq.inputTokenCA
-        : swapReq.outputTokenCA;
-  }
-  return {status: 'success', task: swapReq};
+      result: 'Pending user confirmation for auto task',
+      };
+      callback?.(responseMsg);
+      return { status: 'pending' };
+    }
 }
+
 
 async function executeSwapTokenTx(
   runtime: IAgentRuntime,
@@ -528,21 +554,27 @@ async function executeSwapTokenTx(
   );
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
-  const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(inputTokenCA);
-  const {slippage, priorityFee, tip, mode } = await getTradeSettings(runtime.agentId);
-  const txid = await await new SwapTokenService().swapToken(
-    {
-      connection,
-      userWalletAddress: keypair.publicKey.toBase58(),
-      inputTokenCA,
-      outputTokenCA,
-      amount: BigNumber(amount).multipliedBy(new BigNumber(10).pow(decimals)).integerValue(),
-      keyPair :keypair,
-      slippage,
-      priorityFee,
-      tip: tip * LAMPORTS_PER_SOL,
-      mode,
-    });
+  const decimals = await new SolanaClient(
+    rpcUrl,
+    keypair.publicKey,
+  ).getMintDecimals(inputTokenCA);
+  const { slippage, priorityFee, tip, mode } = await getTradeSettings(
+    runtime.agentId,
+  );
+  const txid = await await new SwapTokenService().swapToken({
+    connection,
+    userWalletAddress: keypair.publicKey.toBase58(),
+    inputTokenCA,
+    outputTokenCA,
+    amount: BigNumber(amount)
+      .multipliedBy(new BigNumber(10).pow(decimals))
+      .integerValue(),
+    keyPair: keypair,
+    slippage,
+    priorityFee,
+    tip: tip * LAMPORTS_PER_SOL,
+    mode,
+  });
   return txid;
 }
 
@@ -559,16 +591,24 @@ function formatTaskInfo({
   startAt,
   expireAt,
 }: AutoSwapTask): string {
-
-  const displayedInputSymbol = trimTokenSymbol(`$${inputTokenSymbol || inputTokenCA}`);
-  const displayedOutputSymbol = trimTokenSymbol(`$${outputTokenSymbol || outputTokenCA}`);
+  const displayedInputSymbol = trimTokenSymbol(
+    `$${inputTokenSymbol || inputTokenCA}`,
+  );
+  const displayedOutputSymbol = trimTokenSymbol(
+    `$${outputTokenSymbol || outputTokenCA}`,
+  );
   const displayedTokenTarget =
-    tokenTarget === inputTokenCA ? displayedInputSymbol :
-      tokenTarget === outputTokenCA ? displayedOutputSymbol :
-        trimTokenSymbol(`$${tokenTarget}`);
+    tokenTarget === inputTokenCA
+      ? displayedInputSymbol
+      : tokenTarget === outputTokenCA
+        ? displayedOutputSymbol
+        : trimTokenSymbol(`$${tokenTarget}`);
 
   const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'buy' : 'sell';
-  const tokenInfo = swapType === 'sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
+  const tokenInfo =
+    swapType === 'sell'
+      ? `${displayedInputSymbol} (${inputTokenCA})`
+      : `${displayedOutputSymbol} (${outputTokenCA})`;
 
   const amountInfo =
     swapType === 'sell'

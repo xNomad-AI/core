@@ -9,7 +9,8 @@ import {
   composeContext,
   generateObjectDeprecated,
   ModelClass,
-  elizaLogger, ActionStatus,
+  elizaLogger,
+  ActionStatus,
 } from '@elizaos/core';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getTokensBySymbol } from '../providers/tokenUtils.js';
@@ -81,7 +82,6 @@ export const analyze: Action = {
     if (!isSuccess) {
       callback?.({
         text: `Failed to analyze the token: ${analyzeResult.error}`,
-
       });
       return 'failed';
     }
@@ -89,6 +89,9 @@ export const analyze: Action = {
     const data = analyzeResult.data;
     callback?.({
       text: `token: ${response.tokenSymbol || response.tokenAddress}\n${JSON.stringify(data)}`,
+      result: `Successfully analyzed the token: ${response.tokenSymbol ? 
+        (response.tokenAddress ? `${response.tokenSymbol} (${response.tokenAddress})` : response.tokenSymbol) 
+        : response.tokenAddress}`,
       status: 'success',
       action: `ANALYZE_TOKEN`,
       webAction: 'analyze',

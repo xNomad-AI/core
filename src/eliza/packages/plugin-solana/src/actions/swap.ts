@@ -8,18 +8,19 @@ import {
   ModelClass,
   type State,
   type Action,
-  elizaLogger, ActionStatus,
+  elizaLogger,
+  ActionStatus,
 } from '@elizaos/core';
-import {
-  Connection, LAMPORTS_PER_SOL,
-  PublicKey,
-} from '@solana/web3.js';
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getWalletKey } from '../keypairUtils.js';
 import {
   isAgentAdmin,
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
-import { convertNullStrings, getTradeSettings } from '../providers/swapUtils.js';
+import {
+  convertNullStrings,
+  getTradeSettings,
+} from '../providers/swapUtils.js';
 import { NATIVE_MINT } from '@solana/spl-token';
 import { getSolanaClient, SolanaClient } from '../providers/solanaClient.js';
 import {
@@ -44,23 +45,20 @@ interface SwapTokenRequest {
 const userConfirmTemplate = `
 {{recentMessages}}
 
-Analyzing the user’s response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
+Analyzing the user's response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
 Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
 Respond with a JSON:  
 \`\`\`json
 {
-    "userAcked": "confirmed" | "rejected" | "pending"
+    "userAcked": "confirmed" | "rejected" 
 }
 \`\`\`  
 
 **Decision Criteria:**  
-"confirmed" → The user has explicitly confirmed the swap using words like “yes”, “confirm”, “okay”, “sure”, etc.
+"confirmed" → The user has explicitly confirmed the swap using words like "yes", "confirm", "okay", "sure", etc.
 "rejected" → The user has responded with anything other than a confirmation.
-"pending" → The user has provided a complete swap request, but User2 has not yet sent the confirmation prompt.
 
 **Additional Rules:**  
-•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
-•If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
 •If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
 
@@ -79,12 +77,8 @@ Respond with a JSON:
 - User2: "Swap 0.1 SOL for ELIZA. Please confirm by replying with 'yes' or 'confirm'."  
 - User1: "cancel"  
 
-❓ **Should return \`"pending"\`**  
-- User1: "swap 0.0001 SOL for USDC"  
 
-- User1: "buy 0.1 SOL ELIZA"  
-
-Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
+Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\` or  \`"rejected"\` based on the **immediate** response following the confirmation request.`;
 
 export const executeSwap: Action = {
   functionCallSpec: {
@@ -159,7 +153,7 @@ async function handleExecuteSwap(
   _options: { [key: string]: unknown },
   callback?: HandlerCallback,
 ): Promise<ActionStatus> {
-  const {parameters, status} = await checkResponse(
+  const { parameters, status } = await checkResponse(
     runtime,
     message,
     state,
@@ -173,24 +167,30 @@ async function handleExecuteSwap(
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
   const { keypair } = await getWalletKey(runtime, true);
-  const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(parameters.inputTokenCA);
-  const {slippage, priorityFee, tip, mode } = await getTradeSettings(runtime.agentId);
+  const decimals = await new SolanaClient(
+    rpcUrl,
+    keypair.publicKey,
+  ).getMintDecimals(parameters.inputTokenCA);
+  const { slippage, priorityFee, tip, mode } = await getTradeSettings(
+    runtime.agentId,
+  );
   let txid: string;
   try {
-    txid = await new SwapTokenService().swapToken(
-      {
-        connection,
-        userWalletAddress: keypair.publicKey.toBase58(),
-        inputTokenCA : parameters.inputTokenCA,
-        outputTokenCA: parameters.outputTokenCA,
-        amount: BigNumber(parameters.inputTokenAmount).multipliedBy(10 ** decimals).integerValue(),
-        slippage,
-        priorityFee,
-        keyPair :keypair,
-        mode,
-        tip: tip * LAMPORTS_PER_SOL,
-      });
-  }catch (e){
+    txid = await new SwapTokenService().swapToken({
+      connection,
+      userWalletAddress: keypair.publicKey.toBase58(),
+      inputTokenCA: parameters.inputTokenCA,
+      outputTokenCA: parameters.outputTokenCA,
+      amount: BigNumber(parameters.inputTokenAmount)
+        .multipliedBy(10 ** decimals)
+        .integerValue(),
+      slippage,
+      priorityFee,
+      keyPair: keypair,
+      mode,
+      tip: tip * LAMPORTS_PER_SOL,
+    });
+  } catch (e) {
     elizaLogger.error(`Error occurred while executing swap: ${e}`);
     callback?.({
       text: `${e}`,
@@ -223,7 +223,7 @@ async function checkResponse(
     outputTokenAmount: number | null;
     outputTokenCA: string;
     programId: PublicKey;
-}
+  };
 }> {
   const isAdmin = await isAgentAdmin(runtime, message);
   if (!isAdmin) {
@@ -232,7 +232,16 @@ async function checkResponse(
   }
 
   // generate formatted response from chat
+  const lastAction = state.lastAction as {
+    action: string;
+    result: string;
+    parameters: { [key: string]: unknown };
+  };
   let swapReq = convertNullStrings(state.actionParameters) as SwapTokenRequest;
+  // strip $ from inputTokenSymbol and outputTokenSymbol
+  swapReq.inputTokenSymbol = swapReq.inputTokenSymbol?.replace('$', '');
+  swapReq.outputTokenSymbol = swapReq.outputTokenSymbol?.replace('$', '');
+
   elizaLogger.log('Swap request:', swapReq);
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
@@ -264,7 +273,7 @@ async function checkResponse(
         result: 'Pending inputToken CA',
       };
       callback?.(responseMsg);
-      return { status: 'pending'};
+      return { status: 'pending' };
     }
   }
 
@@ -279,7 +288,7 @@ async function checkResponse(
         result: 'Pending outputToken CA',
       };
       callback?.(responseMsg);
-      return { status: 'pending'};
+      return { status: 'pending' };
     }
   }
 
@@ -294,14 +303,13 @@ async function checkResponse(
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
       result: 'Pending outputToken Amount',
     });
-    return { status: 'pending'};
+    return { status: 'pending' };
   }
 
   if (
     !Number.isFinite(swapReq.inputTokenAmount) &&
     Number.isFinite(swapReq.inputTokenPercentage) &&
     swapReq.inputTokenPercentage != 0
-
   ) {
     const balance = await client.getUIBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
@@ -317,7 +325,7 @@ async function checkResponse(
       result: 'Pending inputToken Amount',
     };
     callback?.(responseMsg);
-    return { status: 'pending'};
+    return { status: 'pending' };
   }
 
   const balance = await client.getUIBalance(swapReq.inputTokenCA);
@@ -327,7 +335,7 @@ async function checkResponse(
       result: 'Insufficient inputToken Balance',
     };
     callback?.(responseMsg);
-    return { status: 'failed'};
+    return { status: 'failed' };
   }
 
   if (balance < swapReq.inputTokenAmount) {
@@ -336,7 +344,7 @@ async function checkResponse(
       result: 'Insufficient balance for swap',
     };
     callback?.(responseMsg);
-    return { status: 'failed'};
+    return { status: 'failed' };
   }
 
   const WSOL_AMOUNT = await client.getUIBalance(NATIVE_MINT.toBase58());
@@ -354,7 +362,7 @@ async function checkResponse(
         result: 'Insufficient balance for swap gas fee',
       };
       callback?.(responseMsg);
-      return { status: 'failed'};
+      return { status: 'failed' };
     }
   } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BALANCE) {
     // buy with SOL
@@ -367,33 +375,58 @@ async function checkResponse(
       result: 'Insufficient balance for swap gas fee',
     };
     callback?.(responseMsg);
-    return { status: 'failed'};
+    return { status: 'failed' };
   }
 
   elizaLogger.info(`checking if user confirm to execute swap`);
+  let pendingAck = false;
 
-  const confirmContext = composeContext({
-    state,
-    template: userConfirmTemplate,
-  });
+  elizaLogger.info(`lastAction: ${JSON.stringify(lastAction)}`);
+  elizaLogger.info(`swapReq: ${JSON.stringify(swapReq)}`);
 
-  const confirmResponse = await generateObjectDeprecated({
-    runtime,
-    context: confirmContext,
-    modelClass: ModelClass.LARGE,
-  });
-  elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+  if (
+    lastAction?.action === 'EXECUTE_SWAP' &&
+    lastAction?.result &&
+    lastAction.result.toLowerCase().includes('pending')
+  ) {
+    const matchResults = Object.entries(swapReq).map(([key, value]) => {
+      const isKeyExcluded = false;
+      const isValueMatched = lastAction.parameters[key] === value;
+      const isBothInvalid = !value && !lastAction.parameters[key];
+      return isKeyExcluded || isValueMatched || isBothInvalid;
+    });
 
-  if (confirmResponse.userAcked == 'rejected') {
-    const responseMsg = {
-      text: 'ok. I will not execute this transaction.',
-      result: 'User rejected the swap',
-    };
-    callback?.(responseMsg);
-    return { status: 'cancelled'};
+    const isSameAction = matchResults.every((result) => result === true);
+    pendingAck = isSameAction;
   }
+  elizaLogger.info(`pendingAck: ${pendingAck}`);
+  if (pendingAck) {
+    const confirmContext = composeContext({
+      state,
+      template: userConfirmTemplate,
+    });
 
-  if (confirmResponse.userAcked == 'pending') {
+    const confirmResponse = await generateObjectDeprecated({
+      runtime,
+      context: confirmContext,
+      modelClass: ModelClass.LARGE,
+    });
+    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+
+    if (confirmResponse.userAcked == 'rejected') {
+      const responseMsg = {
+        text: 'ok. I will not execute this transaction.',
+        result: 'User rejected the swap',
+      };
+      callback?.(responseMsg);
+      return { status: 'cancelled' };
+    } else if (confirmResponse.userAcked == 'confirmed') {
+      return {
+        status: 'success',
+        parameters: { ...swapReq, programId },
+      };
+    }
+  } else {
     const swapInfo = formatConfirmSwapInfo({
       inputTokenSymbol: swapReq.inputTokenSymbol,
       inputTokenCA: swapReq.inputTokenCA,
@@ -405,16 +438,11 @@ async function checkResponse(
     const responseMsg = {
       text: `${swapInfo}`,
       action: 'EXECUTE_SWAP',
-      result: 'User pending the swap',
+      result: 'Pending user confirmation for executing swap',
     };
     callback?.(responseMsg);
-    return { status: 'pending'};
+    return { status: 'pending' };
   }
-
-  return {
-    status: 'success',
-    parameters: { ...swapReq, programId },
-  };
 }
 
 function formatConfirmSwapInfo(params: {
@@ -425,8 +453,12 @@ function formatConfirmSwapInfo(params: {
   inputTokenAmount: number;
   inputPercentage: string;
 }): string {
-  const displayedInputSymbol = trimTokenSymbol(`$${params.inputTokenSymbol || params.inputTokenCA}`);
-  const displayedOutputSymbol = trimTokenSymbol(`$${params.outputTokenSymbol || params.outputTokenCA}`);
+  const displayedInputSymbol = trimTokenSymbol(
+    `$${params.inputTokenSymbol || params.inputTokenCA}`,
+  );
+  const displayedOutputSymbol = trimTokenSymbol(
+    `$${params.outputTokenSymbol || params.outputTokenCA}`,
+  );
   if (
     params.inputTokenCA !== NATIVE_MINT.toBase58() &&
     params.outputTokenCA !== NATIVE_MINT.toBase58()

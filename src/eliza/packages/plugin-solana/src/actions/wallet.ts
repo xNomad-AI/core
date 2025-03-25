@@ -9,7 +9,8 @@ import {
   composeContext,
   generateObjectDeprecated,
   ModelClass,
-  elizaLogger, ActionStatus,
+  elizaLogger,
+  ActionStatus,
 } from '@elizaos/core';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { getWalletPortfolio } from '../providers/walletUtils.js';
@@ -67,6 +68,7 @@ export const walletPortfolio: Action = {
       case 'walletBalance':
         callback?.({
           text: `Your wallet balance is ${portfolio?.totalUsd} USD.`,
+          result: `Query success, portfolio: ${JSON.stringify(portfolio)}`,
         });
         return 'success';
       case 'tokenBalance':
@@ -77,6 +79,7 @@ export const walletPortfolio: Action = {
         );
         callback?.({
           text: `${response.tokenSymbol} balance in my wallet is ${tokenInfo?.uiAmount}, it is worth $${tokenInfo?.valueUsd} now.`,
+          result: `Query success, ${response.tokenSymbol} balance in my wallet is ${tokenInfo?.uiAmount}, it is worth $${tokenInfo?.valueUsd} now.`,
         });
         return 'success';
       default:
