@@ -1,18 +1,28 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { EvmLaunchpadService } from './evm/evm-launchpad.service.js';
 import { LaunchpadService } from './launchpad.service.js';
 
 @Controller('/launchpad')
 export class LaunchpadController {
-  constructor(private readonly launchpadService: LaunchpadService) {}
+  constructor(
+    private readonly launchpadService: LaunchpadService,
+    private readonly evmLaunchpadService: EvmLaunchpadService,
+  ) {}
 
   @Get('/:chain/common-collection-nft-fee')
   async getCreateCommonCollectionNftFee(
     @Param('chain') chain: string,
     @Query('userAddress') userAddress: string,
   ) {
-    const { fee, feeAfterDiscount, discountPercentage } =
-      await this.launchpadService.calculateMintFee(userAddress);
-    return { fee, feeAfterDiscount, discountPercentage };
+    if (chain === 'solana') {
+      const { fee, feeAfterDiscount, discountPercentage } =
+        await this.launchpadService.calculateMintFee(userAddress);
+      return { fee, feeAfterDiscount, discountPercentage };
+    } else {
+      const { fee, feeAfterDiscount, discountPercentage } =
+        await this.evmLaunchpadService.calculateMintFee();
+      return { fee, feeAfterDiscount, discountPercentage };
+    }
   }
 
   @Post('/:chain/create-common-collection-nft')
@@ -46,12 +56,21 @@ export class LaunchpadController {
       };
     },
   ) {
-    return this.launchpadService.createCommonCollectionNft({
-      chain,
-      userAddress: body.userAddress,
-      nft: body.nft,
-      createToken: body.createToken,
-    });
+    if (chain === 'solana') {
+      return this.launchpadService.createCommonCollectionNft({
+        chain,
+        userAddress: body.userAddress,
+        nft: body.nft,
+        createToken: body.createToken,
+      });
+    } else {
+      return this.evmLaunchpadService.createCommonCollectionNft({
+        chain,
+        userAddress: body.userAddress,
+        nft: body.nft,
+        createToken: body.createToken,
+      });
+    }
   }
 
   @Post('create-w3s-delegate')
