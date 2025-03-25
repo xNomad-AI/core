@@ -17,14 +17,14 @@ export async function transferToken({
   privateKey,
   tokenAddress,
   recipient,
-  amount,
+  uiAmount,
   chainName,
 }: {
   rpcUrl: string;
   privateKey: string;
   tokenAddress: string;
   recipient: string;
-  amount: string;
+  uiAmount: string;
   chainName: string;
 }) {
   const account = privateKeyToAccount(privateKey as Hex);
@@ -51,7 +51,7 @@ export async function transferToken({
 
   if (tokenAddress === nativeTokenAddress) {
     // Send native token transaction
-    const amountInWei = parseUnits(amount, 18);
+    const amountInWei = parseUnits(uiAmount, 18);
     const txHash = await walletClient.sendTransaction({
       to: recipient as `0x${string}`,
       value: amountInWei,
@@ -81,7 +81,7 @@ export async function transferToken({
       abi: erc20Abi,
       functionName: 'decimals',
     });
-    const amountInWei = parseUnits(amount, decimals);
+    const amountInWei = parseUnits(uiAmount, decimals);
 
     if (BigInt(balance) < amountInWei) {
       throw new Error('Insufficient balance');

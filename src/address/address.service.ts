@@ -23,7 +23,7 @@ export class AddressService {
       updatedAt: now,
     };
     await this.mongo.addressNonces.updateOne(
-      { chain, address, nonceType },
+      { address, nonceType },
       { $set: addressNonce },
       { upsert: true },
     );
