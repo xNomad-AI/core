@@ -323,7 +323,7 @@ async function checkResponse(
   const balance = await client.getUIBalance(swapReq.inputTokenCA);
   if (!balance) {
     const responseMsg = {
-      text: `Your input ${swapReq.inputTokenSymbol}(${swapReq.inputTokenCA}) balance is 0.`,
+      text: `Your input ${swapReq.inputTokenSymbol}(${swapReq.inputTokenCA})  balance is 0.`,
       result: 'Insufficient inputToken Balance',
     };
     callback?.(responseMsg);
