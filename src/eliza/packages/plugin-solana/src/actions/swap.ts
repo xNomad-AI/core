@@ -233,7 +233,7 @@ async function checkResponse(
 
   // generate formatted response from chat
   let swapReq = convertNullStrings(state.actionParameters) as SwapTokenRequest;
-  elizaLogger.log('Swap request:', swapReq);
+  elizaLogger.info('Swap request:', swapReq);
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
   swapReq.outputTokenAmount = Number(swapReq.outputTokenAmount);
@@ -323,7 +323,7 @@ async function checkResponse(
   const balance = await client.getUIBalance(swapReq.inputTokenCA);
   if (!balance) {
     const responseMsg = {
-      text: 'Your input balance is 0.',
+      text: `Your input ${swapReq.inputTokenSymbol}(${swapReq.inputTokenCA}) balance is 0.`,
       result: 'Insufficient inputToken Balance',
     };
     callback?.(responseMsg);
