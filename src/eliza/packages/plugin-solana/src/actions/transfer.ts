@@ -401,7 +401,6 @@ export const transfer: Action = {
           preflightCommitment: 'confirmed',
         },
       );
-      // const signature = '2KJX2c5ThDkf4wDKVyCQngmJsyzx8Ht3EAATM8Jz8phHcbjJJuBot4pbWi6Fnx7zHjWtrrnarAwWmME5oZ838vED';
       if (callback) {
         callback({
           text: `Successfully sent ${content.amount} ${content.tokenSymbol || content.tokenAddress} to ${content.recipient}.\n\nTransaction hash: ${signature}`,

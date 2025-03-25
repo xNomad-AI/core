@@ -190,7 +190,6 @@ async function handleExecuteSwap(
       mode,
       tip: tip * LAMPORTS_PER_SOL,
     });
-    // txid = '2KJX2c5ThDkf4wDKVyCQngmJsyzx8Ht3EAATM8Jz8phHcbjJJuBot4pbWi6Fnx7zHjWtrrnarAwWmME5oZ838vED';
   } catch (e) {
     elizaLogger.error(`Error occurred while executing swap: ${e}`);
     callback?.({

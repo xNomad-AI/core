@@ -51,8 +51,7 @@ export class NftService implements OnApplicationBootstrap {
     const configedNfts = await this.mongo.nftConfigs.find().toArray();
     const configedNftIds = configedNfts.map((nft) => nft.nftId);
     const cursor = this.mongo.nfts
-      // .find({ chain: 'solana', nftId: { $in: configedNftIds } })
-      .find({ name: 'xNomad #4058' })
+      .find({ chain: 'solana', nftId: { $in: configedNftIds } })
       .addCursorFlag('noCursorTimeout', true);
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
