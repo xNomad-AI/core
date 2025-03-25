@@ -388,6 +388,7 @@ async function checkResponse(
     const responseMsg = {
       text: 'ok. I will not execute this transaction.',
       result: 'User rejected the swap',
+      action: 'EXECUTE_SWAP',
     };
     callback?.(responseMsg);
     return { status: 'cancelled'};
@@ -405,7 +406,7 @@ async function checkResponse(
     const responseMsg = {
       text: `${swapInfo}`,
       action: 'EXECUTE_SWAP',
-      result: 'User pending the swap',
+      result: 'Pending user confirmation',
     };
     callback?.(responseMsg);
     return { status: 'pending'};

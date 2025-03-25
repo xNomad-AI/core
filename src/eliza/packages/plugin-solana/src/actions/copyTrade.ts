@@ -201,6 +201,8 @@ export const copyTrade: Action = {
     if (confirmResponse.userAcked == 'pending') {
       const responseMsg = {
         text: `${formatConfirmMessage(response)}`,
+        result: 'Pending user confirmation',
+        action: 'COPY_TRADE',
       };
       callback?.(responseMsg);
       return 'pending';

@@ -492,6 +492,7 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'rejected') {
     const responseMsg = {
       text: 'ok. I will not set the autotask.',
+      action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
     return {status: 'cancelled'};
@@ -502,6 +503,7 @@ async function checkResponse(
     const swapInfo = formatTaskInfo(swapReq);
     const responseMsg = {
       text: `${swapInfo}`,
+      result: 'Pending user confirmation',
       action: 'AUTO_TASK',
     };
     callback?.(responseMsg);
