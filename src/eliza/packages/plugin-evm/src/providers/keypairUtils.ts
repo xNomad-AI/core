@@ -2,6 +2,7 @@ import { type IAgentRuntime, elizaLogger } from '@elizaos/core';
 import { DeriveKeyProvider, TEEMode } from '@elizaos/plugin-tee';
 import { privateKeyToAccount } from 'viem/accounts';
 import { createWalletClient, Hex, http } from 'viem';
+import { getRuntimeKey } from './environment.js';
 
 export interface EvmAccount {
   address: string;
@@ -18,13 +19,12 @@ export async function getWalletKey(
   runtime: IAgentRuntime,
   requirePrivateKey = true,
 ): Promise<EvmAccount> {
-  const teeMode = (runtime.getSetting('TEE_MODE') as TEEMode) || TEEMode.OFF;
-  const walletSecretSalt = runtime.getSetting('WALLET_SECRET_SALT');
+  const teeMode = (getRuntimeKey(runtime, 'TEE_MODE') as TEEMode) || TEEMode.OFF;
+  const walletSecretSalt = getRuntimeKey(runtime, 'WALLET_SECRET_SALT');
   const agentId = runtime.agentId;
-  const endpoint = runtime.getSetting('WALLET_SERVICE_ENDPOINT');
-  const walletServiceSecretToken = runtime.getSetting(
-    'WALLET_SERVICE_SECRET_TOKEN',
-  );
+  const endpoint = getRuntimeKey(runtime, 'WALLET_SERVICE_ENDPOINT');
+  const walletServiceSecretToken = getRuntimeKey(runtime, 'WALLET_SERVICE_SECRET_TOKEN');
+
   return await getAccountFromWalletService({
     teeMode,
     walletSecretSalt,

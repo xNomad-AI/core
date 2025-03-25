@@ -28,10 +28,8 @@
 		"bignumber.js": "9.1.2",
 		"bs58": "6.0.0",
 		"crypto-js": "^4.2.0",
-		"fomo-sdk-solana": "1.3.2",
 		"node-cache": "5.1.2",
 		"pumpdotfun-sdk": "git+https://github.com/rckprtr/pumpdotfun-sdk.git#576b978b25e1c8404bfecc55951bdfdcf44a1e1d",
-		"solana-agent-kit": "^1.4.0",
 		"tsup": "8.3.5",
 		"tweetnacl": "^1.0.3",
 		"vitest": ">=2.1.9",
@@ -43,7 +41,5 @@
 		"test": "vitest run"
 	},
 	"peerDependencies": {
-		"form-data": "4.0.1",
-		"whatwg-url": "7.1.0"
 	}
 }

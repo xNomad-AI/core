@@ -117,11 +117,12 @@ export class TokenInfoService {
 
   async getTokenBasicInfo(
     tokenAddress: string,
+    chain: string = 'solana',
   ): Promise<TokenBasicInfoResponse> {
     try {
       const config = {
         method: 'GET',
-        url: `${this.endpoint}/api/v1/public/token/basic/info/${tokenAddress}`,
+        url: `${this.endpoint}/api/v1/public/token/basic/info/${tokenAddress}?chain=${chain}`,
       };
       const response = await firstValueFrom(this.httpService.request(config));
       const tokenInfoResponse = response.data as TokenBasicInfoResponse;
@@ -133,11 +134,11 @@ export class TokenInfoService {
     }
   }
 
-  async getTokenInfo(tokenAddress: string): Promise<TokenInfoResponse> {
+  async getTokenInfo(tokenAddress: string, chain: string = 'solana'): Promise<TokenInfoResponse> {
     try {
       const config = {
         method: 'GET',
-        url: `${this.endpoint}/api/v1/public/token/info/${tokenAddress}`,
+        url: `${this.endpoint}/api/v1/public/token/info/${tokenAddress}?chain=${chain}`,
       };
       const response = await firstValueFrom(this.httpService.request(config));
       const tokenInfoResponse = response.data as TokenInfoResponse;
@@ -151,11 +152,12 @@ export class TokenInfoService {
 
   async getTokenTwitterInfo(
     tokenAddress: string,
+    chain: string = 'solana',
   ): Promise<TokenTwitterInfoResponse> {
     try {
       const config = {
         method: 'GET',
-        url: `${this.endpoint}/api/v1/public/token/twitter/${tokenAddress}`,
+        url: `${this.endpoint}/api/v1/public/token/twitter/${tokenAddress}?chain=${chain}`,
       };
       const response = await firstValueFrom(this.httpService.request(config));
       const tokenTwitterInfoResponse =
@@ -168,11 +170,11 @@ export class TokenInfoService {
     }
   }
 
-  async getTokenNews(tokenAddress: string): Promise<TokenNewsResponse[]> {
+  async getTokenNews(tokenAddress: string, chain: string = 'solana'): Promise<TokenNewsResponse[]> {
     try {
       const config = {
         method: 'GET',
-        url: `${this.endpoint}/api/v1/public/token/news/${tokenAddress}`,
+        url: `${this.endpoint}/api/v1/public/token/news/${tokenAddress}?chain=${chain}`,
       };
       const response = await firstValueFrom(this.httpService.request(config));
       const tokenTwitterInfoResponse = response.data as TokenNewsResponse[];

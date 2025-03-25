@@ -1,7 +1,6 @@
 import { type IAgentRuntime, type Memory, elizaLogger } from '@elizaos/core';
 
 import { getRuntimeKey } from '../providers/environment.js';
-import { run } from 'jest';
 
 class BirdEyeAPIResponse<T> {
   success: boolean;
