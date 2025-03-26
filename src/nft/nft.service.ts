@@ -20,6 +20,7 @@ import {
   AssetsByCollection,
   NEW_AI_NFT_EVENT,
   NftSearchOptions,
+  normalizeBlockchainAddress,
 } from './nft.types.js';
 
 @Injectable()
@@ -193,7 +194,7 @@ export class NftService implements OnApplicationBootstrap {
     if (!nft) {
       return false;
     }
-    address = nft?.chain === 'solana' ? address : address.toLowerCase();
+    address = normalizeBlockchainAddress(nft.chain, address);
     const owner = await this.mongo.nftOwners.findOne({
       chain: nft.chain,
       contractAddress: nft.contractAddress,
@@ -373,7 +374,6 @@ export class NftService implements OnApplicationBootstrap {
     ownerAddress: string,
     collectionId?: string,
   ) {
-    ownerAddress = chain === 'solana' ? ownerAddress : ownerAddress.toLowerCase();
     const filter: any = {
       chain,
       ownerAddress,

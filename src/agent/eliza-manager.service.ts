@@ -25,6 +25,7 @@ import { SettingsService } from '../nft/core-settings.service.js';
 import { NftConfigService } from '../nft/nft-config.service.js';
 import { ClientName } from '../eliza/starter/clients/index.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
+import { normalizeBlockchainAddress } from 'src/nft/nft.types.js';
 
 export type ElizaAgentConfig = {
   chain: string;
@@ -464,7 +465,7 @@ export class ElizaManagerService {
 
   async isAgentOwner(agentId: string, ownerAddress: string) {
     const nft = await this.mongoService.nfts.findOne({ agentId });
-    ownerAddress = nft?.chain === 'solana' ? ownerAddress : ownerAddress.toLowerCase();
+    ownerAddress = normalizeBlockchainAddress(nft?.chain, ownerAddress);
     const owner = await this.mongoService.nftOwners.findOne({
       chain: nft?.chain,
       contractAddress: nft?.contractAddress,
