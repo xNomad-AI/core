@@ -65,6 +65,7 @@
     "agent-twitter-client": "https://github.com/xNomad-AI/agent-twitter-client.git#main",
     "amqplib": "^0.10.5",
     "async-retry": "^1.3.3",
+    "axios": "^1.7.9",
     "bignumber.js": "9.1.2",
     "body-parser": "^1.20.3",
     "bs58": "^6.0.0",

@@ -56,7 +56,7 @@ export class EvmLaunchpadService {
         telegram?: string;
         website?: string;
       };
-      buyAmountSol: number;
+      buyAmount: number;
     };
   }) {
     this.logger.log(
@@ -108,7 +108,7 @@ export class EvmLaunchpadService {
           website: createToken.tokenInfo.website,
         },
         metadataUri: null,
-        initialBuyAmountSol: createToken.buyAmountSol,
+        initialBuyAmountSol: createToken.buyAmount,
         mintAddress: null as any,
         mintSecretKey: null as any,
         created: false,
@@ -120,7 +120,7 @@ export class EvmLaunchpadService {
         .getAgentAccountKeypair(chain, nftId)
         .then(({ evmPrivateKey }) => new ethers.Wallet(evmPrivateKey).address);
       agentAddressValue = ethers.parseEther(
-        (createToken.buyAmountSol * 1.01 + 0.002).toString(),
+        (createToken.buyAmount * 1.01 + 0.002).toString(),
       );
     }
 

@@ -52,10 +52,15 @@ export class LaunchpadController {
           telegram?: string;
           website?: string;
         };
-        buyAmountSol: number;
+        buyAmount: number;
       };
     },
   ) {
+    if (body.createToken) {
+      body.createToken.buyAmount =
+        body.createToken.buyAmount ?? body.createToken['buyAmountSol'];
+    }
+
     if (chain === 'solana') {
       return this.launchpadService.createCommonCollectionNft({
         chain,
