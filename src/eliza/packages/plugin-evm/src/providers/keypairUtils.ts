@@ -61,18 +61,19 @@ export async function getAccountFromWalletService({
 
   if (endpoint) {
     endpoint = endpoint.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
+    const body = JSON.stringify({
+      walletSecretSalt,
+      agentId,
+      teeMode,
+      requirePrivateKey: true,
+    });
     account = await fetch(`${endpoint}/wallet/wallet`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-secret-token': walletServiceSecretToken,
       },
-      body: JSON.stringify({
-        walletSecretSalt,
-        agentId,
-        teeMode,
-        requirePrivateKey: true,
-      }),
+      body, 
     })
       .then((response) => response.json())  // Parse the response as JSON
       .then((data) => {

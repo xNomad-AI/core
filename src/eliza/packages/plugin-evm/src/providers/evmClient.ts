@@ -16,6 +16,7 @@ export const nativeTokenAddress = ethAddress;
 export class EVMClient {
   private publicClient;
   private chain: Chain;
+  private rpcUrl: string;
 
   constructor({
     rpcUrl,
@@ -25,6 +26,7 @@ export class EVMClient {
     chainName: string;
   }) {
     this.chain = this.getChainConfig(chainName);
+    this.rpcUrl = rpcUrl;
     this.publicClient = createPublicClient({
       chain: this.chain,
       transport: http(rpcUrl),
@@ -45,7 +47,7 @@ export class EVMClient {
   }
 
   isNativeToken(tokenSymbol: string) {
-    return this.chain.nativeCurrency.symbol === tokenSymbol.toUpperCase() || this.chain.nativeCurrency.name === tokenSymbol.toUpperCase();
+    return this.chain.nativeCurrency.symbol === tokenSymbol?.toUpperCase() || this.chain.nativeCurrency.name === tokenSymbol?.toUpperCase();
   }
 
   /**
@@ -95,6 +97,53 @@ export class EVMClient {
     const balance = await this.getTokenBalance(tokenAddress, walletAddress);
     const decimals = await this.getTokenDecimals(tokenAddress);
     return formatUnits(balance, decimals);
+  }
+
+  async checkAndApproveTokenTransfer({
+    walletAddress,
+    walletPrivateKey,
+    tokenAddress,
+    dexRouterAddress,
+    rawAmount,
+  }: {
+    tokenAddress: string;
+    dexRouterAddress: string;
+    walletPrivateKey: string;
+    walletAddress: string;
+    rawAmount: string;
+  }): Promise<string> {
+    // read current allowance
+    const currentAllowance = await this.publicClient.readContract({
+      address: tokenAddress,
+      abi: erc20Abi,
+      functionName: 'allowance',
+      args: [walletAddress, dexRouterAddress],
+    });
+
+    if (currentAllowance >= rawAmount) {
+      return '0x';
+    }
+    console.log(`approve token transfer, address: ${walletAddress}, amount: ${rawAmount}`);
+    const walletClient = createWalletClient({
+      chain: this.chain,
+      transport: http(this.rpcUrl),
+      account: privateKeyToAccount(walletPrivateKey as Hex),
+    });
+    // set max amount?
+    const txHash = await walletClient.writeContract({
+      chain: this.chain,
+      address: tokenAddress as Hex,
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [dexRouterAddress as Hex, BigInt(rawAmount)],
+      account: privateKeyToAccount(walletPrivateKey as Hex),
+    });
+    // wait for tx to be mined
+    const receipt = await this.publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+    console.log(`approved token transfer, address: ${walletAddress}, amount: ${rawAmount}, txHash: ${txHash}`);
+    return txHash;
   }
 
   /**

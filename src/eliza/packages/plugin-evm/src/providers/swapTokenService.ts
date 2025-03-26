@@ -1,11 +1,11 @@
-import { OkxParams, OkxSwapResponse, SwapTokenDto } from './type';
-import { createWalletClient, ethAddress, Hex, http, zeroAddress } from 'viem';
+import { OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanSwapResponse, SwapTokenDto } from './type';
+import { createWalletClient, ethAddress, formatUnits, Hex, http, zeroAddress } from 'viem';
 import { bloxValidatorNodeService, jsonRpcNodeService } from './validatorNodeService.js';
 import okxService from './okxService.js';
+import openoceanService from './openoceanService.js';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base, bsc, mainnet } from 'viem/chains';
-
-
+import { EVMClient } from './evmClient.js';
 
 const DEFAULT_CONFIG = {
     EVM_SWAP_FEE_ACCOUNT: '0x1b455ab558518b7c32bafaff4661ede24cef005c',
@@ -82,28 +82,61 @@ export class SwapTokenService {
         );
 
         try {
-            const validatorNode =
-                mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
-            const okxParams: OkxParams = {
-                chainId,
-                amount: amount.toString(),
-                toTokenAddress: outputTokenCA,
-                fromTokenAddress: inputTokenCA,
-                slippage: slippage.toString(),
-                userWalletAddress
-            };
-            this.logger.info('okxParams', JSON.stringify(okxParams));
-
-            const okxResponse = await this.getOKXCallData(okxParams);
-            const tx = okxResponse.data?.[0]?.tx;
-            if (!tx) {
-                throw new Error(`Failed to generate transaction: ${okxResponse?.msg}`);
-            }
             const account = privateKeyToAccount(privateKey as Hex);
             const walletClient = createWalletClient({
                 chain,
                 transport: http(rpcUrl),
                 account,
+            });
+
+            const validatorNode =
+                mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
+            // const okxParams: OkxParams = {
+            //     chainId,
+            //     amount: amount.toString(),
+            //     toTokenAddress: outputTokenCA,
+            //     fromTokenAddress: inputTokenCA,
+            //     slippage: slippage.toString(),
+            //     userWalletAddress
+            // };
+            // this.logger.info('okxParams', JSON.stringify(okxParams));
+
+            // const okxResponse = await this.getOKXCallData(okxParams);
+            // const tx = okxResponse.data?.[0]?.tx;
+            // if (!tx) {
+            //     throw new Error(`Failed to generate transaction: ${okxResponse?.msg}`);
+            // }
+
+            const evmClient = new EVMClient({
+                rpcUrl, chainName
+            });
+            
+            const deciaml = await evmClient.getTokenDecimals(inputTokenCA);
+            const openoceanParams: OpenoceanParams = {
+                chainId,
+                inTokenAddress: inputTokenCA,
+                outTokenAddress: outputTokenCA,
+                amount: formatUnits(BigInt(amount.toString()), deciaml),
+                slippage: slippage.toString(),
+                account: userWalletAddress
+            }
+            const openoceanResponse = await this.getOpenoceanCallData(openoceanParams);
+            if (!openoceanResponse.data) {
+                throw new Error(`Failed to generate transaction, ${openoceanResponse?.data}`);
+            }
+            const tx = {
+                to: openoceanResponse.data.to,
+                value: openoceanResponse.data.value,
+                data: openoceanResponse.data.data,
+                gasPrice: openoceanResponse.data.gasPrice,
+            };
+
+            await evmClient.checkAndApproveTokenTransfer({
+                walletAddress: userWalletAddress,
+                walletPrivateKey: privateKey,
+                tokenAddress: inputTokenCA,
+                dexRouterAddress: openoceanResponse.data.to,
+                rawAmount: amount.toString(),
             });
 
             const request = await walletClient.prepareTransactionRequest({
@@ -112,10 +145,9 @@ export class SwapTokenService {
                 to: tx.to,
                 data: tx.data,
                 value: BigInt(tx.value),
-                gas: BigInt(tx.gas),
                 gasPrice: BigInt(tx.gasPrice),
                 kzg: undefined,
-            })
+            });
             const serializedTransaction = await account.signTransaction(request)
             return await validatorNode.postTransaction({
                 walletClient,
@@ -148,5 +180,27 @@ export class SwapTokenService {
         }
 
         return await okxService.getCallData(params);
+    }
+
+    private async getOpenoceanCallData(params: OpenoceanParams): Promise<OpenoceanSwapResponse> {
+        const feePercent = Number(getSWAP_FEE_BPS()) / 100;
+        const feeAccount = getSWAP_FEE_ACCOUNT();
+
+        if (feePercent && feeAccount) {
+            params.referrerFee = feePercent;
+            params.referrer = feeAccount;
+        }
+
+        if (!params.gasPrice) {
+            const response: OpenoceanGasPriceResponse = await openoceanService.getGasPrice({
+                chainId: params.chainId
+            });
+            if (!response.without_decimals) {
+                throw new Error(`Get gas price failed: ${JSON.stringify(response)}`);
+            }
+            params.gasPrice = response.without_decimals.fast.toString();
+        }
+
+        return await openoceanService.getCallData(params);
     }
 }
