@@ -83,10 +83,10 @@ export class EvmLaunchCoinService {
       symbol: coin.coinInfo.symbol,
       description: coin.coinInfo.description,
       image: coin.coinInfo.image,
-      initialBuyAmount: coin.initialBuyAmountSol,
-      twitter: coin.coinInfo.twitter ?? undefined,
-      telegram: coin.coinInfo.telegram ?? undefined,
-      website: coin.coinInfo.website ?? undefined,
+      initialBuyAmount: coin.initialBuyAmountSol || 0,
+      twitter: coin.coinInfo.twitter || undefined,
+      telegram: coin.coinInfo.telegram || undefined,
+      website: coin.coinInfo.website || undefined,
     });
 
     this.logger.log(`Sending transaction to create token`);
@@ -101,7 +101,7 @@ export class EvmLaunchCoinService {
         fourMemeCreateResult.signature,
         {
           value: ethers.parseEther(
-            (coin.initialBuyAmountSol * 1.01).toString(),
+            ((coin.initialBuyAmountSol || 0) * 1.01).toString(),
           ),
         },
       );
