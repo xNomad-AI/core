@@ -7,6 +7,7 @@ import { analyze } from './actions/analyze.js';
 import { executeSwap } from './actions/swap.js';
 import { copyTrade } from './actions/copyTrade.js';
 import { autoTask } from './actions/autoSwap.js';
+import { airdrop } from './actions/airdrop.js';
 export {
   EVMClient,
   SwapTokenService,
@@ -22,6 +23,7 @@ export const evmPlugin: Plugin = {
     executeSwap,
     copyTrade,
     autoTask,
+    airdrop,
   ],
   evaluators: [],
   providers: [],
