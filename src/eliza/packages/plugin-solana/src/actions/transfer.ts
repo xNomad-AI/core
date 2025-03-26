@@ -3,6 +3,7 @@ import {
   createTransferInstruction,
   createAssociatedTokenAccountInstruction,
   ACCOUNT_SIZE,
+  NATIVE_MINT,
 } from '@solana/spl-token';
 import { ActionStatus, elizaLogger } from '@elizaos/core';
 import {
@@ -158,7 +159,7 @@ export const transfer: Action = {
       return 'pending';
     }
 
-    if (!content.tokenAddress && content.tokenSymbol?.toUpperCase() === 'SOL') {
+    if ((!content.tokenAddress || content.tokenAddress === NATIVE_MINT.toBase58()) && content.tokenSymbol?.toUpperCase() === 'SOL') {
       content.tokenAddress = STANDARD_SOL_ADDRESS;
     }
 
@@ -256,12 +257,14 @@ export const transfer: Action = {
       const solBalance = await connection.getBalance(senderKeypair.publicKey);
       let solTransferOut =
         content.tokenAddress === STANDARD_SOL_ADDRESS ? Number(mintAmount) : 0;
-
+      let estimatedFee = 0.001 * LAMPORTS_PER_SOL;
+      const rentExemption =
+        await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
       const transaction = new Transaction();
       if (content.tokenAddress === STANDARD_SOL_ADDRESS) {
-        if (solBalance < solTransferOut) {
+        if (solBalance < (solTransferOut + estimatedFee + rentExemption)) {
           callback({
-            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.(${rentExemption / LAMPORTS_PER_SOL} SOL for account rent exemption, ${estimatedFee / LAMPORTS_PER_SOL} SOL for transaction fee)`,
           });
           return 'failed';
         }
@@ -338,12 +341,10 @@ export const transfer: Action = {
       const recentBlockhash = await connection.getLatestBlockhash('confirmed');
       transaction.feePayer = senderKeypair.publicKey;
       transaction.recentBlockhash = recentBlockhash.blockhash;
-      const estimatedFee = await transaction.getEstimatedFee(connection);
-      const rentExemption =
-        await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
+      estimatedFee = await transaction.getEstimatedFee(connection);
       if (solBalance < solTransferOut + estimatedFee + rentExemption) {
         callback({
-          text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+          text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.(${rentExemption / LAMPORTS_PER_SOL} SOL for account rent exemption, ${estimatedFee / LAMPORTS_PER_SOL} SOL for transaction fee)`,
         });
         return 'failed';
       }
