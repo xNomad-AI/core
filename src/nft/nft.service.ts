@@ -193,7 +193,7 @@ export class NftService implements OnApplicationBootstrap {
     if (!nft) {
       return false;
     }
-
+    address = nft?.chain === 'solana' ? address : address.toLowerCase();
     const owner = await this.mongo.nftOwners.findOne({
       chain: nft.chain,
       contractAddress: nft.contractAddress,
@@ -373,6 +373,7 @@ export class NftService implements OnApplicationBootstrap {
     ownerAddress: string,
     collectionId?: string,
   ) {
+    ownerAddress = chain === 'solana' ? ownerAddress : ownerAddress.toLowerCase();
     const filter: any = {
       chain,
       ownerAddress,

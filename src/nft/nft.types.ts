@@ -152,13 +152,14 @@ export function transformToActivity(
 }
 
 export function transformToOwner(activity: AINftActivity): AINftOwner {
+  const ownerAddress = activity.chain === 'solana' ? activity.to : activity.to.toLowerCase();
   return {
     chain: activity.chain,
     collectionId: activity.collectionId,
     contractAddress: activity.contractAddress,
     tokenId: activity.tokenId,
     createdAt: new Date(),
-    ownerAddress: activity.to,
+    ownerAddress: ownerAddress,
     updatedAt: new Date(),
   };
 }
