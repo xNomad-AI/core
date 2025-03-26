@@ -24,8 +24,9 @@ import {
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
-  private queue: PQueue;
-
+  private queue: PQueue; // queue for starting agents
+  private backgroundQueue: PQueue; // queue for background agents
+  
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly nftgo: NftgoService,
@@ -36,7 +37,8 @@ export class NftService implements OnApplicationBootstrap {
     private readonly tradeMonitorService: TradeMonitorService,
   ) {
     this.logger.setContext(NftService.name);
-    this.queue = new PQueue({ concurrency: 3 });
+    this.backgroundQueue = new PQueue({ concurrency: 2 });
+    this.queue = new PQueue({ concurrency: 3});
   }
 
   onApplicationBootstrap() {
@@ -55,18 +57,19 @@ export class NftService implements OnApplicationBootstrap {
       .addCursorFlag('noCursorTimeout', true);
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
-      await this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft]);
+      this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft], true, true);
     }
   }
 
   @OnEvent(NEW_AI_NFT_EVENT, { async: true })
-  async handleNewAINfts(nfts: AINft[], restart?: boolean): Promise<void> {
+  async handleNewAINfts(nfts: AINft[], restart?: boolean, isBackground?: boolean): Promise<void> {
     for (const nft of nfts) {
       if (nft?.aiAgent?.engine !== 'eliza') {
         continue;
       }
+      const queue = isBackground ? this.backgroundQueue : this.queue;
 
-      await this.queue.add(async () => {
+      await queue.add(async () => {
         const isAgentRunning = await this.elizaManager.isAgentRunning(
           nft.agentId,
         );
@@ -120,7 +123,6 @@ export class NftService implements OnApplicationBootstrap {
     const nft = await this.mongo.nfts.findOne({ nftId });
     void this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
-      this.logger.error(e);
     });
 
     // hiden the http proxy
@@ -170,7 +172,6 @@ export class NftService implements OnApplicationBootstrap {
     const nft = await this.mongo.nfts.findOne({ nftId });
     void this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
-      this.logger.error(e);
     });
   }
 

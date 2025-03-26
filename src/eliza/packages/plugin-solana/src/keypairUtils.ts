@@ -4,6 +4,7 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import axios from 'axios';
 import bs58 from 'bs58';
 import nacl from 'tweetnacl';
+import { getRuntimeKey } from './environment.js';
 
 export interface KeypairResult {
   keypair?: Keypair;
@@ -20,13 +21,12 @@ export async function getWalletKey(
   runtime: IAgentRuntime,
   requirePrivateKey = true,
 ): Promise<KeypairResult> {
-  const teeMode = (runtime.getSetting('TEE_MODE') as TEEMode) || TEEMode.OFF;
-  const walletSecretSalt = runtime.getSetting('WALLET_SECRET_SALT');
+  const teeMode = (getRuntimeKey(runtime, 'TEE_MODE') as TEEMode) || TEEMode.OFF;
+  const walletSecretSalt = getRuntimeKey(runtime, 'WALLET_SECRET_SALT');
   const agentId = runtime.agentId;
-  const endpoint = runtime.getSetting('WALLET_SERVICE_ENDPOINT');
-  const walletServiceSecretToken = runtime.getSetting(
-    'WALLET_SERVICE_SECRET_TOKEN',
-  );
+  const endpoint = getRuntimeKey(runtime, 'WALLET_SERVICE_ENDPOINT');
+  const walletServiceSecretToken = getRuntimeKey(runtime, 'WALLET_SERVICE_SECRET_TOKEN');
+  
   return await getWalletKeyFromWalletService({
     teeMode,
     walletSecretSalt,
