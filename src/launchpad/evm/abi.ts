@@ -161,6 +161,54 @@ export const CommonCollectionAbi = [
   },
   {
     type: 'function',
+    name: 'mint',
+    inputs: [
+      {
+        name: 'to',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'uri',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'fee',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'agentAddress',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'agentAddressValue',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'deadline',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'signature',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
     name: 'name',
     inputs: [],
     outputs: [
@@ -247,49 +295,6 @@ export const CommonCollectionAbi = [
     inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'safeMint',
-    inputs: [
-      {
-        name: 'to',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'tokenId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'uri',
-        type: 'string',
-        internalType: 'string',
-      },
-      {
-        name: 'fee',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'agentAddress',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'agentAddressValue',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'signature',
-        type: 'bytes',
-        internalType: 'bytes',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'payable',
   },
   {
     type: 'function',
@@ -381,6 +386,24 @@ export const CommonCollectionAbi = [
         name: 'newFeeReceiver',
         type: 'address',
         internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setTokenURI',
+    inputs: [
+      {
+        name: 'tokenId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'newUri',
+        type: 'string',
+        internalType: 'string',
       },
     ],
     outputs: [],
@@ -814,6 +837,16 @@ export const CommonCollectionAbi = [
         internalType: 'address',
       },
     ],
+  },
+  {
+    type: 'error',
+    name: 'SignatureExpired',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'TokenAlreadyMinted',
+    inputs: [],
   },
   {
     type: 'error',
