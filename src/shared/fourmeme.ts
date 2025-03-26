@@ -70,6 +70,9 @@ export class FourMemeApi {
     return response.data.data;
   }
 
+  /**
+   * twitter, telegram, website must start with "https://"
+   */
   async createToken(
     userToken: string,
     params: {
@@ -147,7 +150,11 @@ export class FourMemeApi {
 
       return response.data.data;
     } catch (e) {
-      throw new Error(`failed to create token on four.meme: ${e.message}`);
+      throw new Error(
+        `failed to create token on four.meme, error: ${e.message}${
+          e.response?.data ? `, response: ${e.response.data}` : ''
+        }`,
+      );
     }
   }
 }
