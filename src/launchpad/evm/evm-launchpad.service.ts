@@ -156,11 +156,20 @@ export class EvmLaunchpadService {
     agentAddress: string;
     agentAddressValue: bigint;
   }) {
+    const deadline = Math.floor(Date.now() / 1000) + 5 * 60; // 5 minutes
     const authorityPrivateKey = this.config.get<string>(
       'BSC_COMMON_COLLECTION_AUTHORITY_PRIVATE_KEY',
     );
     const messageHash = ethers.solidityPackedKeccak256(
-      ['address', 'uint256', 'string', 'uint256', 'address', 'uint256'],
+      [
+        'address',
+        'uint256',
+        'string',
+        'uint256',
+        'address',
+        'uint256',
+        'uint256',
+      ],
       [
         userAddress,
         tokenId,
@@ -168,13 +177,14 @@ export class EvmLaunchpadService {
         ethers.parseEther(fee.toString()),
         agentAddress,
         agentAddressValue,
+        deadline,
       ],
     );
     const wallet = new ethers.Wallet(authorityPrivateKey);
     const signature = await wallet.signMessage(ethers.getBytes(messageHash));
 
     const txData = new ethers.Interface(CommonCollectionAbi).encodeFunctionData(
-      'safeMint',
+      'mint',
       [
         userAddress,
         tokenId,
@@ -182,6 +192,7 @@ export class EvmLaunchpadService {
         ethers.parseEther(fee.toString()),
         agentAddress,
         agentAddressValue,
+        deadline,
         signature,
       ],
     );
@@ -196,7 +207,7 @@ export class EvmLaunchpadService {
 
   async calculateMintFee() {
     let [fee, feeAfterDiscount, discountPercentage] =
-      process.env.RUN_ENV === 'dev' ? [0.02, 0.02, 0] : [0.0001, 0.0001, 0];
+      process.env.RUN_ENV === 'dev' ? [0.0001, 0.0001, 0] : [0.02, 0.02, 0];
 
     return { fee, feeAfterDiscount, discountPercentage };
   }
