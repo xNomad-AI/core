@@ -464,6 +464,7 @@ export class ElizaManagerService {
 
   async isAgentOwner(agentId: string, ownerAddress: string) {
     const nft = await this.mongoService.nfts.findOne({ agentId });
+    ownerAddress = nft?.chain === 'solana' ? ownerAddress : ownerAddress.toLowerCase();
     const owner = await this.mongoService.nftOwners.findOne({
       chain: nft?.chain,
       contractAddress: nft?.contractAddress,

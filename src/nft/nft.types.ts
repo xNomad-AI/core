@@ -17,6 +17,11 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
+// Utility function for blockchain address case conversion
+function normalizeBlockchainAddress(blockchain: string, address: string): string {
+  return blockchain.toLowerCase() === 'solana' ? address : address.toLowerCase();
+}
+
 export type NftSearchOptions = {
   chain: string;
   collectionId: string;
@@ -34,6 +39,11 @@ export type NftSearchSortBy =
   | 'mintTimeDesc';
 
 export async function transformToAINft(nft: Nft): Promise<AINft> {
+  // to lower case
+  nft.contract_address = normalizeBlockchainAddress(nft.blockchain, nft.contract_address);
+  if (nft.created && nft.created.minted_to) {
+    nft.created.minted_to = normalizeBlockchainAddress(nft.blockchain, nft.created.minted_to);
+  }
   // solana and some non-evm chain's NFT has either token_id or contract_address, not both
   const tokenId = nft.token_id || nft.contract_address;
   const contractAddress = nft.contract_address || nft.token_id;
@@ -133,37 +143,49 @@ export function transformToActivity(
   collectionId: string,
   tx: NftTx,
 ): AINftActivity {
+  const contractAddress = normalizeBlockchainAddress(tx.blockchain, tx.nft.contract_address);
+  const tokenId = normalizeBlockchainAddress(tx.blockchain, tx.nft.token_id);
+  const from = normalizeBlockchainAddress(tx.blockchain, tx.from_address);
+  const to = normalizeBlockchainAddress(tx.blockchain, tx.to_address);
+  const txHash = normalizeBlockchainAddress(tx.blockchain, tx.tx_hash);
+
   return {
     action: tx.action,
     collectionId: collectionId,
     blockNumber: tx.block_number,
     chain: tx.blockchain,
-    contractAddress: tx.nft.contract_address || tx.nft.token_id,
-    tokenId: tx.nft.token_id || tx.nft.contract_address,
+    contractAddress: contractAddress || tokenId,
+    tokenId: tokenId || contractAddress,
     contractType: tx.nft.contract_type,
     createdAt: new Date(),
-    from: tx.from_address,
+    from,
     quantity: tx.quantity,
     time: new Date(tx.time * 1000),
-    to: tx.to_address,
-    txHash: tx.tx_hash,
+    to,
+    txHash,
     updatedAt: new Date(),
   };
 }
 
 export function transformToOwner(activity: AINftActivity): AINftOwner {
+  const ownerAddress = normalizeBlockchainAddress(activity.chain, activity.to);
+  const contractAddress = normalizeBlockchainAddress(activity.chain, activity.contractAddress);
   return {
     chain: activity.chain,
     collectionId: activity.collectionId,
-    contractAddress: activity.contractAddress,
+    contractAddress,
     tokenId: activity.tokenId,
     createdAt: new Date(),
-    ownerAddress: activity.to,
+    ownerAddress,
     updatedAt: new Date(),
   };
 }
 
 export function transformToAICollection(coll: Collection): AICollection {
+  coll.contracts = coll.contracts.map(contract => 
+    normalizeBlockchainAddress(coll.blockchain, contract)
+  );
+
   return {
     id: coll.collection_id,
     name: coll.name,
