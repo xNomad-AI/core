@@ -1,6 +1,7 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module.js';
+import { EvmLaunchCoinService } from './evm/evm-launch-coin.service.js';
 import { EvmLaunchpadService } from './evm/evm-launchpad.service.js';
 import { LaunchCoinService } from './launch-coin.service.js';
 import { LaunchpadController } from './launchpad.controller.js';
@@ -17,6 +18,7 @@ import { SwarmService } from './swarm.service.js';
     SwarmService,
     SetupSwarmService,
     EvmLaunchpadService,
+    EvmLaunchCoinService,
   ],
   controllers: [LaunchpadController, SwarmController],
   exports: [],
