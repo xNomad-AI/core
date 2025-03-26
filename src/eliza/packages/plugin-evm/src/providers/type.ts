@@ -151,3 +151,58 @@ Additional Rules:
 - User1: "withdraw"  
 
 Return the JSON object with the \`userAcked\` field set to either \`"confirmed"\`, \`"rejected"\`, or \`"pending"\` based on the **immediate** response following the confirmation request.`;
+
+
+export interface OpenoceanParams {
+  chainId: string;
+  inTokenAddress: string;
+  outTokenAddress: string;
+  amount: string;
+  gasPrice?: string;
+  slippage: string;
+  account: string;
+  referrer?: string;
+  referrerFee?: number;
+}
+
+export interface OpenoceanGasPriceResponse {
+  code: number;
+  data: {
+    standard: number;
+    fast: number;
+    instant: number;
+  };
+  without_decimals: {
+    standard: number;
+    fast: number;
+    instant: number;
+  };
+}
+
+export interface OpenoceanTokenInfo {
+  address: string;
+  decimals: number;
+  symbol: string;
+  name: string;
+  usd: string;
+  volume: number;
+}
+
+export interface OpenoceanSwapData {
+  inToken: OpenoceanTokenInfo;
+  outToken: OpenoceanTokenInfo;
+  inAmount: string;
+  outAmount: string;
+  estimatedGas: number;
+  minOutAmount: string;
+  from: string;
+  to: string;
+  value: string;
+  gasPrice: string;
+  data: string;
+}
+
+export interface OpenoceanSwapResponse {
+  code: number;
+  data?: OpenoceanSwapData;
+}
