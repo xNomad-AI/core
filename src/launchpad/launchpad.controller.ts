@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ethers } from 'ethers';
+import { FourMemeApi } from '../shared/fourmeme.js';
 import { EvmLaunchpadService } from './evm/evm-launchpad.service.js';
 import { LaunchpadService } from './launchpad.service.js';
 
@@ -76,6 +88,16 @@ export class LaunchpadController {
         createToken: body.createToken,
       });
     }
+  }
+
+  @Post('upload-fourmeme-image')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFourMemeImage(@UploadedFile() file: Express.Multer.File) {
+    const fourMemeApi = new FourMemeApi();
+    const wallet = new ethers.Wallet(ethers.Wallet.createRandom().privateKey);
+    const userToken = await fourMemeApi.login(wallet);
+    const url = await fourMemeApi.uploadImage(userToken, file.buffer);
+    return { url };
   }
 
   @Post('create-w3s-delegate')
