@@ -9,7 +9,7 @@ import {
 import { AddressService } from './address.service.js';
 import { NonceType } from '../shared/mongo/types.js';
 import { AuthService } from '../shared/auth/auth.service.js';
-import { normalizeBlockchainAddress } from 'src/nft/nft.types.js';
+import { normalizeBlockchainAddress } from '../nft/nft.types.js';
 
 @Controller('/address')
 export class AddressController {

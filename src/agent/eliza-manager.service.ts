@@ -25,7 +25,7 @@ import { SettingsService } from '../nft/core-settings.service.js';
 import { NftConfigService } from '../nft/nft-config.service.js';
 import { ClientName } from '../eliza/starter/clients/index.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
-import { normalizeBlockchainAddress } from 'src/nft/nft.types.js';
+import { normalizeBlockchainAddress } from '../nft/nft.types.js';
 
 export type ElizaAgentConfig = {
   chain: string;
