@@ -18,6 +18,7 @@ import { isAgentAdmin, NotAgentAdminResponse } from '../providers/walletUtils';
 
 type CopyTradeParameters = {
   name: string;
+  chain: string;
   targetAddress: string;
   mode: 'fixedAmount' | 'percentage';
   fixedAmount: number | undefined;
@@ -90,7 +91,7 @@ export const copyTrade: Action = {
         mode: {
           type: ['string'],
           description:
-            'The mode of copying trade, enum can be "fixed" or "percentage"',
+            'The mode of copying trade, enum can be "fixedAmount" or "percentage"',
         },
         copySell: {
           type: 'boolean',
@@ -165,8 +166,10 @@ export const copyTrade: Action = {
     const wallet = await getWalletKey(runtime, true);
     response.walletAddress = wallet.keypair.publicKey.toBase58();
     response.agentId = runtime.agentId;
+    response.chain = 'solana';
     const records = await runtime.databaseAdapter.find?.('copyTrades', {
       agentId: response.agentId,
+      chain: response.chain,
       targetAddress: response.targetAddress,
       walletAddress: response.walletAddress,
     });
@@ -211,6 +214,7 @@ export const copyTrade: Action = {
     const { id } = await SharedProvider.get<any>(
       'tradeMonitorService',
     ).createCopyTrade({
+      chain: response.chain,
       targetAddress: response.targetAddress,
       walletAddress: response.walletAddress,
       expiredAt: response.expiredAt || 0,

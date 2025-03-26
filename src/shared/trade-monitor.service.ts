@@ -40,6 +40,7 @@ interface CreateOrderParams {
 }
 
 interface CreateCopyTradeParams {
+  chain: string;
   targetAddress: string;
   walletAddress: string;
   expiredAt: number;
