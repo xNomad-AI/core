@@ -232,21 +232,21 @@ export class ElizaManagerService {
     chain: string,
     nftId: string,
     agentId?: string,
-  ): Promise<{ solanaKeypair: Keypair; evmPrivateKey: string }> {
+  ): Promise<{ solanaKeypair: Keypair, evmAddress: string, evmPrivateKey: string }> {
     const secrectSalt = this.getAgentSecretSalt(chain, nftId);
     agentId ??= stringToUuid(nftId);
 
-    const { keypair, evmPrivateKey } =
-      await this.walletProxyService.getWalletKey(
-        secrectSalt,
-        agentId,
-        this.appConfig.get<string>('TEE_MODE') as TEEMode,
-        true,
-      );
+    const { keypair, evmAddress, evmPrivateKey } = await this.walletProxyService.getWalletKey(
+      secrectSalt,
+      agentId,
+      this.appConfig.get<string>('TEE_MODE') as TEEMode,
+      true,
+    );
 
     return {
       solanaKeypair: keypair,
-      evmPrivateKey: evmPrivateKey,
+      evmAddress,
+      evmPrivateKey,
     };
   }
 

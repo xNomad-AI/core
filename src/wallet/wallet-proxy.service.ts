@@ -59,7 +59,7 @@ export class WalletProxyService {
           Keypair.fromSecretKey(bs58.decode(response.data.secretKey)),
         publicKey: new PublicKey(response.data.publicKey),
         evmAddress: response.data.evmAddress as string,
-        evmPrivateKey: response.data.evmPrivateKey as string,
+        evmPrivateKey: response.data.evmPrivateKey && response.data.evmPrivateKey as string,
       };
     });
   }

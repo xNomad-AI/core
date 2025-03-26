@@ -187,6 +187,7 @@ export interface CopyTrade {
   id: number;
   agentId: string;
   name: string;
+  chain: string;
   targetAddress: string;
   walletAddress: string;
   copySell: boolean;

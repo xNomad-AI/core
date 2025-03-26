@@ -2,15 +2,19 @@ import type { Plugin } from '@elizaos/core';
 import { walletPortfolio } from './actions/wallet.js';
 import { transfer } from './actions/transfer.js';
 import { SwapTokenService } from './providers/swapTokenService.js';
-import { EVMClient } from './providers/evmClient.js';
+import { EVMClient, nativeTokenAddress } from './providers/evmClient.js';
 import { analyze } from './actions/analyze.js';
 import { executeSwap } from './actions/swap.js';
 import { copyTrade } from './actions/copyTrade.js';
 import { autoTask } from './actions/autoSwap.js';
 import { airdrop } from './actions/airdrop.js';
+import { getAccountFromWalletService } from './providers/keypairUtils.js';
+
 export {
   EVMClient,
   SwapTokenService,
+  getAccountFromWalletService,
+  nativeTokenAddress,
 };
 
 export const evmPlugin: Plugin = {

@@ -10,7 +10,7 @@ import {
   generateObjectDeprecated,
   ModelClass, ActionStatus,
 } from '@elizaos/core';
-import { convertNullStrings } from '../providers/environment.js';
+import { convertNullStrings, getRuntimeDefaultChain, getRuntimeKey } from '../providers/environment.js';
 import { isValidAddress } from '../providers/tokenUtils.js';
 import { getWalletKey } from '../providers/keypairUtils.js';
 import { isAgentAdmin, NotAgentAdminResponse } from '../providers/walletUtils.js';
@@ -18,6 +18,7 @@ import { SharedProvider } from '../index.js';
 import { userConfirmTemplate } from '../providers/type.js';
 
 type CopyTradeParameters = {
+  chain: string;
   name: string;
   targetAddress: string;
   mode: 'fixedAmount' | 'percentage';
@@ -50,7 +51,7 @@ export const copyTrade: Action = {
         mode: {
           type: ['string'],
           description:
-            'The mode of copying trade, enum can be "fixed" or "percentage"',
+            'The mode of copying trade, enum can be "fixedAmount" or "percentage"',
         },
         copySell: {
           type: 'boolean',
@@ -94,6 +95,9 @@ export const copyTrade: Action = {
     let response = convertNullStrings(
       state.actionParameters,
     ) as CopyTradeParameters;
+    response.chain = getRuntimeDefaultChain(runtime);
+    response.fixedAmount = Number(response.fixedAmount);
+    response.percentage = Number(response.percentage);
 
     if (!response.name) {
       response.name = `COPY_TRADE-${response.walletAddress}`;
@@ -127,6 +131,7 @@ export const copyTrade: Action = {
     response.agentId = runtime.agentId;
     const records = await runtime.databaseAdapter.find?.('copyTrades', {
       agentId: response.agentId,
+      chain: response.chain,
       targetAddress: response.targetAddress,
       walletAddress: response.walletAddress,
     });
@@ -169,6 +174,7 @@ export const copyTrade: Action = {
     const { id } = await SharedProvider.get<any>(
       'tradeMonitorService',
     ).createCopyTrade({
+      chain: response.chain,
       targetAddress: response.targetAddress,
       walletAddress: response.walletAddress,
       expiredAt: response.expiredAt || 0,
