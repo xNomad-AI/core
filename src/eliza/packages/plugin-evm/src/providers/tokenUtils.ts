@@ -17,6 +17,23 @@ export async function getTokenCABySymbol(
   return tokens?.[0]?.address;
 }
 
+export async function getTokenSymbolByCA(
+  runtime: IAgentRuntime,
+  chain: string,
+  tokenCA: string,
+) {
+  const birdeypeApikey = getRuntimeKey(runtime, 'BIRDEYE_API_KEY');
+  const url = `https://public-api.birdeye.so/defi/v3/token?address=${tokenCA}`;
+  const response = await fetch(url, {
+    headers: {
+      'X-API-KEY': birdeypeApikey,
+      accept: 'application/json',
+    },
+  });
+  const result = await response.json();
+  return result?.data?.items?.[0]?.result?.symbol;
+}
+
 export async function getTokensBySymbol(
   runtime: IAgentRuntime,
   chain: string,
@@ -92,7 +109,7 @@ export async function getSwapTokenPrice(
 }
 
 export function trimTokenSymbol(tokenSymbol: string) {
-  if (tokenSymbol.startsWith('$$')) {
+  if (tokenSymbol?.startsWith('$$')) {
     return tokenSymbol.slice(1);
   }
   return tokenSymbol;

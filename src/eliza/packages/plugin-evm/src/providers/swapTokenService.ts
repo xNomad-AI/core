@@ -120,18 +120,24 @@ export class SwapTokenService {
                 slippage: slippage.toString(),
                 account: userWalletAddress
             }
-            this.logger.info('openoceanParams', JSON.stringify(openoceanParams));
             const openoceanResponse = await this.getOpenoceanCallData(openoceanParams);
             if (!openoceanResponse.data) {
-                throw new Error('Failed to generate transaction');
+                throw new Error(`Failed to generate transaction, ${openoceanResponse?.data}`);
             }
-            this.logger.info('openoceanResponse', JSON.stringify(openoceanResponse))
             const tx = {
                 to: openoceanResponse.data.to,
                 value: openoceanResponse.data.value,
                 data: openoceanResponse.data.data,
                 gasPrice: openoceanResponse.data.gasPrice,
             };
+
+            await evmClient.checkAndApproveTokenTransfer({
+                walletAddress: userWalletAddress,
+                walletPrivateKey: privateKey,
+                tokenAddress: inputTokenCA,
+                dexRouterAddress: openoceanResponse.data.to,
+                rawAmount: amount.toString(),
+            });
 
             const request = await walletClient.prepareTransactionRequest({
                 account,
@@ -148,7 +154,6 @@ export class SwapTokenService {
                 serializedTransaction
             })
         } catch (error) {
-            console.log(error)
             throw new Error(
                 `Swap token failed: ${error instanceof Error ? error.message : 'unknown error'}`,
             );
