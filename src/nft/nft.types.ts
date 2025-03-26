@@ -18,7 +18,7 @@ import {
 import { Transform } from 'class-transformer';
 
 // Utility function for blockchain address case conversion
-function normalizeBlockchainAddress(blockchain: string, address: string): string {
+export function normalizeBlockchainAddress(blockchain: string, address: string): string {
   return blockchain.toLowerCase() === 'solana' ? address : address.toLowerCase();
 }
 

@@ -27,7 +27,7 @@ import { CORE_ADMIN_API_KEY, DELEGATION_MODE } from '../static-settings.js';
 import { SettingsService } from './core-settings.service.js';
 import { UpdateCoreSettingsDto, UpdateTwitterConfigDto } from './nft.dto.js';
 import { NftService } from './nft.service.js';
-import { NftSearchQueryDto } from './nft.types.js';
+import { NftSearchQueryDto, normalizeBlockchainAddress } from './nft.types.js';
 
 @Controller('/nft')
 export class NftController {
@@ -88,6 +88,7 @@ export class NftController {
     @Param('address') address: string,
     @Query('collectionId') collectionId: string,
   ) {
+    address = normalizeBlockchainAddress(chain, address);
     return await this.nftService.getNftsByOwner(chain, address, collectionId);
   }
 
@@ -242,7 +243,7 @@ export class NftController {
     }
     const owner = await this.nftService.getAgentOwner(agentId);
     return {
-      isAdmin: owner?.ownerAddress === address,
+      isAdmin: owner?.ownerAddress === normalizeBlockchainAddress(chain, address),
     };
   }
 
