@@ -112,6 +112,10 @@ export class EVMClient {
     walletAddress: string;
     rawAmount: string;
   }): Promise<string> {
+    if (tokenAddress.toLowerCase() === nativeTokenAddress) {
+      return '0x';
+    }
+
     // read current allowance
     const currentAllowance = await this.publicClient.readContract({
       address: tokenAddress,
