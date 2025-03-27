@@ -98,23 +98,23 @@ export class SwapTokenService {
                 rpcUrl, chainName
             });
             
-            const kyberSwapParams: KyberSwapParams = {
-                chain: chainName,
-                tokenIn: inputTokenCA,
-                tokenOut: outputTokenCA,
-                amountIn: amount.toString(),
-                to: userWalletAddress,
-                slippageTolerance: (slippage * 100).toString()
+            const deciaml = await evmClient.getTokenDecimals(inputTokenCA);
+            const openoceanParams: OpenoceanParams = {
+                chainId,
+                inTokenAddress: inputTokenCA,
+                outTokenAddress: outputTokenCA,
+                amount: formatUnits(BigInt(amount.toString()), deciaml),
+                slippage: slippage.toString(),
+                account: userWalletAddress
             }
-
-            const kyberSwapResponse = await this.getKyberSwapCallData(kyberSwapParams);
-            if (!kyberSwapResponse.encodedSwapData) {
-                throw new Error(`Failed to generate transaction: ${kyberSwapResponse}`);
+            const openoceanResponse = await this.getOpenoceanCallData(openoceanParams);
+            if (!openoceanResponse.data) {
+                throw new Error(`Failed to generate transaction, ${openoceanResponse?.data}`);
             }
             const tx: any = {
-                to: kyberSwapResponse.routerAddress,
-                value: inputTokenCA.toLowerCase() === ethAddress ? amount.toString() : '0',
-                data: kyberSwapResponse.encodedSwapData,
+                to: openoceanResponse.data.to,
+                value: openoceanResponse.data.value,
+                data: openoceanResponse.data.data,
             };
 
             await evmClient.checkAndApproveTokenTransfer({
