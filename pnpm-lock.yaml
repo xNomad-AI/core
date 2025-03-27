@@ -123,7 +123,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.2))(prom-client@15.1.3)
       agent-twitter-client:
-        specifier: github:xNomad-AI/agent-twitter-client#main
+        specifier: https://github.com/xNomad-AI/agent-twitter-client.git#main
         version: https://codeload.github.com/xNomad-AI/agent-twitter-client/tar.gz/8af978f5fbf5e02555efa423d2355ba1a8cb804a(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       amqplib:
         specifier: ^0.10.5
@@ -133,7 +133,7 @@ importers:
         version: 1.3.3
       axios:
         specifier: ^1.7.9
-        version: 1.8.1(debug@4.4.0)
+        version: 1.8.1
       bignumber.js:
         specifier: 9.1.2
         version: 9.1.2
@@ -183,7 +183,7 @@ importers:
         specifier: ^15.1.3
         version: 15.1.3
       pumpdotfun-sdk:
-        specifier: github:rckprtr/pumpdotfun-sdk#576b978b25e1c8404bfecc55951bdfdcf44a1e1d
+        specifier: https://github.com/rckprtr/pumpdotfun-sdk.git#576b978b25e1c8404bfecc55951bdfdcf44a1e1d
         version: https://codeload.github.com/rckprtr/pumpdotfun-sdk/tar.gz/576b978b25e1c8404bfecc55951bdfdcf44a1e1d(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.8)(typescript@5.7.3)(utf-8-validate@5.0.10)
       reflect-metadata:
         specifier: ^0.1.13
@@ -3719,6 +3719,9 @@ packages:
 
   buffer-more-ints@1.0.0:
     resolution: {integrity: sha512-EMetuGFz5SLsT0QTnXzINh4Ksr+oo4i+UGTXEshiGCQWnsgSs7ZhJ8fzlwQ+OzEMs0MpDAMr1hxnblp5a4vcHg==}
+
+  buffer-reverse@1.0.1:
+    resolution: {integrity: sha512-M87YIUBsZ6N924W57vDwT/aOu8hw7ZgdByz6ijksLjmHJELBASmYTTlNHRgjE+pTsT9oJXGaDSgqqwfdHotDUg==}
 
   buffer-xor@1.0.3:
     resolution: {integrity: sha512-571s0T7nZWK6vB67HI5dyUF7wXiNcfaPPPTl6zYCNApANjIvYJTg7hlud/+cJpdAhS7dVzqMLmfhfHR3rAcOjQ==}
@@ -12374,7 +12377,7 @@ snapshots:
       zod: 3.23.8
     optional: true
 
-  abitype@1.0.8(typescript@5.7.3)(zod@3.23.8):
+  abitype@1.0.8(typescript@5.7.3)(zod@3.24.2):
     optionalDependencies:
       typescript: 5.7.3
       zod: 3.24.2
@@ -12848,6 +12851,8 @@ snapshots:
   buffer-layout@1.2.2: {}
 
   buffer-more-ints@1.0.0: {}
+
+  buffer-reverse@1.0.1: {}
 
   buffer-xor@1.0.3: {}
 
@@ -15879,7 +15884,7 @@ snapshots:
       '@noble/hashes': 1.7.1
       '@scure/bip32': 1.6.2
       '@scure/bip39': 1.5.4
-      abitype: 1.0.8(typescript@5.7.3)(zod@3.23.8)
+      abitype: 1.0.8(typescript@5.7.3)(zod@3.24.2)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.7.3

@@ -1,8 +1,16 @@
 import axios from 'axios';
 import { ethers } from 'ethers';
 
+const FOUR_MEME_DEPLOYER_ADDRESS = '0x5c952063c7fc8610FFDB798152D69F0B9550762b';
+
 export class FourMemeApi {
-  constructor() {}
+  private provider: ethers.Provider;
+
+  constructor() {
+    this.provider = new ethers.JsonRpcProvider(
+      process.env.BSC_RPC_URL!,
+    );
+  }
 
   async login(wallet: ethers.Wallet): Promise<string> {
     const nonceResponse = await axios.post(
@@ -73,7 +81,7 @@ export class FourMemeApi {
   /**
    * twitter, telegram, website must start with "https://"
    */
-  async createToken(
+  async getCreateTokenQuote(
     userToken: string,
     params: {
       name: string;
@@ -156,5 +164,40 @@ export class FourMemeApi {
         }`,
       );
     }
+  }
+
+  async createAndBuyToken(wallet: ethers.Wallet, quote: any, initialBuyAmount: number){
+    const contractInstance = new ethers.Contract(
+      FOUR_MEME_DEPLOYER_ADDRESS,
+      ['function createToken(bytes,bytes)'],
+      wallet.connect(this.provider),
+    );
+    const response: ethers.TransactionResponse =
+      await contractInstance.createToken(
+        quote.createArg,
+        quote.signature,
+        {
+          value: ethers.parseEther(
+            ((initialBuyAmount || 0) * 1.01).toString(),
+          ),
+        },
+      );
+    console.log(`Create token transaction sent, txHash: ${response.hash}`);
+    const receipt: ethers.TransactionReceipt = await response.wait();
+    const tokenAddress = this.parseTokenAddressFromLogs(receipt.logs);
+    return {
+      tokenAddress,
+      txid: response.hash,
+    };
+  }
+
+  parseTokenAddressFromLogs(logs: readonly ethers.Log[]) {
+    // the token contract will emit OwnershipTransferred event when it is created
+    const log = logs.find(
+      (log) =>
+        log.topics[0] ===
+        '0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0',
+    );
+    return log?.address.toLowerCase();
   }
 }

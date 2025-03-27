@@ -10,6 +10,7 @@ import { TransientLoggerService } from './transient-logger.service.js';
 import { ConfigModule } from '@nestjs/config';
 import { SharedProvider as SolanaSharedProvider } from '@elizaos/plugin-solana';
 import { SharedProvider as EvmSharedProvider } from '@elizaos/plugin-evm';
+import { FourMemeApi } from './fourmeme.js';
 
 @Global()
 @Module({
@@ -44,5 +45,6 @@ export class SharedModule implements OnModuleInit {
   onModuleInit() {
     SolanaSharedProvider.set('tradeMonitorService', this._tradeMonitorService);
     EvmSharedProvider.set('tradeMonitorService', this._tradeMonitorService);
+    EvmSharedProvider.set('fourMemeApi', new FourMemeApi());
   }
 }
