@@ -1,8 +1,9 @@
-import { OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanSwapResponse, SwapTokenDto } from './type';
+import { KyberSwapParams, KyberSwapResponse, OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanSwapResponse, SwapTokenDto } from './type';
 import { createWalletClient, ethAddress, formatUnits, Hex, http, zeroAddress } from 'viem';
 import { bloxValidatorNodeService, jsonRpcNodeService } from './validatorNodeService.js';
 import okxService from './okxService.js';
 import openoceanService from './openoceanService.js';
+import kyberSwapService from './kyberSwapService.js';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base, bsc, mainnet } from 'viem/chains';
 import { EVMClient } from './evmClient.js';
@@ -92,50 +93,35 @@ export class SwapTokenService {
                 transport: http(rpcUrl),
                 account,
             });
-            // const okxParams: OkxParams = {
-            //     chainId,
-            //     amount: amount.toString(),
-            //     toTokenAddress: outputTokenCA,
-            //     fromTokenAddress: inputTokenCA,
-            //     slippage: slippage.toString(),
-            //     userWalletAddress
-            // };
-            // this.logger.info('okxParams', JSON.stringify(okxParams));
-
-            // const okxResponse = await this.getOKXCallData(okxParams);
-            // const tx = okxResponse.data?.[0]?.tx;
-            // if (!tx) {
-            //     throw new Error(`Failed to generate transaction: ${okxResponse?.msg}`);
-            // }
 
             const evmClient = new EVMClient({
                 rpcUrl, chainName
             });
             
-            const deciaml = await evmClient.getTokenDecimals(inputTokenCA);
-            const openoceanParams: OpenoceanParams = {
-                chainId,
-                inTokenAddress: inputTokenCA,
-                outTokenAddress: outputTokenCA,
-                amount: formatUnits(BigInt(amount.toString()), deciaml),
-                slippage: slippage.toString(),
-                account: userWalletAddress
+            const kyberSwapParams: KyberSwapParams = {
+                chain: chainName,
+                tokenIn: inputTokenCA,
+                tokenOut: outputTokenCA,
+                amountIn: amount.toString(),
+                to: userWalletAddress,
+                slippageTolerance: (slippage * 100).toString()
             }
-            const openoceanResponse = await this.getOpenoceanCallData(openoceanParams);
-            if (!openoceanResponse.data) {
-                throw new Error(`Failed to generate transaction, ${openoceanResponse?.data}`);
+
+            const kyberSwapResponse = await this.getKyberSwapCallData(kyberSwapParams);
+            if (!kyberSwapResponse.encodedSwapData) {
+                throw new Error(`Failed to generate transaction: ${kyberSwapResponse}`);
             }
             const tx: any = {
-                to: openoceanResponse.data.to,
-                value: openoceanResponse.data.value,
-                data: openoceanResponse.data.data,
+                to: kyberSwapResponse.routerAddress,
+                value: inputTokenCA.toLowerCase() === ethAddress ? amount.toString() : '0',
+                data: kyberSwapResponse.encodedSwapData,
             };
 
             await evmClient.checkAndApproveTokenTransfer({
                 walletAddress: userWalletAddress,
                 walletPrivateKey: privateKey,
                 tokenAddress: inputTokenCA,
-                dexRouterAddress: openoceanResponse.data.to,
+                dexRouterAddress: tx.to,
                 rawAmount: amount.toString(),
             });
 
@@ -216,5 +202,19 @@ export class SwapTokenService {
         }
 
         return await openoceanService.getCallData(params);
+    }
+
+    private async getKyberSwapCallData(params: KyberSwapParams): Promise<KyberSwapResponse> {
+        const feePercent = getSWAP_FEE_BPS();
+        const feeAccount = getSWAP_FEE_ACCOUNT();
+
+        if (feePercent && feeAccount) {
+            params.isInBps = true;
+            params.chargeFeeBy = params.tokenIn.toLowerCase() === ethAddress ? 'currency_in' : 'currency_out';
+            params.feeAmount = feePercent.toString();
+            params.feeReceiver = feeAccount;
+        }
+
+        return await kyberSwapService.getCallData(params);
     }
 }

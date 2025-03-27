@@ -210,3 +210,29 @@ export interface OpenoceanSwapResponse {
   code: number;
   data?: OpenoceanSwapData;
 }
+
+export interface KyberSwapParams {
+  chain: string;
+  tokenIn: string;
+  tokenOut: string;
+  amountIn: string;
+  to: string;
+  slippageTolerance: string;
+  isInBps?: boolean;
+  chargeFeeBy?: 'currency_in' | 'currency_out';
+  feeReceiver?: string;
+  feeAmount?: string;
+}
+
+export interface KyberSwapResponse {
+  inputAmount: string;
+  outputAmount: string;
+  totalGas: number;
+  gasPriceGwei: string;
+  gasUsd: number;
+  amountInUsd: number;
+  amountOutUsd: number;
+  receivedUsd: number;
+  encodedSwapData: string;
+  routerAddress: string;
+}
