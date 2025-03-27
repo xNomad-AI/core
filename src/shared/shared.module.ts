@@ -8,7 +8,8 @@ import { TokenInfoService } from './token-info.service.js';
 import { TradeMonitorService } from './trade-monitor.service.js';
 import { TransientLoggerService } from './transient-logger.service.js';
 import { ConfigModule } from '@nestjs/config';
-import { SharedProvider } from '@elizaos/plugin-solana';
+import { SharedProvider as SolanaSharedProvider } from '@elizaos/plugin-solana';
+import { SharedProvider as EvmSharedProvider } from '@elizaos/plugin-evm';
 
 @Global()
 @Module({
@@ -41,6 +42,7 @@ export class SharedModule implements OnModuleInit {
   constructor(private readonly _tradeMonitorService: TradeMonitorService) {}
 
   onModuleInit() {
-    SharedProvider.set('tradeMonitorService', this._tradeMonitorService);
+    SolanaSharedProvider.set('tradeMonitorService', this._tradeMonitorService);
+    EvmSharedProvider.set('tradeMonitorService', this._tradeMonitorService);
   }
 }
