@@ -12,6 +12,8 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+
+import { getWalletPortfolio } from '@elizaos/plugin-evm';
 import { unpack } from '@solana/spl-token-metadata';
 import {
   ComputeBudgetProgram,
@@ -56,7 +58,7 @@ export class AgentAccountController {
     @Query('afterTime') afterTime: number,
     @Query('limit') limit: number,
   ) {
-    return await this.birdEye.getTxs({ address, afterTime, beforeTime, limit });
+    return await this.birdEye.getTxs({ chain, address, afterTime, beforeTime, limit });
   }
 
   @Get('/defi/portfolio')
@@ -64,7 +66,13 @@ export class AgentAccountController {
     @Query('chain') chain: string,
     @Query('address') address: string,
   ) {
-    return await this.birdEye.getWalletPortfolio({ chain, address });
+    switch (chain) {
+      case 'solana':
+        return await this.birdEye.getWalletPortfolio({ chain, address });
+      default:
+        const moralisApikey = this.config.get('MORALIS_API_KEY');
+        return await getWalletPortfolio(address, chain, { moralisApikey });
+    }
   }
 
   @Get('/defi/search')

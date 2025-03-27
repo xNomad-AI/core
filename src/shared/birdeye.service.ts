@@ -120,6 +120,7 @@ export class BirdeyeService {
   }
 
   async getTxs(params: {
+    chain: string ;
     address: string;
     beforeTime?: number;
     afterTime?: number;
@@ -132,6 +133,7 @@ export class BirdeyeService {
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apikey,
+        'x-chain': params.chain,
       },
     };
     const response = await firstValueFrom(this.httpService.request(config));

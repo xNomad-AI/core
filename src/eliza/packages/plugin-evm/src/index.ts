@@ -9,12 +9,16 @@ import { copyTrade } from './actions/copyTrade.js';
 import { autoTask } from './actions/autoSwap.js';
 import { airdrop } from './actions/airdrop.js';
 import { getAccountFromWalletService } from './providers/keypairUtils.js';
+import { getWalletPortfolio, WalletPortfolio, Item } from './providers/walletUtils.js';
 
 export {
   EVMClient,
   SwapTokenService,
   getAccountFromWalletService,
   nativeTokenAddress,
+  getWalletPortfolio,
+  WalletPortfolio,
+  Item,
 };
 
 export const evmPlugin: Plugin = {

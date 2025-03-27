@@ -8,8 +8,8 @@ import {
   elizaLogger,
   ActionStatus,
 } from '@elizaos/core';
-import { convertNullStrings, getRuntimeKey } from '../providers/environment.js';
-import { getWalletPortfolio } from '../providers/walletUtils.js';
+import { convertNullStrings, getRuntimeDefaultChain } from '../providers/environment.js';
+import { getWalletPortfolioFromRuntime } from '../providers/walletUtils.js';
 import { getWalletKey } from '../providers/keypairUtils.js';
 
 export const walletPortfolio: Action = {
@@ -59,7 +59,8 @@ export const walletPortfolio: Action = {
     elizaLogger.log('WALLET_PORTFOLIO Response:', response);
 
     const { address } = await getWalletKey(runtime, false);
-    const portfolio = await getWalletPortfolio(runtime, address, getRuntimeKey(runtime, 'NFT_CHAIN'));
+    const chain = getRuntimeDefaultChain(runtime);
+    const portfolio = await getWalletPortfolioFromRuntime(runtime, address, chain);
     switch (response.queryType) {
       case 'walletBalance':
         callback?.({
@@ -82,7 +83,6 @@ export const walletPortfolio: Action = {
         });
         return 'failed';
     }
-    return 'success';
   },
 
   examples: [] as ActionExample[][],

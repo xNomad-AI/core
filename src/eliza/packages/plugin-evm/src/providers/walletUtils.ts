@@ -1,15 +1,13 @@
 import { type IAgentRuntime, type Memory, elizaLogger } from '@elizaos/core';
-
 import { getRuntimeKey } from '../providers/environment.js';
+import Moralis from 'moralis';
 
-class BirdEyeAPIResponse<T> {
-  success: boolean;
-  data: T;
-}
+let isMoralisInitialized = false;
 
 export class WalletPortfolio {
   items: Item[];
   totalUsd: number;
+  nextCursor?: string;
 }
 
 export interface Item {
@@ -66,41 +64,80 @@ export async function getWalletTokenBySymbol(
   chain?: string,
 ): Promise<Item> {
   chain = chain || getRuntimeKey(runtime, 'NFT_CHAIN');
-  const portfolio = await getWalletPortfolio(runtime, address, chain);
+  const portfolio = await getWalletPortfolioFromRuntime(runtime, address, chain);
   return portfolio?.items.find((item) => item.symbol === symbol);
 }
 
-export async function getWalletPortfolio(
+export async function getWalletPortfolioFromRuntime(
   runtime: IAgentRuntime,
   address: string,
   chain: string = 'bsc',
-): Promise<WalletPortfolio | undefined> {
+): Promise<WalletPortfolio> {
+  const moralisApikey = getRuntimeKey(runtime, 'MORALIS_API_KEY');
+  return await getWalletPortfolio(address, chain, { moralisApikey });
+}
+
+export async function getWalletPortfolio(
+  address: string,
+  chain: string = 'bsc',
+  options?: {
+    cursor?: string,
+    moralisApikey?: string,
+  },
+): Promise<WalletPortfolio> {
   try {
-    const birdeyeApikey = getRuntimeKey(runtime, 'BIRDEYE_API_KEY');
-    const response = await fetch(
-      `https://public-api.birdeye.so/v1/wallet/token_list?wallet=${address}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': birdeyeApikey,
-          'x-chain': chain,
-        },
-      },
-    );
-    if (response.status !== 200) {
-      elizaLogger.error(
-        `Failed to fetch wallet portfolio ${address} ${response.status}`,
-      );
-      return undefined;
+    const { moralisApikey, cursor } = options || {};
+    if (!isMoralisInitialized) {
+      await Moralis.start({
+        apiKey: moralisApikey
+      });
+      isMoralisInitialized = true;
     }
-    const data = await response.json();
-    const birdEyeResponse = data as BirdEyeAPIResponse<WalletPortfolio>;
-    if (birdEyeResponse.success) {
-      return birdEyeResponse.data;
-    }
+    let evmChain;
+    switch(chain) {
+      case 'bsc':
+        evmChain = Moralis.EvmUtils.EvmChain.BSC;
+        break;
+      case 'eth':
+        evmChain = Moralis.EvmUtils.EvmChain.ETHEREUM;
+        break;
+      case 'base':
+        evmChain = Moralis.EvmUtils.EvmChain.BASE;
+        break;
+      default:
+        throw new Error(`Unsupport chain: ${chain}`);
+      }
+    const response = await Moralis.EvmApi.wallets.getWalletTokenBalancesPrice({
+      chain: evmChain,
+      address,
+      excludeSpam: true,
+      excludeUnverifiedContracts: true,
+      limit: 100,
+      cursor,
+    });
+    const walletPortfolio: WalletPortfolio = {
+      items: [],
+      totalUsd: 0
+    };
+    response.response.result.forEach((item) => {
+      if (item.tokenAddress && item.usdValue >= 0.1) {
+        walletPortfolio.items.push({
+          name: item.name,
+          address: item.tokenAddress.lowercase,
+          symbol: item.symbol,
+          decimals: item.decimals,
+          balance: item.balance.value.toString(),
+          uiAmount: item.balanceFormatted,
+          priceUsd: item.usdPrice,
+          valueUsd: item.usdValue.toString()
+        });
+        walletPortfolio.totalUsd += item.usdValue;
+      }
+    });
+    walletPortfolio.nextCursor = response.response.cursor;
+    return walletPortfolio;
   } catch (e) {
     elizaLogger.error(`Failed to fetch wallet portfolio ${address} ${e}`);
+    throw new Error(`Failed to fetch wallet portfolio`);
   }
-  return undefined;
 }

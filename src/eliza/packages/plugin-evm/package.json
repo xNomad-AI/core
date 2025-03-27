@@ -19,7 +19,8 @@
 		"dist"
 	],
 	"dependencies": {
-		"viem": "^2.23.13"
+		"viem": "^2.23.13",
+		"moralis": "^2.27.2"
 	},
 	"scripts": {
 		"build": "tsc",
