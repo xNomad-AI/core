@@ -122,7 +122,49 @@ class BloxValidatorNodeService extends ValidatorNodeService {
   }
 }
 
+class DefaultRPCNodeService extends ValidatorNodeService {
+  private readonly rpcUrl = process.env.SOLANA_RPC_URL;
+
+  constructor() {
+    super();
+  }
+
+  async makeTransferInstruction(
+    fromPubkey: PublicKey,
+    lamports: number,
+  ): Promise<TransactionInstruction[]> {
+    return [];
+  }
+
+  async postSubmit(content: string): Promise<string> {
+    const body = {
+      id: 1,
+      jsonrpc: '2.0',
+      method: 'sendTransaction',
+      params: [
+        content,
+        {
+          encoding: 'base64',
+        },
+      ],
+    };
+
+    const response = await fetch(
+      this.rpcUrl,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+    );
+    const responseData = (await response.json()) as JitoResponse<string>;
+    return responseData.result;
+  }
+}
+
 const bloxValidatorNodeService = new BloxValidatorNodeService();
 const jitoValidatorNodeService = new JitoValidatorNodeService();
-
-export { bloxValidatorNodeService, jitoValidatorNodeService };
+const defaultRPCNodeService = new DefaultRPCNodeService();
+export { bloxValidatorNodeService, jitoValidatorNodeService, defaultRPCNodeService };
