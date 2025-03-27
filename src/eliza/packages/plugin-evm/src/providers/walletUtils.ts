@@ -1,12 +1,8 @@
 import { type IAgentRuntime, type Memory, elizaLogger } from '@elizaos/core';
 import { getRuntimeKey } from '../providers/environment.js';
 import Moralis from 'moralis';
-import { formatUnits } from 'viem';
 
-class BirdEyeAPIResponse<T> {
-  success: boolean;
-  data: T;
-}
+let isMoralisInitialized = false;
 
 export class WalletPortfolio {
   items: Item[];
@@ -68,50 +64,35 @@ export async function getWalletTokenBySymbol(
   chain?: string,
 ): Promise<Item> {
   chain = chain || getRuntimeKey(runtime, 'NFT_CHAIN');
-  const portfolio = await getWalletPortfolio(runtime, address, chain);
+  const portfolio = await getWalletPortfolioFromRuntime(runtime, address, chain);
   return portfolio?.items.find((item) => item.symbol === symbol);
 }
 
-export async function getWalletPortfolio(
+export async function getWalletPortfolioFromRuntime(
   runtime: IAgentRuntime,
   address: string,
   chain: string = 'bsc',
-  cursor?: string,
-): Promise<WalletPortfolio | undefined> {
-  // try {
-  //   const birdeyeApikey = getRuntimeKey(runtime, 'BIRDEYE_API_KEY');
-  //   const response = await fetch(
-  //     `https://public-api.birdeye.so/v1/wallet/token_list?wallet=${address}`,
-  //     {
-  //       method: 'GET',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'X-API-KEY': birdeyeApikey,
-  //         'x-chain': chain,
-  //       },
-  //     },
-  //   );
-  //   if (response.status !== 200) {
-  //     elizaLogger.error(
-  //       `Failed to fetch wallet portfolio ${address} ${response.status}`,
-  //     );
-  //     return undefined;
-  //   }
-  //   const data = await response.json();
-  //   const birdEyeResponse = data as BirdEyeAPIResponse<WalletPortfolio>;
-  //   if (birdEyeResponse.success) {
-  //     return birdEyeResponse.data;
-  //   }
-  // } catch (e) {
-  //   elizaLogger.error(`Failed to fetch wallet portfolio ${address} ${e}`);
-  // }
-  // return undefined;
+): Promise<WalletPortfolio> {
+  const moralisApikey = getRuntimeKey(runtime, 'MORALIS_API_KEY');
+  return await getWalletPortfolio(address, chain, { moralisApikey });
+}
 
+export async function getWalletPortfolio(
+  address: string,
+  chain: string = 'bsc',
+  options?: {
+    cursor?: string,
+    moralisApikey?: string,
+  },
+): Promise<WalletPortfolio> {
   try {
-    const moralisApikey = getRuntimeKey(runtime, 'MORALIS_API_KEY');
-    await Moralis.start({
-      apiKey: moralisApikey
-    });
+    const { moralisApikey, cursor } = options || {};
+    if (!isMoralisInitialized) {
+      await Moralis.start({
+        apiKey: moralisApikey
+      });
+      isMoralisInitialized = true;
+    }
     let evmChain;
     switch(chain) {
       case 'bsc':
@@ -132,7 +113,7 @@ export async function getWalletPortfolio(
       excludeSpam: true,
       excludeUnverifiedContracts: true,
       limit: 100,
-      cursor
+      cursor,
     });
     const walletPortfolio: WalletPortfolio = {
       items: [],
@@ -157,6 +138,6 @@ export async function getWalletPortfolio(
     return walletPortfolio;
   } catch (e) {
     elizaLogger.error(`Failed to fetch wallet portfolio ${address} ${e}`);
+    throw new Error(`Failed to fetch wallet portfolio`);
   }
-  return undefined;
 }
