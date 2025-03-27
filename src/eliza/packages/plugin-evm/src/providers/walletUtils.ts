@@ -1,6 +1,7 @@
 import { type IAgentRuntime, type Memory, elizaLogger } from '@elizaos/core';
-
 import { getRuntimeKey } from '../providers/environment.js';
+import Moralis from 'moralis';
+import { formatUnits } from 'viem';
 
 class BirdEyeAPIResponse<T> {
   success: boolean;
@@ -10,6 +11,7 @@ class BirdEyeAPIResponse<T> {
 export class WalletPortfolio {
   items: Item[];
   totalUsd: number;
+  nextCursor?: string;
 }
 
 export interface Item {
@@ -74,31 +76,85 @@ export async function getWalletPortfolio(
   runtime: IAgentRuntime,
   address: string,
   chain: string = 'bsc',
+  cursor?: string,
 ): Promise<WalletPortfolio | undefined> {
+  // try {
+  //   const birdeyeApikey = getRuntimeKey(runtime, 'BIRDEYE_API_KEY');
+  //   const response = await fetch(
+  //     `https://public-api.birdeye.so/v1/wallet/token_list?wallet=${address}`,
+  //     {
+  //       method: 'GET',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'X-API-KEY': birdeyeApikey,
+  //         'x-chain': chain,
+  //       },
+  //     },
+  //   );
+  //   if (response.status !== 200) {
+  //     elizaLogger.error(
+  //       `Failed to fetch wallet portfolio ${address} ${response.status}`,
+  //     );
+  //     return undefined;
+  //   }
+  //   const data = await response.json();
+  //   const birdEyeResponse = data as BirdEyeAPIResponse<WalletPortfolio>;
+  //   if (birdEyeResponse.success) {
+  //     return birdEyeResponse.data;
+  //   }
+  // } catch (e) {
+  //   elizaLogger.error(`Failed to fetch wallet portfolio ${address} ${e}`);
+  // }
+  // return undefined;
+
   try {
-    const birdeyeApikey = getRuntimeKey(runtime, 'BIRDEYE_API_KEY');
-    const response = await fetch(
-      `https://public-api.birdeye.so/v1/wallet/token_list?wallet=${address}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': birdeyeApikey,
-          'x-chain': chain,
-        },
-      },
-    );
-    if (response.status !== 200) {
-      elizaLogger.error(
-        `Failed to fetch wallet portfolio ${address} ${response.status}`,
-      );
-      return undefined;
-    }
-    const data = await response.json();
-    const birdEyeResponse = data as BirdEyeAPIResponse<WalletPortfolio>;
-    if (birdEyeResponse.success) {
-      return birdEyeResponse.data;
-    }
+    const moralisApikey = getRuntimeKey(runtime, 'MORALIS_API_KEY');
+    await Moralis.start({
+      apiKey: moralisApikey
+    });
+    let evmChain;
+    switch(chain) {
+      case 'bsc':
+        evmChain = Moralis.EvmUtils.EvmChain.BSC;
+        break;
+      case 'eth':
+        evmChain = Moralis.EvmUtils.EvmChain.ETHEREUM;
+        break;
+      case 'base':
+        evmChain = Moralis.EvmUtils.EvmChain.BASE;
+        break;
+      default:
+        throw new Error(`Unsupport chain: ${chain}`);
+      }
+    const response = await Moralis.EvmApi.wallets.getWalletTokenBalancesPrice({
+      chain: evmChain,
+      address,
+      excludeSpam: true,
+      excludeUnverifiedContracts: true,
+      limit: 100,
+      cursor
+    });
+    const walletPortfolio: WalletPortfolio = {
+      items: [],
+      totalUsd: 0
+    };
+    response.response.result.forEach((item) => {
+      if (item.tokenAddress && item.usdValue >= 0.1) {
+        walletPortfolio.items.push({
+          name: item.name,
+          address: item.tokenAddress.lowercase,
+          symbol: item.symbol,
+          decimals: item.decimals,
+          balance: item.balance.value.toString(),
+          uiAmount: item.balanceFormatted,
+          priceUsd: item.usdPrice,
+          valueUsd: item.usdValue.toString()
+        });
+        walletPortfolio.totalUsd += item.usdValue;
+      }
+    });
+    walletPortfolio.nextCursor = response.response.cursor;
+    return walletPortfolio;
   } catch (e) {
     elizaLogger.error(`Failed to fetch wallet portfolio ${address} ${e}`);
   }
