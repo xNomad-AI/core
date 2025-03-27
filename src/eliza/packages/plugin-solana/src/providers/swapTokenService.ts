@@ -20,6 +20,7 @@ import {
 import {
   bloxValidatorNodeService,
   jitoValidatorNodeService,
+  defaultRPCNodeService,
 } from './validatorNodeService.js';
 import { getSWAP_FEE_ACCOUNT, getSWAP_FEE_BPS } from './swapUtils';
 import { SolanaClient } from './solanaClient';
@@ -135,7 +136,7 @@ export class SwapTokenService {
       const transactionBuf = Buffer.from(swapData.swapTransaction, 'base64');
       const tx = VersionedTransaction.deserialize(transactionBuf);
       const validatorNode =
-        mode === 'FAST' ? bloxValidatorNodeService : jitoValidatorNodeService;
+        mode === 'FAST' ? defaultRPCNodeService : jitoValidatorNodeService;
       if (tip && tip > 0) {
         const transferInstructions = await validatorNode.makeTransferInstruction(
           walletPublicKey,
@@ -207,7 +208,7 @@ export class SwapTokenService {
     }
     try {
       const validatorNode =
-        mode === 'FAST' ? bloxValidatorNodeService : jitoValidatorNodeService;
+        mode === 'FAST' ? defaultRPCNodeService : jitoValidatorNodeService;
 
       const computeUnitLimit = 300000;
       const computeUnitPrice =
