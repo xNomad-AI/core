@@ -236,3 +236,52 @@ export interface KyberSwapResponse {
   encodedSwapData: string;
   routerAddress: string;
 }
+
+export interface FourMemeTokenInfo {
+  version: string;
+  tokenManager: string;
+  quote: string;
+  lastPrice: string;
+  tradingFeeRate: string;
+  minTradingFee: string;
+  launchTime: string;
+  offers: string;
+  maxOffers: string;
+  funds: string;
+  maxFunds: string;
+  liquidityAdded: boolean;
+}
+
+
+export interface FourMemeTryBuy {
+  tokenManager: string;
+  quote: string;
+  estimatedAmount: string;
+  estimatedCost: string;
+  estimatedFee: string;
+  amountMsgValue: string;
+  amountApproval: string;
+  amountFunds: string;
+}
+
+export interface FourMemeTrySell {
+  tokenManager: string;
+  quote: string;
+  funds: string;
+  fee: string;
+}
+
+export interface FourMemeSwapParams {
+  rpcUrl: string;
+  chainName: string;
+  inputTokenCA: string;
+  outputTokenCA: string;
+  amount: string;
+  slippage: number;
+}
+
+export interface FourMemeSwapResponse {
+  to: string;
+  data: string;
+  value: string;
+}
