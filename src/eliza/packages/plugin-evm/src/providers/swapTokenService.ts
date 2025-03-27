@@ -39,7 +39,11 @@ export class SwapTokenService {
         slippage,
         inputTokenCA,
         outputTokenCA,
-        mode = 'FAST',
+        mode = 'JSON_RPC',
+        gasMode = 'AVG',
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        tip,
         privateKey,
         userWalletAddress,
     }: SwapTokenDto): Promise<string> {
@@ -88,9 +92,6 @@ export class SwapTokenService {
                 transport: http(rpcUrl),
                 account,
             });
-
-            const validatorNode =
-                mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
             // const okxParams: OkxParams = {
             //     chainId,
             //     amount: amount.toString(),
@@ -124,11 +125,10 @@ export class SwapTokenService {
             if (!openoceanResponse.data) {
                 throw new Error(`Failed to generate transaction, ${openoceanResponse?.data}`);
             }
-            const tx = {
+            const tx: any = {
                 to: openoceanResponse.data.to,
                 value: openoceanResponse.data.value,
                 data: openoceanResponse.data.data,
-                gasPrice: openoceanResponse.data.gasPrice,
             };
 
             await evmClient.checkAndApproveTokenTransfer({
@@ -145,13 +145,27 @@ export class SwapTokenService {
                 to: tx.to,
                 data: tx.data,
                 value: BigInt(tx.value),
-                gasPrice: BigInt(tx.gasPrice),
                 kzg: undefined,
             });
-            const serializedTransaction = await account.signTransaction(request)
+            
+            if (gasMode === 'CUSTOM' && (maxFeePerGas && maxPriorityFeePerGas)) {
+                request.maxFeePerGas = BigInt(maxFeePerGas.toString());;
+                request.maxPriorityFeePerGas = BigInt(maxPriorityFeePerGas.toString());;
+            } else if (gasMode === 'HIGH') {
+                request.maxFeePerGas = BigInt(request.maxFeePerGas) * 2n;
+                request.maxPriorityFeePerGas = BigInt(request.maxPriorityFeePerGas) * 2n;
+            }
+            if (request.maxFeePerGas < request.maxPriorityFeePerGas) {
+                throw new Error('Invalid max fee or max priority fee');
+            }
+            
+            const serializedTransaction = await account.signTransaction(request);
+            const validatorNode =
+                mode === 'JSON_RPC' ? jsonRpcNodeService : bloxValidatorNodeService;
             return await validatorNode.postTransaction({
                 walletClient,
-                serializedTransaction
+                serializedTransaction,
+                tip
             })
         } catch (error) {
             throw new Error(

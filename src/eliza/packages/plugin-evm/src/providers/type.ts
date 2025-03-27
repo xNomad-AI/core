@@ -7,7 +7,11 @@ export interface SwapTokenDto {
   outputTokenCA: string;
   amount: string | BigNumber;
   slippage: number; // 0.01 = 1%
-  mode?: 'FAST' | 'ANTI_MEV';
+  mode?: 'JSON_RPC' | 'ANTI_MEV';
+  gasMode?: 'LOW' | 'AVG' | 'HIGH' | 'CUSTOM';
+  maxFeePerGas?: string | BigNumber; // wei
+  maxPriorityFeePerGas?: string | BigNumber; // wei
+  tip?: string | BigNumber; // 1 = 0.000000000000000001 eth
   privateKey: string;
   userWalletAddress: string;
 }
