@@ -11,7 +11,7 @@ export async function getTokenCABySymbol(
   if (tokens?.[0]?.address) {
     return tokens[0]?.address;
   }
-  if (keyword.startsWith('$')) {
+  if (keyword?.startsWith('$')) {
     tokens = await getTokensBySymbol(runtime, chain, keyword.slice(1));
   }
   return tokens?.[0]?.address;

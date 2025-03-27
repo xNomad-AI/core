@@ -6,6 +6,7 @@ let isMoralisInitialized = false;
 
 export class WalletPortfolio {
   items: Item[];
+  wallet: string;
   totalUsd: number;
   nextCursor?: string;
 }
@@ -117,6 +118,7 @@ export async function getWalletPortfolio(
     });
     const walletPortfolio: WalletPortfolio = {
       items: [],
+      wallet: address,
       totalUsd: 0
     };
     response.response.result.forEach((item) => {
