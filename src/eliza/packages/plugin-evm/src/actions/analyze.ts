@@ -89,9 +89,6 @@ export const analyze: Action = {
       text: `token: ${response.tokenAddress || response.tokenSymbol}`,
       action: `ANALYZE_TOKEN`,
       webAction: 'analyze',
-      data: {
-        ...data,
-      },
     });
     return true;
   },

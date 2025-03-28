@@ -95,9 +95,6 @@ export const analyze: Action = {
       status: 'success',
       action: `ANALYZE_TOKEN`,
       webAction: 'analyze',
-      data: {
-        ...data,
-      },
     });
     return 'success';
   },
