@@ -46,6 +46,13 @@ class OpenoceanService {
     return await this.request(url, 'GET', undefined, query);
   }
 
+  async getQuote(query: Record<string, any>) {
+    const path = `/${query['chainId']}/quote`;
+    const url = `${this.targetUrl}${path}${this.preParams(query)}`;
+    this.logger.log(`Request URL: ${url}`);
+    return await this.request(url, 'GET', undefined, query);
+  }
+
   async getCallData(query: Record<string, any>) {
     const path = `/${query['chainId']}/swap`;
     const url = `${this.targetUrl}${path}${this.preParams(query)}`;
