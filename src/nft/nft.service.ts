@@ -9,7 +9,7 @@ import {
   AICollection,
   AINft,
   CharacterConfig,
-  DEFAULT_TRADE_SETTINGS,
+  DEFAULT_TRADE_SETTINGS_SOLANA,
   NftConfig,
 } from '../shared/mongo/types.js';
 import { NftgoService } from '../shared/nftgo.service.js';
@@ -22,6 +22,7 @@ import {
   NftSearchOptions,
   normalizeBlockchainAddress,
 } from './nft.types.js';
+import { AgentTradeService } from '../agent/agent-trade.service.js';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -34,6 +35,7 @@ export class NftService implements OnApplicationBootstrap {
     private readonly mongo: MongoService,
     private readonly elizaManager: ElizaManagerService,
     private readonly addressService: AddressService,
+    private readonly agentTradeService: AgentTradeService,
     private readonly eventEmitter: EventEmitter2,
     private readonly tradeMonitorService: TradeMonitorService,
   ) {
@@ -142,15 +144,14 @@ export class NftService implements OnApplicationBootstrap {
       ignoreTwitterHttpProxy?: boolean;
     },
   ): Promise<NftConfig> {
+    const {agentId} = await this.mongo.nfts.findOne({nftId});
     let nftConfig: NftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
 
     nftConfig = nftConfig || {nftId, chain,};
-    if (!nftConfig?.trade){
-      nftConfig.trade =  DEFAULT_TRADE_SETTINGS;
-    }
-
+    nftConfig.tradeSettings = await this.agentTradeService.getAgentTradeSettings(agentId);
+    nftConfig.trade = await this.agentTradeService.getTradeSettingsByChain(agentId, chain);
     // default hiden the http proxy
     if (
       (options?.ignoreTwitterHttpProxy ?? true) &&

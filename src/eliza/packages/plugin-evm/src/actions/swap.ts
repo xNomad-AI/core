@@ -156,10 +156,9 @@ async function handleExecuteSwap(
     return 'failed';
   }
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
-  const responseMsg = {
+  callback?.({
     text: `Swap completed successfully! Transaction ID: ${txid}`,
-  };
-  callback?.(responseMsg);
+  });
   return 'success';
 }
 

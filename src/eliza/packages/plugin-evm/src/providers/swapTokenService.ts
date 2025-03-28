@@ -8,6 +8,7 @@ import fourMemeService from './fourMemeService.js';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base, bsc, mainnet } from 'viem/chains';
 import { EVMClient } from './evmClient.js';
+import BigNumber from 'bignumber.js';
 
 const DEFAULT_CONFIG = {
     EVM_SWAP_FEE_ACCOUNT: '0x1b455ab558518b7c32bafaff4661ede24cef005c',
@@ -41,7 +42,7 @@ export class SwapTokenService {
         slippage,
         inputTokenCA,
         outputTokenCA,
-        mode = 'JSON_RPC',
+        mode = 'FAST',
         gasMode = 'AVG',
         maxFeePerGas,
         maxPriorityFeePerGas,
@@ -49,6 +50,9 @@ export class SwapTokenService {
         privateKey,
         userWalletAddress,
     }: SwapTokenDto): Promise<string> {
+        // transform gas Gwei to wei
+        const maxFeePerGasWei = maxFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
+        const maxPriorityFeePerGasWei = maxPriorityFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
         let chain;
         let chainId;
         switch (chainName) {
@@ -153,9 +157,9 @@ export class SwapTokenService {
                 kzg: undefined,
             });
 
-            if (gasMode === 'CUSTOM' && (maxFeePerGas && maxPriorityFeePerGas)) {
-                request.maxFeePerGas = BigInt(maxFeePerGas.toString());;
-                request.maxPriorityFeePerGas = BigInt(maxPriorityFeePerGas.toString());;
+            if (gasMode === 'CUSTOM' && (maxFeePerGasWei && maxPriorityFeePerGasWei)) {
+                request.maxFeePerGas = BigInt(maxFeePerGasWei.toString());;
+                request.maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasWei.toString());;
             } else if (gasMode === 'HIGH') {
                 request.maxFeePerGas = BigInt(request.maxFeePerGas) * 2n;
                 request.maxPriorityFeePerGas = BigInt(request.maxPriorityFeePerGas) * 2n;
@@ -166,7 +170,7 @@ export class SwapTokenService {
 
             const serializedTransaction = await account.signTransaction(request);
             const validatorNode =
-                mode === 'JSON_RPC' ? jsonRpcNodeService : bloxValidatorNodeService;
+                mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
             return await validatorNode.postTransaction({
                 walletClient,
                 serializedTransaction,
