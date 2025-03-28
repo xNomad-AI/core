@@ -45,14 +45,18 @@ export async function getTokensBySymbol(
     return [];
   }
   try {
-    const url = `https://public-api.birdeye.so/defi/v3/search?chain=${chain}&keyword=${keyword}&target=token&sort_by=volume_24h_usd&sort_type=desc&verify_token=true&offset=0&limit=10`;
+    const url = `https://public-api.birdeye.so/defi/v3/search?chain=${chain}&keyword=${keyword}&target=token&sort_by=liquidity&sort_type=desc&offset=0&limit=10`;
     const headers = {
       'X-API-KEY': birdeypeApikey,
       accept: 'application/json',
-      'x-chain': chain,
     };
     const response = await fetch(url, { headers });
     const result = await response.json();
+    if (result?.success === false) {
+      elizaLogger.error(`Error getting token CA: ${result?.message}`);
+      return [];
+    }
+
     return result?.data?.items?.[0]?.result as {
       name: string;
       symbol: string;

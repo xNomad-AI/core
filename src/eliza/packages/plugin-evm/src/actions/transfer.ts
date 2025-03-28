@@ -17,7 +17,7 @@ import {
   isAgentAdmin,
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
-import { convertNullStrings, getRuntimeKey, trimTokenSymbol } from '../providers/environment.js';
+import { convertNullStrings, getRuntimeDefaultChain, getRuntimeKey, trimTokenSymbol } from '../providers/environment.js';
 import { transferToken } from '../providers/transferUtils.js';
 import { EVMClient, nativeTokenAddress } from '../providers/evmClient.js';
 import { userConfirmTemplate } from '../providers/type.js';
@@ -99,7 +99,7 @@ export const transfer: Action = {
       return 'pending';
     }
     
-    const chain = getRuntimeKey(runtime, 'NFT_CHAIN');
+    const chain = getRuntimeDefaultChain(runtime);
     const rpcUrl = getRuntimeKey(runtime, `${chain.toUpperCase()}_RPC_URL`);
     const evmClient = new EVMClient({
       rpcUrl,
@@ -168,14 +168,27 @@ export const transfer: Action = {
       content,
     );
 
-    const txHash = await transferToken({
-      rpcUrl: rpcUrl,
-      uiAmount: content.amount.toString(),
-      privateKey: privateKey,
-      recipient: content.recipient,
-      tokenAddress: content.tokenAddress,
-      chainName: chain,
-    });
+    
+    let txHash: string;
+    try {
+      txHash = await transferToken({
+        rpcUrl: rpcUrl,
+        uiAmount: content.amount.toString(),
+        privateKey: privateKey,
+        recipient: content.recipient,
+        tokenAddress: content.tokenAddress,
+        chainName: chain,
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('Transfer is restricted')) {
+        callback?.({
+          text: `Due to Transfer Restrictions, this token is not allowed to transfer. Please contact the token creator for more information.`,
+          isError: true,
+        });
+        return 'failed';
+      }
+      throw e;
+    }
 
     callback?.({
       text: `Successfully sent ${content.amount} ${content.tokenSymbol || content.tokenAddress} to ${content.recipient}.\n\nTransaction hash: ${txHash}`,
@@ -198,7 +211,7 @@ function formatTransferInfo(from: string, content): string {
 ————
 ➡️ Type: Transfer
 🪙 Token: ${displayTokenSymbol} (${content.tokenAddress})
-💰 Amount: ${content.amount} (${content.transferPercentage}%)
+💰 Amount: ${content.amount} (${content.percentage}%)
 💼 From: ${from}
 💼 To: ${content.recipient}
 ————
