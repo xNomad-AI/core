@@ -23,9 +23,16 @@ export function validateTradeSettingsSolana(dto: SolanaTradeSettingsDTO) {
 }
 
 export function validateTradeSettingsEvm(dto: EvmTradeSettingsDTO) {
+  if (!dto.slippage || dto.slippage < 0 || dto.slippage > 1) {
+    throw new BadRequestException('Invalid slippage, slippage should be between 0 and 1');
+  }
+
   if (dto.chain === 'bsc') {
     if (dto.mode === 'ANTI_MEV' && (dto.tip < 1 || !Number.isInteger(dto.tip))){
       throw new BadRequestException('Tip should be an integer greater than 1 Gwei');
+    }
+    if (dto.gasMode === 'CUSTOM' && (!dto.maxFeePerGas || !Number.isFinite(dto.maxFeePerGas))){
+      throw new BadRequestException('Gas must be set when gas mode is set to custom');
     }
   }
 }
