@@ -177,6 +177,7 @@ export class BirdeyeService {
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apikey,
+        'x-chain': params.chain,
       },
       params: {
         keyword: params.query,
