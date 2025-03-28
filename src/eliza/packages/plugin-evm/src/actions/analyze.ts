@@ -86,12 +86,9 @@ export const analyze: Action = {
 
     const data = analyzeResult.data;
     callback?.({
-      text: `token: ${response.tokenSymbol || response.tokenAddress}\n${JSON.stringify(data)}`,
+      text: `token: ${response.tokenAddress || response.tokenSymbol}`,
       action: `ANALYZE_TOKEN`,
       webAction: 'analyze',
-      data: {
-        ...data,
-      },
     });
     return true;
   },
