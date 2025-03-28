@@ -230,7 +230,6 @@ export class BirdeyeService {
           'x-chain': chain,
         },
       });
-      console.log(response);
       const result = await response.json();
       return result?.data?.value;
     } catch (error) {
