@@ -6,11 +6,12 @@ import {
   Hex,
   http,
   parseUnits,
+  ethAddress,
 } from 'viem';
 import { mainnet, base,bsc } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
-const nativeTokenAddress = '0x0000000000000000000000000000000000000000';
+const nativeTokenAddress = ethAddress;
 
 export async function transferToken({
   rpcUrl,

@@ -163,7 +163,7 @@ export const transfer: Action = {
     }
 
     
-    elizaLogger.log(
+    elizaLogger.info(
       `${address} start transfer content:`,
       content,
     );
@@ -207,10 +207,11 @@ export const transfer: Action = {
 
 function formatTransferInfo(from: string, content): string {
   const displayTokenSymbol = trimTokenSymbol(`$${content.tokenSymbol}`);
+  const displayTokenAddress = content.tokenAddress != nativeTokenAddress ? `(${content.tokenAddress})` : '';
   return `Please confirm the info below. If any adjustments are needed, let me know the updated details.
 ————
 ➡️ Type: Transfer
-🪙 Token: ${displayTokenSymbol} (${content.tokenAddress})
+🪙 Token: ${displayTokenSymbol} ${displayTokenAddress}
 💰 Amount: ${content.amount} (${content.percentage}%)
 💼 From: ${from}
 💼 To: ${content.recipient}
