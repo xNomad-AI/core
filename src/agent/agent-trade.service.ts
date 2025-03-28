@@ -166,12 +166,12 @@ async executeEvmLimitOrder(
         privateKey,
         inputTokenCA,
         outputTokenCA,
-        amount: BigNumber(inputTokenAmount).multipliedBy(new BigNumber(10).pow(decimals)).integerValue(),
+        amount: BigNumber(inputTokenAmount).multipliedBy(new BigNumber(10).pow(decimals)).toFixed(0),
         slippage,
         mode,
         tip: BigNumber(tip).toString(),
         gasMode,
-        maxFeePerGas: BigNumber(maxFeePerGas).toString(),
+        maxFeePerGas: BigNumber(maxFeePerGas).toFixed(0),
     });
     await this.mongo.limitOrders.deleteOne({id});
     this.logger.log(`AUTO_TASK Finished successfully ${id}, txId: ${txid}`);

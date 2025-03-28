@@ -277,6 +277,7 @@ export interface FourMemeSwapParams {
   inputTokenCA: string;
   outputTokenCA: string;
   amount: string;
+  recipient: string;
   slippage: number;
 }
 

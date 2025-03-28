@@ -65,9 +65,12 @@ export async function getWalletTokenBySymbol(
   symbol: string,
   chain?: string,
 ): Promise<Item> {
+  if (!symbol){
+    return undefined;
+  }
   chain = chain || getRuntimeKey(runtime, 'NFT_CHAIN');
   const portfolio = await getWalletPortfolioFromRuntime(runtime, address, chain);
-  return portfolio?.items.find((item) => item.symbol === symbol);
+  return portfolio?.items.find((item) => (item.symbol === symbol) || (item.symbol?.toLowerCase() === symbol.toLowerCase()));
 }
 
 export async function getWalletPortfolioFromRuntime(

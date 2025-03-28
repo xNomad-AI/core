@@ -180,7 +180,7 @@ export class EVMClient {
     const decimals = await this.getTokenDecimals(tokenAddress);
     
     // Check balance
-    const balance = await this.getTokenBalance(tokenAddress, account.address) as bigint;
+    const balance = await this.getTokenBalance(tokenAddress, account.address);
     const amountInWei = parseUnits(amount, decimals);
     
     if (balance < amountInWei) {

@@ -133,28 +133,20 @@ async function handleExecuteSwap(
   const { address, privateKey } = await getWalletKey(runtime, true);
   const {slippage, mode } = await getTradeSettings(runtime.agentId);
   const decimals = await evmClient.getTokenDecimals(parameters.inputTokenCA);
-  let txid: string;
-  try {
-    txid = await new SwapTokenService().swapToken(
-      {
-        rpcUrl,
-        chainName: chain,
-        userWalletAddress: address,
-        privateKey,
-        inputTokenCA : parameters.inputTokenCA,
-        outputTokenCA: parameters.outputTokenCA,
-        amount: BigNumber(parameters.inputTokenAmount).multipliedBy(10 ** decimals).integerValue(),
-        slippage,
-        mode,
-      });
-  }catch (e){
-    elizaLogger.error(`Error occurred while executing swap: ${e}`);
-    callback?.({
-      text: `${e}`,
-      isError: true,
+
+  const txid = await new SwapTokenService().swapToken(
+    {
+      rpcUrl,
+      chainName: chain,
+      userWalletAddress: address,
+      privateKey,
+      inputTokenCA : parameters.inputTokenCA,
+      outputTokenCA: parameters.outputTokenCA,
+      amount: BigNumber(parameters.inputTokenAmount).multipliedBy(10 ** decimals).toFixed(0),
+      slippage,
+      mode,
     });
-    return 'failed';
-  }
+  
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
   callback?.({
     text: `Swap completed successfully! Transaction ID: ${txid}`,

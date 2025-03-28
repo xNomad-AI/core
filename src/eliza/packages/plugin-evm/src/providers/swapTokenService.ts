@@ -1,5 +1,5 @@
 import { FourMemeSwapParams, FourMemeSwapResponse, KyberSwapParams, KyberSwapResponse, OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanSwapResponse, SwapTokenDto } from './type';
-import { createWalletClient, ethAddress, formatUnits, Hex, http, zeroAddress } from 'viem';
+import { createWalletClient, encodeFunctionData, ethAddress, formatUnits, Hex, http, zeroAddress } from 'viem';
 import { bloxValidatorNodeService, jsonRpcNodeService } from './validatorNodeService.js';
 import okxService from './okxService.js';
 import openoceanService from './openoceanService.js';
@@ -9,11 +9,16 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { base, bsc, mainnet } from 'viem/chains';
 import { EVMClient } from './evmClient.js';
 import BigNumber from 'bignumber.js';
+import swapxABI from './swapxABI.js';
 
 const DEFAULT_CONFIG = {
     EVM_SWAP_FEE_ACCOUNT: '0x1b455ab558518b7c32bafaff4661ede24cef005c',
     EVM_SWAP_FEE_BPS: 100,
 };
+
+const SWAPX_ADDRESS = {
+    ['bsc']: '0x25751494aa6187db7a6aebc6d53ddae876420f8d',
+}
 
 export function getSWAP_FEE_BPS() {
     return DEFAULT_CONFIG.EVM_SWAP_FEE_BPS;
@@ -111,6 +116,7 @@ export class SwapTokenService {
                 inputTokenCA,
                 outputTokenCA,
                 amount: amount.toString(),
+                recipient: account.address,
                 slippage
             };
             const fourMemeSwapResponse = await this.getFourMemeCallData(fourMemeParams);
@@ -245,21 +251,26 @@ export class SwapTokenService {
     }
 
     private async getFourMemeCallData(params: FourMemeSwapParams): Promise<FourMemeSwapResponse | undefined> {
-        const { rpcUrl, chainName, inputTokenCA, outputTokenCA, amount, slippage } = params;
+        const { rpcUrl, chainName, inputTokenCA, outputTokenCA, amount, slippage } = params;   
+        const swapxAddress = SWAPX_ADDRESS[chainName];     
         if (chainName === 'bsc') {
             const side = inputTokenCA.toLowerCase() === ethAddress ? 'BUY' : 'SELL';
             const tokenInfo = await fourMemeService.getTokenInfo(rpcUrl, chainName, (side === 'BUY' ? outputTokenCA : inputTokenCA) as `0x${string}`);
             if (tokenInfo.version !== '0' && !tokenInfo.liquidityAdded) {
-                if (side === 'BUY') {
+                if (side === 'BUY' && swapxAddress) {
                     const tryBuyResult = await fourMemeService.tryBuy(rpcUrl, chainName, outputTokenCA as `0x${string}`, '0', amount.toString());
                     const minBuyAmount = (BigInt(tryBuyResult.estimatedAmount) * BigInt(100 - slippage * 100) / BigInt(100)).toString();
-                    const buyData = fourMemeService.buildBuyTxData(tokenInfo.version, outputTokenCA, amount.toString(), minBuyAmount);
+                    const buyData = encodeFunctionData({
+                        abi: swapxABI,
+                        functionName: 'buyMemeToken',
+                        args: [tokenInfo.tokenManager, outputTokenCA, params.recipient, amount, minBuyAmount, []],
+                    });
                     return {
-                        to: tokenInfo.tokenManager,
+                        to: swapxAddress,
                         data: buyData,
                         value: amount.toString(),
                     };
-                } else {
+                } else if (side === 'SELL') {
                     const trySellResult = await fourMemeService.trySell(rpcUrl, chainName, inputTokenCA as `0x${string}`, amount.toString());
                     const minFunds = (BigInt(trySellResult.funds) * BigInt(100 - slippage * 100) / BigInt(100)).toString();
                     const feePercent = getSWAP_FEE_BPS() ?? 0;

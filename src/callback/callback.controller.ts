@@ -193,7 +193,7 @@ export class CallbackController {
         swapTokenDto.amount = BigNumber(copyTradeTask.fixedAmount).multipliedBy(10 ** tokenDecimals).toString();
       } else {
         const userBalance = await evmClient.getTokenUIBalance(inputTokenCA, address);
-        swapTokenDto.amount = BigNumber(userBalance).multipliedBy(copyTradeTask.percentage).multipliedBy(10 ** tokenDecimals).toString();
+        swapTokenDto.amount = BigNumber(userBalance).multipliedBy(copyTradeTask.percentage).multipliedBy(10 ** tokenDecimals).toFixed(0);
       }
     }
     // copy sell
@@ -207,7 +207,7 @@ export class CallbackController {
       const balanceChange = inputTokenAmount;
       const percentage = Number(balanceChange) / (Number(balanceChange) + Number(txSignerBalance));
       const userBalance = await evmClient.getTokenUIBalance(inputTokenCA, address);
-      swapTokenDto.amount = BigNumber(userBalance).multipliedBy(percentage).multipliedBy(10 ** tokenDecimals).toString();
+      swapTokenDto.amount = BigNumber(userBalance).multipliedBy(percentage).multipliedBy(10 ** tokenDecimals).toFixed(0);
     }
 
     if (Number(swapTokenDto.amount) == 0){
