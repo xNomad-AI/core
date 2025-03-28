@@ -360,10 +360,7 @@ function formatTaskInfo({
 }: LimitOrder): string {
   const displayedInputSymbol = trimTokenSymbol(`$${inputTokenSymbol || inputTokenCA}`);
   const displayedOutputSymbol = trimTokenSymbol(`$${outputTokenSymbol || outputTokenCA}`);
-  const displayedtargetToken =
-    targetTokenCA === inputTokenCA ? displayedInputSymbol :
-      targetTokenCA === outputTokenCA ? displayedOutputSymbol :
-        trimTokenSymbol(`$${targetToken} (${targetTokenCA})`);
+  const displayedtargetToken =  trimTokenSymbol(`$${targetToken} (${targetTokenCA})`);
 
   const swapType = inputTokenCA === nativeTokenAddress ? 'buy' : 'sell';
   const tokenInfo = swapType === 'sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
