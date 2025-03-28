@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { MongoService } from "../shared/mongo/mongo.service.js";
-import { CopyTrade, DEFAULT_TRADE_SETTINGS, LimitOrder } from "../shared/mongo/types.js";
+import { CopyTrade, getChainDefaultTradeSettings, LimitOrder, TradeSettingsEvm, TradeSettingsSolana } from "../shared/mongo/types.js";
 import { TradeMonitorService } from "../shared/trade-monitor.service.js";
 import { TransientLoggerService } from "../shared/transient-logger.service.js";
 import { Timeout } from "@nestjs/schedule";
@@ -157,7 +157,7 @@ async executeEvmLimitOrder(
     const rpcUrl = this.config.get<string>(`${chain.toUpperCase()}_RPC_URL`);
     const evmClient = new EVMClient({rpcUrl, chainName: chain});
     const decimals = await evmClient.getTokenDecimals(inputTokenCA);
-    const {slippage, mode } = await this.getTradeSettings(agentId);
+    const {slippage, mode, tip, gasMode, maxFeePerGas } = await this.getTradeSettingsByChain(agentId, chain) as TradeSettingsEvm;
     const txid = await new EVMSwapService().swapToken(
     {
         rpcUrl,
@@ -168,6 +168,10 @@ async executeEvmLimitOrder(
         outputTokenCA,
         amount: BigNumber(inputTokenAmount).multipliedBy(new BigNumber(10).pow(decimals)).integerValue(),
         slippage,
+        mode,
+        tip: BigNumber(tip).toString(),
+        gasMode,
+        maxFeePerGas: BigNumber(maxFeePerGas).toString(),
     });
     await this.mongo.limitOrders.deleteOne({id});
     this.logger.log(`AUTO_TASK Finished successfully ${id}, txId: ${txid}`);
@@ -225,7 +229,7 @@ async executeEvmLimitOrder(
     const rpcUrl = this.config.get<string>('SOLANA_RPC_URL');
     const connection = new Connection(rpcUrl);
     const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(inputTokenCA);
-    const {slippage, priorityFee, tip, mode } = await this.getTradeSettings(agentId);
+    const {slippage, priorityFee, tip, mode } = await this.getTradeSettingsByChain(agentId, chain) as TradeSettingsSolana;
     const txid = await new SolanaSwapService().swapToken(
       {
         connection,
@@ -245,10 +249,18 @@ async executeEvmLimitOrder(
   }
 
 
-  async getTradeSettings(agentId: string){
-    const {nftId} = await this.mongo.nfts.findOne({agentId});
-    const nftConfig = await this.mongo.nftConfigs.findOne({nftId});
-    return nftConfig?.trade || DEFAULT_TRADE_SETTINGS;
+  async getTradeSettingsByChain(agentId: string, chain: string = 'solana'){
+    const tradeSettings = await this.getAgentTradeSettings(agentId);
+    return tradeSettings[chain] || getChainDefaultTradeSettings(chain);
   }
 
+  async getAgentTradeSettings(agentId: string){
+    const {nftId} = await this.mongo.nfts.findOne({agentId});
+    const nftConfig = await this.mongo.nftConfigs.findOne({nftId});
+    return {
+      solana: getChainDefaultTradeSettings('solana'),
+      bsc: getChainDefaultTradeSettings('bsc'),
+      ...nftConfig?.tradeSettings
+    };
+  }
 }

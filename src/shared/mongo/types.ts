@@ -1,7 +1,6 @@
 import { Character } from '@elizaos/core';
 import { COLLECTIONS } from './configs.js';
-import exp from 'node:constants';
-
+import { BigNumber } from 'bignumber.js';
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
 export interface CollectionConfig {
@@ -104,21 +103,49 @@ export interface NftConfig {
   nftId: string;
   chain?: string;
   characterConfig?: CharacterConfig;
-  trade?: TradeSettings;
+  trade?: TradeSettingsSolana | TradeSettingsEvm;
+  tradeSettings?: {
+    [key: string]: TradeSettingsSolana | TradeSettingsEvm;
+  };
 }
 
-export interface TradeSettings {
+export interface TradeSettingsSolana {
   slippage: number;
   priorityFee: number;
   tip: number;
   mode: 'FAST' | 'ANTI_MEV';
 }
 
-export const DEFAULT_TRADE_SETTINGS: TradeSettings = {
+export interface TradeSettingsEvm {
+  chain: string;
+  slippage: number; // 0.01 = 1%
+  mode?: 'FAST' | 'ANTI_MEV';
+  gasMode?: 'LOW' | 'AVG' | 'HIGH' | 'CUSTOM';
+  maxFeePerGas?: number; // Gwei, fill this when gasMode is CUSTOM
+  maxPriorityFeePerGas?: number; // Gwei
+  tip?: number; // Gwei
+}
+
+export function getChainDefaultTradeSettings(chain: string): TradeSettingsSolana | TradeSettingsEvm {
+  if (chain === 'solana') {
+    return DEFAULT_TRADE_SETTINGS_SOLANA;
+  }
+  return DEFAULT_TRADE_SETTINGS_EVM;
+}
+
+export const DEFAULT_TRADE_SETTINGS_SOLANA: TradeSettingsSolana = {
   slippage: 0.25,
   priorityFee: 0.006,
   tip: 0.001,
   mode: 'FAST',
+};
+
+export const DEFAULT_TRADE_SETTINGS_EVM: TradeSettingsEvm = {
+  chain: undefined,
+  slippage: 0.25,
+  mode: 'FAST',
+  gasMode: 'AVG',
+  tip: 0,
 };
 
 export interface CoreSettings {

@@ -16,10 +16,10 @@ import {
   EVMClient,
 } from '@elizaos/plugin-evm';
 import { BigNumber } from 'bignumber.js';
-import { CopyTrade, DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
+import { CopyTrade, DEFAULT_TRADE_SETTINGS_SOLANA } from '../shared/mongo/types.js';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { NATIVE_MINT } from '@solana/spl-token';
-
+import { AgentTradeService } from '../agent/agent-trade.service.js';
 class BaseCallbackDto {
   monitorId: number;
   clientId: string;
@@ -86,6 +86,7 @@ export class CallbackController {
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
     private elizaManager: ElizaManagerService,
+    private agentTradeService: AgentTradeService,
     private mongo: MongoService,
   ) {
     this.apikey = this.appConfig.get<string>('TRADE_MONITOR_SERVICE_API_KEY')!;
@@ -145,9 +146,8 @@ export class CallbackController {
   
     const agentId = copyTradeTask.agentId;
     const nft = await this.mongo.nfts.findOne({ agentId });
-    const nftConfig = await this.mongo.nftConfigs.findOne({ nftId: nft.nftId });
     const wallet = await this.elizaManager.getAgentAccountKeypair(nft.chain, nft.nftId, agentId);
-    const tradeConfig = nftConfig?.trade || DEFAULT_TRADE_SETTINGS;
+    const tradeConfig = await this.agentTradeService.getTradeSettingsByChain(agentId, nft.chain);
     const swapInfo = getSwapInfo(callbackData);
     if (copyTradeTask.chain === 'solana') {
       return await this.copyTradeSolana(wallet, copyTradeTask, swapInfo, tradeConfig);
@@ -163,7 +163,7 @@ export class CallbackController {
     }
   }
 
-  async copyTradeEvm(wallet: {evmAddress: string, evmPrivateKey: string}, copyTradeTask: CopyTrade, {inputTokenCA, outputTokenCA, inputTokenAmount, txSigner, txHash}: TxToCopy, {mode, priorityFee, tip, slippage}: any = DEFAULT_TRADE_SETTINGS) {
+  async copyTradeEvm(wallet: {evmAddress: string, evmPrivateKey: string}, copyTradeTask: CopyTrade, {inputTokenCA, outputTokenCA, inputTokenAmount, txSigner, txHash}: TxToCopy, {mode, priorityFee, tip, slippage}: any = DEFAULT_TRADE_SETTINGS_SOLANA) {
     if (inputTokenCA !== nativeTokenAddress && outputTokenCA !== nativeTokenAddress) {
       this.logger.log(`ignore not native token swap, id: ${copyTradeTask.id}`);
       return;
@@ -228,7 +228,7 @@ export class CallbackController {
 
 
 
-  async copyTradeSolana({ solanaKeypair }: {solanaKeypair: Keypair}, copyTradeTask: CopyTrade, {inputTokenCA, outputTokenCA, inputTokenAmount, txSigner, txHash}: TxToCopy, {mode, priorityFee, tip, slippage}: any = DEFAULT_TRADE_SETTINGS) {
+  async copyTradeSolana({ solanaKeypair }: {solanaKeypair: Keypair}, copyTradeTask: CopyTrade, {inputTokenCA, outputTokenCA, inputTokenAmount, txSigner, txHash}: TxToCopy, {mode, priorityFee, tip, slippage}: any = DEFAULT_TRADE_SETTINGS_SOLANA) {
     const solAddress = NATIVE_MINT.toBase58();
     if (inputTokenCA != solAddress && outputTokenCA != solAddress) {
       this.logger.log(`ignore not SOL swap, id: ${copyTradeTask.id}`);
