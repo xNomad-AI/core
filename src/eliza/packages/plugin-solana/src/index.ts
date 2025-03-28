@@ -35,11 +35,6 @@ export const solanaPlugin: Plugin = {
   providers: [],
 };
 export default solanaPlugin;
-export {
-  AutoSwapTaskTable,
-  executeAutoTokenSwapTask,
-  AutoSwapTask,
-} from './actions/autoSwap.js';
 
 export class SharedProvider {
   private static instances = new Map<string, any>();

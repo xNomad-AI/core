@@ -113,6 +113,7 @@ export async function getTokensBySymbol(
     const headers = {
       'X-API-KEY': birdeypeApikey,
       accept: 'application/json',
+      'x-chain': 'solana',
     };
     const response = await fetch(url, { headers });
     const result = await response.json();

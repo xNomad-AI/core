@@ -188,6 +188,9 @@ importers:
       tweetnacl:
         specifier: ^1.0.3
         version: 1.0.3
+      viem:
+        specifier: ^2.23.13
+        version: 2.23.14(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.23.8)
     devDependencies:
       '@nestjs/cli':
         specifier: 10.4.9
@@ -12309,7 +12312,6 @@ snapshots:
     optionalDependencies:
       typescript: 5.7.3
       zod: 3.23.8
-    optional: true
 
   abitype@1.0.8(typescript@5.7.3)(zod@3.24.2):
     optionalDependencies:
@@ -15786,7 +15788,6 @@ snapshots:
       typescript: 5.7.3
     transitivePeerDependencies:
       - zod
-    optional: true
 
   ox@0.6.9(typescript@5.7.3)(zod@3.24.2):
     dependencies:
@@ -17226,7 +17227,6 @@ snapshots:
       - bufferutil
       - utf-8-validate
       - zod
-    optional: true
 
   viem@2.23.14(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.24.2):
     dependencies:

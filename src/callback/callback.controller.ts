@@ -15,7 +15,6 @@ import {
   nativeTokenAddress,
   EVMClient,
 } from '@elizaos/plugin-evm';
-import { TEEMode } from '@elizaos/plugin-tee';
 import { BigNumber } from 'bignumber.js';
 import { CopyTrade, DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';

@@ -17,6 +17,7 @@ import {
   NftPrologues,
   CoreSettings,
   CopyTrade, CollectionConfig,
+  LimitOrder,
 } from './types.js';
 
 @Injectable()
@@ -138,6 +139,10 @@ export class MongoService implements OnModuleInit {
 
   get copyTrades() {
     return this.client.db('agent').collection<CopyTrade>('copyTrades');
+  }
+
+  get limitOrders() {
+    return this.client.db('agent').collection<LimitOrder>('limitOrders');
   }
 
   // global key-value storage

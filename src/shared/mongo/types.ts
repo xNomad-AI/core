@@ -194,8 +194,28 @@ export interface CopyTrade {
   fixedAmount?: number;
   percentage?: number;
   expiredAt?: number;
-  status: 'running' | 'paused';
+  status: 'running' | 'paused' | string;
   createdAt: Date;
+}
+
+export interface LimitOrder {
+  id: string;
+  chain: string;
+  agentId: string;
+  inputTokenSymbol: string | null;
+  outputTokenSymbol: string | null;
+  inputTokenCA: string | null;
+  outputTokenCA: string | null;
+  inputTokenAmount: number | string | null;
+  inputTokenPercentage: number | null;
+  outputTokenAmount: number | string | null;
+  delay: string | null;
+  startAt: Date | null;
+  expireAt: Date;
+  priceCondition: 'below' | 'above' | null;
+  targetPrice: number | null;
+  targetToken: string | null;
+  targetTokenCA: string;
 }
 
 export type NonceType = 'claim' | 'login';

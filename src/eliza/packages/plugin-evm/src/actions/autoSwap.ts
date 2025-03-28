@@ -9,31 +9,27 @@ import {
   type State,
   type Action,
   elizaLogger,
-  Content,
-  stringToUuid, ActionStatus,
+  ActionStatus,
+  stringToUuid,
 } from '@elizaos/core';
-
 import { getWalletKey } from '../providers/keypairUtils.js';
 import {
   isAgentAdmin,
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
-
 import {
-  getSwapTokenPrice,
-  validateAndAssignCA,
   getTokenCABySymbol,
   trimTokenSymbol,
+  isValidAddress,
 } from '../providers/tokenUtils.js';
-import { convertNullStrings, getChainRPC, getEvmClient, getRuntimeDefaultChain, md5sum } from '../providers/environment.js';
-import { getTradeSettings, SwapTokenService } from '../providers/swapTokenService.js';
-import { BigNumber } from 'bignumber.js';
+import { convertNullStrings, getEvmClient, getRuntimeDefaultChain } from '../providers/environment.js';
 import { userConfirmTemplate } from '../providers/type.js';
-import { EVMClient, nativeTokenAddress } from '../providers/evmClient.js';
-
-export const AutoSwapTaskTable = 'AUTO_TOKEN_SWAP_TASK';
-export interface AutoSwapTask {
+import { nativeTokenAddress } from '../providers/evmClient.js';
+export const LimitOrderTable = 'limitOrders';
+export interface LimitOrder {
+  id: string;
   chain: string;
+  agentId: string;
   inputTokenSymbol: string | null;
   outputTokenSymbol: string | null;
   inputTokenCA: string | null;
@@ -44,86 +40,13 @@ export interface AutoSwapTask {
   delay: string | null;
   startAt: Date | null;
   expireAt: Date;
-  priceCondition: 'below' | 'above' | 'null' | null;
-  priceTarget: number | 'null' | null;
-  tokenTarget: string | null;
+  priceCondition: 'below' | 'above' | null;
+  targetPrice: number | null;
+  targetToken: string | null;
+  targetTokenCA: string;
 }
 
-export async function executeAutoTokenSwapTask(
-  runtime: IAgentRuntime,
-  memory: Memory,
-) {
-  const { id } = memory;
-  let content: Content;
-  // check content type
-  if (typeof content === 'string') {
-    content = JSON.parse(content);
-  } else {
-    content = memory.content;
-  }
-  // do not remove!
-  if (typeof content === 'string') {
-    content = JSON.parse(content);
-  } else {
-    content = memory.content;
-  }
 
-  const task = content.task as AutoSwapTask;
-  elizaLogger.log('executeAutoTokenSwapTask', id);
-
-  if (task.expireAt && new Date(task.expireAt).getTime() <= Date.now()) {
-    elizaLogger.info(`Task has expired ${id}`);
-    await runtime.databaseAdapter.removeMemory(id, 'AUTO_TOKEN_SWAP_TASK');
-  }
-
-  if (task.startAt && new Date(task.startAt).getTime() > Date.now()) {
-    elizaLogger.info(`Task is not ready to start yet ${id}`);
-    return;
-  }
-
-  if (
-    task.priceTarget &&
-    task.priceCondition &&
-    task.priceCondition !== 'null' &&
-    task.priceTarget !== 'null'
-  ) {
-    const tokenCA =
-      task.tokenTarget ||
-      (task.priceCondition === 'below'
-        ? task.outputTokenCA
-        : task.inputTokenCA);
-
-    const chain = getRuntimeDefaultChain(runtime);
-    const tokenPrice = await getSwapTokenPrice(runtime, chain, tokenCA);
-    const tokenPriceMatched =
-      task.priceCondition === 'below'
-        ? tokenPrice && tokenPrice < Number(task.priceTarget)
-        : tokenPrice && tokenPrice > Number(task.priceTarget);
-    if (!tokenPriceMatched) {
-      elizaLogger.info(
-        `Token price not matched ${id}, price: ${tokenPrice}, expected: ${task.priceTarget}`,
-      );
-      return;
-    }
-  }
-  elizaLogger.log(
-    `AUTO_TASK started successfully, ${id}, task: ${JSON.stringify(task)}`,
-  );
-
-  await runtime.databaseAdapter.removeMemory(id, AutoSwapTaskTable);
-  const { address, privateKey } = await getWalletKey(runtime, true);
-  const chain = getRuntimeDefaultChain(runtime);
-  const txId = await executeSwapTokenTx(
-    runtime,
-    chain,
-    address,
-    privateKey,
-    task.inputTokenCA,
-    task.outputTokenCA,
-    Number(task.inputTokenAmount),
-  );
-  elizaLogger.info(`AUTO_TASK Finished successfully ${id}, txId: ${txId}`);
-}
 
 export const autoTask: Action = {
   functionCallSpec: {
@@ -168,13 +91,13 @@ export const autoTask: Action = {
         priceCondition: {
           type: ['string', 'null'],
           description:
-            "Defines whether the swap should be triggered when the target token's price is 'above' or 'below' the specified priceTarget.",
+            "Defines whether the swap should be triggered when the target token's price is 'above' or 'below' the specified targetPrice.",
         },
-        priceTarget: {
+        targetPrice: {
           type: ['number', 'null'],
           description: 'Price target for the swap',
         },
-        tokenTarget: {
+        targetToken: {
           type: ['string', 'null'],
           description:
             'Token symbol or contract address used for price trigger evaluation',
@@ -182,7 +105,7 @@ export const autoTask: Action = {
         delay: {
           type: ['string', 'null'],
           description:
-            'Time Delay for the swap, e.g., "after 5 minutes" or "below 0.00169", Either delay or priceTarget must be provided.',
+            'Time Delay for the swap, e.g., "after 5 minutes" or "below 0.00169", Either delay or targetPrice must be provided.',
         },
       },
       required: [
@@ -193,7 +116,7 @@ export const autoTask: Action = {
         'inputTokenAmount',
         'inputTokenPercentage',
         'priceCondition',
-        'priceTarget',
+        'targetPrice',
         'delay',
       ],
     },
@@ -219,40 +142,19 @@ export const autoTask: Action = {
       _options,
       callback,
     );
-    if (!status || status != 'success') {
-      return status || 'failed';
+    if (status != 'success') {
+      return status;
     }
-    try {
-      const content: Content = {
-        ...message.content,
-        task: task,
-      };
-      const memory: Memory = {
-        id: stringToUuid(md5sum(JSON.stringify(content))),
-        agentId: runtime.agentId,
-        content: content,
-        roomId: stringToUuid(AutoSwapTaskTable),
-        userId: message.userId,
-      };
-      await runtime.databaseAdapter.createMemory(
-        memory,
-        AutoSwapTaskTable,
-        true,
-      );
-      elizaLogger.info(`AUTO_Task Created, ${JSON.stringify(task)}`);
-      const responseMsg = {
-        text: `AutoTask Created Successfully`,
-      };
-      callback?.(responseMsg);
-      return 'success';
-    } catch (error) {
-      elizaLogger.error(`Error during autotask create:, ${error}`);
-      const responseMsg = {
-        text: `Emm... something went wrong, please try again later`,
-      };
-      callback?.(responseMsg);
-      return 'failed';
-    }
+    task.id = stringToUuid(new Date().toISOString());
+    await runtime.databaseAdapter.insert(
+      LimitOrderTable,
+      task,
+    );
+    elizaLogger.info(`AUTO_Task Created, ${JSON.stringify(task)}`);
+    callback?.({
+      text: `AutoTask Created Successfully`,
+    });
+    return 'success';
   },
   examples: [] as ActionExample[][],
 } as Action;
@@ -265,7 +167,7 @@ async function checkResponse(
   callback?: HandlerCallback,
 ): Promise<{
   status: ActionStatus;
-  task?: AutoSwapTask;
+  task?: LimitOrder;
 }> {
   // check if the swap request is from agent owner or public chat
   const isAdmin = await isAgentAdmin(runtime, message);
@@ -275,23 +177,14 @@ async function checkResponse(
   }
 
   // generate formatted response from chat
-  let swapReq = convertNullStrings(state.actionParameters) as AutoSwapTask;
+  const swapReq = convertNullStrings(state.actionParameters) as LimitOrder;
   const chain = getRuntimeDefaultChain(runtime);
   const client = getEvmClient(runtime, chain);
   const { address } = await getWalletKey(runtime, true);
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
   swapReq.chain = chain;
-  elizaLogger.log(`Response:`, swapReq);
-
-  swapReq.inputTokenCA = validateAndAssignCA(
-    swapReq.inputTokenSymbol,
-    swapReq.inputTokenCA,
-  );
-  swapReq.outputTokenCA = validateAndAssignCA(
-    swapReq.outputTokenSymbol,
-    swapReq.outputTokenCA,
-  );
+  swapReq.agentId = runtime.agentId;
 
   if (client.isNativeToken(swapReq.inputTokenSymbol)) {
     swapReq.inputTokenCA = nativeTokenAddress;
@@ -299,35 +192,48 @@ async function checkResponse(
   if (client.isNativeToken(swapReq.outputTokenSymbol)) {
     swapReq.outputTokenCA = nativeTokenAddress;
   }
+  if (client.isNativeToken(swapReq.targetToken)) {
+    swapReq.targetTokenCA = nativeTokenAddress;
+  }
+
+  swapReq.inputTokenCA = swapReq.inputTokenCA || await getTokenCABySymbol(
+    runtime,
+    chain,
+    swapReq.inputTokenSymbol,
+  );
+
+  swapReq.outputTokenCA = swapReq.outputTokenCA || await getTokenCABySymbol(
+    runtime,
+    chain,
+    swapReq.outputTokenSymbol,
+  );
+
+  swapReq.targetTokenCA = swapReq.targetTokenCA || await getTokenCABySymbol(
+    runtime,
+    chain,
+    swapReq.targetToken,
+  ) || swapReq.targetToken === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : swapReq.outputTokenCA;
+  
 
   if (!swapReq.inputTokenCA) {
-    swapReq.inputTokenCA = await getTokenCABySymbol(
-      runtime,
-      chain,
-      swapReq.inputTokenSymbol,
-    );
-    if (!swapReq.inputTokenCA) {
-      const responseMsg = {
-        text: 'Please provide a valid inputToken CA you want to sell',
-      };
-      callback?.(responseMsg);
-      return {status: 'pending'};
-    }
+    callback?.({
+      text: 'Please provide a valid inputToken CA you want to sell',
+    });
+    return {status: 'pending'};
   }
 
   if (!swapReq.outputTokenCA) {
-    swapReq.outputTokenCA = await getTokenCABySymbol(
-      runtime,
-      chain,
-      swapReq.outputTokenSymbol,
-    );
-    if (!swapReq.outputTokenCA) {
-      const responseMsg = {
-        text: 'Please provide a valid outputToken CA you want to buy',
-      };
-      callback?.(responseMsg);
-      return {status: 'pending'};
-    }
+    callback?.({
+      text: 'Please provide a valid outputToken CA you want to buy',
+    });
+    return {status: 'pending'};
+  }
+
+  if (!swapReq.targetTokenCA) {
+    callback?.({
+      text: `Please specify which token's price you want to monitor: ${swapReq.inputTokenCA} or ${swapReq.outputTokenCA}?`,
+    });
+    return {status: 'pending'};
   }
 
   if (
@@ -343,7 +249,6 @@ async function checkResponse(
   if (
     Number.isFinite(swapReq.inputTokenPercentage) &&
     swapReq.inputTokenPercentage != 0
-
   ) {
     const balance = await client.getTokenUIBalance(swapReq.inputTokenCA, address);
     swapReq.inputTokenAmount = Number(balance) * swapReq.inputTokenPercentage;
@@ -353,36 +258,32 @@ async function checkResponse(
     !Number.isFinite(swapReq.inputTokenAmount) ||
     swapReq.inputTokenAmount <= 0
   ) {
-    const responseMsg = {
+    callback?.({
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount to perform the swap`,
       action: 'AUTO_TASK',
-    };
-    callback?.(responseMsg);
+    });
     return {status: 'pending'};
   }
 
   const balance = await client.getTokenUIBalance(swapReq.inputTokenCA, address);
   if (!balance) {
-    const responseMsg = {
+    callback?.({
       text: 'Your input balance is 0.',
-    };
-    callback?.(responseMsg);
+    });
     return {status: 'failed'};
   }
 
   if (Number(balance) < swapReq.inputTokenAmount) {
-    const responseMsg = {
+    callback?.({
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
-    };
-    callback?.(responseMsg);
+    });
     return {status: 'failed'};
   }
 
-  if (!swapReq.priceTarget && !swapReq.delay) {
-    const responseMsg = {
+  if (!swapReq.targetPrice && !swapReq.delay) {
+    callback?.({
       text: "If you'd like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
-    };
-    callback?.(responseMsg);
+    });
     return {status: 'pending'};
   }
 
@@ -397,9 +298,19 @@ async function checkResponse(
     swapReq.startAt = new Date();
   }
 
-  swapReq.expireAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  if (!isValidAddress(swapReq.targetTokenCA)) {
+    swapReq.targetTokenCA =
+      swapReq.targetToken === swapReq.inputTokenSymbol
+        ? swapReq.inputTokenCA
+        : swapReq.outputTokenCA;
+  }
 
-  elizaLogger.info(`checking if user confirm to create task`);
+  if (!isValidAddress(swapReq.targetTokenCA)) {
+    callback({
+      text: "Please provide a valid target token CA",
+    });
+    return {status: 'pending'};
+  }
 
   const confirmContext = composeContext({
     state,
@@ -414,10 +325,9 @@ async function checkResponse(
   elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
 
   if (confirmResponse.userAcked == 'rejected') {
-    const responseMsg = {
+    callback?.({
       text: 'ok. I will not set the autotask.',
-    };
-    callback?.(responseMsg);
+    });
     return {status: 'cancelled'};
   }
 
@@ -434,37 +344,6 @@ async function checkResponse(
   return {status: 'success', task: swapReq};
 }
 
-async function executeSwapTokenTx(
-  runtime: IAgentRuntime,
-  chain: string,
-  address: string,
-  privateKey: string,
-  inputTokenCA: string,
-  outputTokenCA: string,
-  amount: number,
-) {
-  elizaLogger.info(
-    `swapToken ${address} : ${inputTokenCA} for ${outputTokenCA} amount: ${amount}`,
-  );
-  const rpcUrl = getChainRPC(runtime, chain);
-  const evmClient = getEvmClient(runtime, chain);
-  const decimals = await evmClient.getTokenDecimals(inputTokenCA);
-  const {slippage, mode } = await getTradeSettings(runtime.agentId);
-  const txid = await new SwapTokenService().swapToken(
-    {
-      rpcUrl,
-      chainName: chain,
-      userWalletAddress: address,
-      privateKey,
-      inputTokenCA,
-      outputTokenCA,
-      amount: BigNumber(amount).multipliedBy(new BigNumber(10).pow(decimals)).integerValue(),
-      slippage,
-      mode,
-    });
-  return txid;
-}
-
 function formatTaskInfo({
   inputTokenAmount,
   inputTokenCA,
@@ -473,18 +352,18 @@ function formatTaskInfo({
   outputTokenSymbol,
   outputTokenCA,
   priceCondition,
-  priceTarget,
-  tokenTarget,
+  targetPrice,
+  targetToken,
+  targetTokenCA,
   startAt,
   expireAt,
-}: AutoSwapTask): string {
-
+}: LimitOrder): string {
   const displayedInputSymbol = trimTokenSymbol(`$${inputTokenSymbol || inputTokenCA}`);
   const displayedOutputSymbol = trimTokenSymbol(`$${outputTokenSymbol || outputTokenCA}`);
-  const displayedTokenTarget =
-    tokenTarget === inputTokenCA ? displayedInputSymbol :
-      tokenTarget === outputTokenCA ? displayedOutputSymbol :
-        trimTokenSymbol(`$${tokenTarget}`);
+  const displayedtargetToken =
+    targetTokenCA === inputTokenCA ? displayedInputSymbol :
+      targetTokenCA === outputTokenCA ? displayedOutputSymbol :
+        trimTokenSymbol(`$${targetToken} (${targetTokenCA})`);
 
   const swapType = inputTokenCA === nativeTokenAddress ? 'buy' : 'sell';
   const tokenInfo = swapType === 'sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
@@ -494,7 +373,7 @@ function formatTaskInfo({
       ? `${inputTokenAmount}(${(inputTokenPercentage * 100)?.toFixed(1)}%)`
       : `${inputTokenAmount} ${displayedInputSymbol}`;
   const trigger = priceCondition
-    ? `${displayedTokenTarget} price ${priceCondition} $${priceTarget}`
+    ? `${displayedtargetToken} price ${priceCondition} $${targetPrice}`
     : `At ${startAt.toUTCString()}`;
   let taskInfo =
     'Please confirm the info below. If any adjustments are needed, let me know the updated details.\n';
