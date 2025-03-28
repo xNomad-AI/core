@@ -307,7 +307,7 @@ export class SwapTokenService {
                 tokenOut: params.tokenOut.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenOut,
                 fee: dex.parts * 10000 / dex.percentage,
                 recipient: params.to,
-                deadline: (Math.floor(Date.now() / 1000) + 600).toString(),
+                deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
                 amountIn: params.amountIn,
                 amountOutMinimum: amountOutMin,
                 sqrtPriceLimitX96: 0,
