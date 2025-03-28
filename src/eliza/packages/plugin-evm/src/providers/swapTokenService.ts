@@ -121,12 +121,15 @@ export class SwapTokenService {
                     value: fourMemeSwapResponse.value,
                 };
             } else {
+                if (slippage > 50) {
+                    throw new Error('Openocean error, exceed max slippage: 50%');
+                }
                 const openoceanParams: OpenoceanParams = {
                     chainId,
                     inTokenAddress: inputTokenCA,
                     outTokenAddress: outputTokenCA,
                     amount: formatUnits(BigInt(amount.toString()), deciaml),
-                    slippage: slippage.toString(),
+                    slippage: (slippage * 100).toString(),
                     account: userWalletAddress
                 }
                 const openoceanResponse = await this.getOpenoceanCallData(openoceanParams);
