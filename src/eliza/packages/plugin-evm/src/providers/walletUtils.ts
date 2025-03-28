@@ -113,7 +113,7 @@ export async function getWalletPortfolio(
       chain: evmChain,
       address,
       excludeSpam: true,
-      excludeUnverifiedContracts: true,
+      excludeUnverifiedContracts: false,
       limit: 100,
       cursor,
     });
