@@ -469,7 +469,7 @@ export class NftService implements OnApplicationBootstrap {
     if (!token) {
       throw new Error('token not indexed');
     }
-    if (token.creatorAddress !== agentWallet) {
+    if (token.creatorAddress.toLowerCase() !== agentWallet.toLowerCase()) {
       throw new Error('agent is not the creator of the token');
     }
     await this.tradeMonitorService.bindAgentCreatedTokenToNft({
