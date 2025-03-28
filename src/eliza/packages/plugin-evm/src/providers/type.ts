@@ -7,7 +7,11 @@ export interface SwapTokenDto {
   outputTokenCA: string;
   amount: string | BigNumber;
   slippage: number; // 0.01 = 1%
-  mode?: 'FAST' | 'ANTI_MEV';
+  mode?: 'JSON_RPC' | 'ANTI_MEV';
+  gasMode?: 'LOW' | 'AVG' | 'HIGH' | 'CUSTOM';
+  maxFeePerGas?: string | BigNumber; // wei
+  maxPriorityFeePerGas?: string | BigNumber; // wei
+  tip?: string | BigNumber; // 1 = 0.000000000000000001 eth
   privateKey: string;
   userWalletAddress: string;
 }
@@ -205,4 +209,79 @@ export interface OpenoceanSwapData {
 export interface OpenoceanSwapResponse {
   code: number;
   data?: OpenoceanSwapData;
+}
+
+export interface KyberSwapParams {
+  chain: string;
+  tokenIn: string;
+  tokenOut: string;
+  amountIn: string;
+  to: string;
+  slippageTolerance: string;
+  isInBps?: boolean;
+  chargeFeeBy?: 'currency_in' | 'currency_out';
+  feeReceiver?: string;
+  feeAmount?: string;
+}
+
+export interface KyberSwapResponse {
+  inputAmount: string;
+  outputAmount: string;
+  totalGas: number;
+  gasPriceGwei: string;
+  gasUsd: number;
+  amountInUsd: number;
+  amountOutUsd: number;
+  receivedUsd: number;
+  encodedSwapData: string;
+  routerAddress: string;
+}
+
+export interface FourMemeTokenInfo {
+  version: string;
+  tokenManager: string;
+  quote: string;
+  lastPrice: string;
+  tradingFeeRate: string;
+  minTradingFee: string;
+  launchTime: string;
+  offers: string;
+  maxOffers: string;
+  funds: string;
+  maxFunds: string;
+  liquidityAdded: boolean;
+}
+
+
+export interface FourMemeTryBuy {
+  tokenManager: string;
+  quote: string;
+  estimatedAmount: string;
+  estimatedCost: string;
+  estimatedFee: string;
+  amountMsgValue: string;
+  amountApproval: string;
+  amountFunds: string;
+}
+
+export interface FourMemeTrySell {
+  tokenManager: string;
+  quote: string;
+  funds: string;
+  fee: string;
+}
+
+export interface FourMemeSwapParams {
+  rpcUrl: string;
+  chainName: string;
+  inputTokenCA: string;
+  outputTokenCA: string;
+  amount: string;
+  slippage: number;
+}
+
+export interface FourMemeSwapResponse {
+  to: string;
+  data: string;
+  value: string;
 }

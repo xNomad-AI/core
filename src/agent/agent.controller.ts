@@ -20,6 +20,7 @@ import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { CreateAgentDto, TradeSettingsDTO, validateTradeSettings } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
 import { CopyTrade, DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
+import { AgentTradeService } from './agent-trade.service.js';
 
 @Controller('/agent')
 export class AgentController {
@@ -29,6 +30,7 @@ export class AgentController {
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
     private mongo: MongoService,
+    private readonly tradeService: AgentTradeService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -67,7 +69,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    return await this.elizaManager.getAgentAutotasks(agentId);
+    return await this.tradeService.getAgentAutotasks(agentId);
   }
 
   @UseGuards(AuthGuard)
@@ -137,7 +139,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    return await this.elizaManager.getCopyTrades(agentId);
+    return await this.tradeService.getCopyTrades(agentId);
   }
 
   @UseGuards(AuthGuard)
@@ -152,7 +154,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    await this.elizaManager.updateCopyTradeStatus(agentId, id, status);
+    await this.tradeService.updateCopyTradeStatus(agentId, id, status);
   }
 
   @UseGuards(AuthGuard)
@@ -166,7 +168,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    await this.elizaManager.cancelCopyTrade(agentId, id);
+    await this.tradeService.cancelCopyTrade(agentId, id);
   }
 
   @UseGuards(AuthGuard)
@@ -181,7 +183,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    await this.elizaManager.updateCopyTrade(agentId, id, copyTrade);
+    await this.tradeService.updateCopyTrade(agentId, id, copyTrade);
   }
 
   @Get('/account')

@@ -36,9 +36,9 @@
     "@elizaos/client-telegram": "file:data/eliza/packages/client-telegram",
     "@elizaos/client-twitter": "https://github.com/xNomad-AI/client-twitter.git#f6253269a9b9188031886e72a380d13ea7e1f536",
     "@elizaos/core": "file:data/eliza/packages/core",
+    "@elizaos/plugin-chat": "workspace:*",
     "@elizaos/plugin-evm": "workspace:*",
     "@elizaos/plugin-solana": "workspace:*",
-    "@elizaos/plugin-chat": "workspace:*",
     "@elizaos/plugin-tee": "file:data/eliza/packages/plugin-tee",
     "@ipld/dag-ucan": "3.4.5",
     "@metaplex-foundation/mpl-core": "1.2.0",
@@ -86,7 +86,8 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "sharp": "^0.33.5",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "viem": "^2.23.13"
   },
   "devDependencies": {
     "@nestjs/cli": "10.4.9",

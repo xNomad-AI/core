@@ -1,30 +1,23 @@
 import { DirectClient } from '@elizaos/client-direct';
 import {
   Character,
-  Memory,
   ModelProviderName,
   stringToUuid,
 } from '@elizaos/core';
-import {
-  AutoSwapTask,
-  AutoSwapTaskTable,
-  executeAutoTokenSwapTask,
-} from '@elizaos/plugin-solana';
+
 import { TEEMode } from '@elizaos/plugin-tee';
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Timeout } from '@nestjs/schedule';
 import { Keypair } from '@solana/web3.js';
-import { newTradeAgentRuntime, startAgent } from '../eliza/starter/index.js';
+import { startAgent } from '../eliza/starter/index.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { CharacterConfig, CopyTrade } from '../shared/mongo/types.js';
+import { CharacterConfig} from '../shared/mongo/types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { sleep } from '../shared/utils.service.js';
 import { WalletProxyService } from '../wallet/wallet-proxy.service.js';
 import { SettingsService } from '../nft/core-settings.service.js';
 import { NftConfigService } from '../nft/nft-config.service.js';
 import { ClientName } from '../eliza/starter/clients/index.js';
-import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { normalizeBlockchainAddress } from '../nft/nft.types.js';
 
 export type ElizaAgentConfig = {
@@ -42,7 +35,6 @@ export class ElizaManagerService {
     private readonly logger: TransientLoggerService,
     private readonly appConfig: ConfigService,
     private readonly mongoService: MongoService,
-    private readonly tradeMonitorService: TradeMonitorService,
     private readonly walletProxyService: WalletProxyService,
     private readonly settingsService: SettingsService,
     private readonly nftConfigService: NftConfigService,
@@ -157,11 +149,10 @@ export class ElizaManagerService {
       return {
         status: 'stopped',
       };
-    } else {
-      return {
-        status: 'running',
-      };
     }
+    return {
+      status: 'running',
+    };
   }
 
   async deleteAgentMemory(
@@ -248,101 +239,6 @@ export class ElizaManagerService {
       evmAddress,
       evmPrivateKey,
     };
-  }
-
-  @Timeout(5000)
-  async startAutoSwapTask() {
-    while (true) {
-      try {
-        await this.runAutoSwapTask();
-      } catch (error) {
-        this.logger.error(`Error during auto swap task:, ${error}`);
-      }
-      await sleep(10000);
-    }
-  }
-
-  async cancelCopyTrade(agentId: string, id: number) {
-    await this.tradeMonitorService.cancelCopyTrade(id);
-    await this.mongoService.client
-      .db('agent')
-      .collection('copyTrades')
-      .deleteOne({ agentId, id });
-  }
-
-  async updateCopyTradeStatus(agentId: string, id: number, status: string) {
-    await this.mongoService.client
-      .db('agent')
-      .collection('copyTrades')
-      .updateOne({ agentId, id }, { $set: { status } });
-  }
-
-  async updateCopyTrade(agentId: string, id: number, {name, copySell, mode, status, fixedAmount, percentage}: CopyTrade){
-    const filter: any = { agentId }
-    if (id){
-      filter.id = id
-    }
-
-    const copyTrade = await this.mongoService.copyTrades.findOne(filter);
-    if (!copyTrade?.id){
-      throw new BadRequestException('Copy trade not exists');
-    }
-    await this.mongoService.copyTrades.updateOne(filter, {
-      $set: {
-        copySell,
-        name,
-        mode,
-        status,
-        fixedAmount,
-        percentage,
-      },
-      $setOnInsert: { agentId, id },
-    }, { upsert: true }  );
-
-  }
-
-  async getCopyTrades(agentId: string) {
-    return await this.mongoService.client
-      .db('agent')
-      .collection('copyTrades')
-      .find({ agentId })
-      .toArray();
-  }
-
-  async runAutoSwapTask() {
-    const memories = await this.mongoService.client
-      .db('agent')
-      .collection('memories')
-      .find<Memory>({ type: AutoSwapTaskTable })
-      .toArray();
-    this.logger.log(`Running auto swap task for ${memories.length} tasks`);
-    for (const memory of memories) {
-      const { agentId } = memory as Memory;
-      const { nftId, chain, aiAgent } = await this.mongoService.nfts.findOne({
-        agentId,
-      });
-      if (!nftId) {
-        continue;
-      }
-      const nftConfig = await this.mongoService.nftConfigs.findOne({
-        nftId: nftId,
-      });
-      const character = await this.initAgentCharacter({
-        nftId,
-        chain,
-        characterConfig: nftConfig?.characterConfig,
-        character: aiAgent.character,
-      });
-      try {
-        const runtime = await newTradeAgentRuntime(
-          character,
-          this.mongoService.client,
-        );
-        await executeAutoTokenSwapTask(runtime, memory);
-      } catch (error) {
-        this.logger.error(`Error during token swap:, ${error}`);
-      }
-    }
   }
 
   async initAgentCharacter(config: ElizaAgentConfig) {
@@ -438,31 +334,6 @@ export class ElizaManagerService {
 {{recentMessages}} 
 `;
     return character;
-  }
-
-  async getAgentAutotasks(agentId: string) {
-    const memories = await this.mongoService.client
-      .db('agent')
-      .collection('memories')
-      .find<Memory>({
-        type: AutoSwapTaskTable,
-        agentId,
-      })
-      .sort({ _id: -1 })
-      .toArray();
-    return memories.map((memory) => {
-      let task: AutoSwapTask;
-      if (typeof memory.content === 'string') {
-        task = JSON.parse(memory.content)?.task as AutoSwapTask;
-      } else {
-        task = memory.content?.task as AutoSwapTask;
-      }
-      return {
-        id: memory.id,
-        userId: memory.userId,
-        ...task,
-      };
-    });
   }
 
   async isAgentOwner(agentId: string, ownerAddress: string) {

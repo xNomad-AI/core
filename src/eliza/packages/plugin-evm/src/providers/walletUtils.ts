@@ -15,6 +15,7 @@ export interface Item {
   name: string;
   address: string;
   symbol?: string;
+  logo?: string;
   decimals: number;
   balance: string;
   uiAmount: string;
@@ -127,6 +128,7 @@ export async function getWalletPortfolio(
           name: item.name,
           address: item.tokenAddress.lowercase,
           symbol: item.symbol,
+          logo: item.logo,
           decimals: item.decimals,
           balance: item.balance.value.toString(),
           uiAmount: item.balanceFormatted,

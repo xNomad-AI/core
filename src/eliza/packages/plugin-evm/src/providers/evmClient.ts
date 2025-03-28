@@ -199,4 +199,21 @@ export class EVMClient {
 
     return txHash;
   }
+
+  /**
+   * Read contract
+   * @param address contract address
+   * @param abi contract abi
+   * @param functionName call function name
+   * @param args call function args
+   * @returns call contract result
+   */
+  async readContract(address: string, abi: any, functionName: string, args: any[]) {
+    return await this.publicClient.readContract({
+      address,
+      abi,
+      functionName,
+      args,
+    });
+  }
 }
