@@ -131,16 +131,17 @@ export class CallbackController {
     @Headers('api-key') apiKey: string,
   ) {
     this.validateApiKey(apiKey);
-    this.logger.log('Received address monitor callback', {
+    this.logger.log(`Copy trade ${id} received`, {
       ...callbackData,
       id,
     });
     const copyTradeTask = await this.mongo.copyTrades.findOne({id: Number(id)});
     if (!copyTradeTask) {
-      throw new Error('Copy trade not found');
+      this.logger.log(`Copy trade ${id} not found`);
+      return;
     }
     if (copyTradeTask.status !== 'running') {
-      this.logger.log(`Copy trade is not running ${id}`);
+      this.logger.log(`Copy trade ${id} is not running`);
       return;
     }
   
@@ -149,6 +150,7 @@ export class CallbackController {
     const wallet = await this.elizaManager.getAgentAccountKeypair(nft.chain, nft.nftId, agentId);
     const tradeConfig = await this.agentTradeService.getTradeSettingsByChain(agentId, nft.chain);
     const swapInfo = getSwapInfo(callbackData);
+    this.logger.log(`copy trade ${id} swapInfo: ${JSON.stringify(swapInfo)}`);
     if (copyTradeTask.chain === 'solana') {
       return await this.copyTradeSolana(wallet, copyTradeTask, swapInfo, tradeConfig);
     } else {
