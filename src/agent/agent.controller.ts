@@ -133,6 +133,7 @@ export class AgentController {
     @Query('agentId') agentId: string,
     @Body() tradeSettingsDTO: EvmTradeSettingsDTO
   ) {
+    tradeSettingsDTO.chain = chain;
     validateTradeSettingsEvm(tradeSettingsDTO);
     await this.elizaManager.ensureAgentOwner(
       agentId,
