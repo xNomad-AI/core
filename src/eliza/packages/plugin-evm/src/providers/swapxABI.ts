@@ -478,88 +478,6 @@ const swapxABI = [
                 "type": "address"
             }
         ],
-        "name": "sePancakeFactoryV3",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "tokenManager",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "token",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "recipient",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "minFunds",
-                "type": "uint256"
-            },
-            {
-                "components": [
-                    {
-                        "internalType": "address",
-                        "name": "feeCollector",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "feeRate",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct SwapX.ExtraFee[]",
-                "name": "extraFees",
-                "type": "tuple[]"
-            }
-        ],
-        "name": "sellMemeToken",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "amountOut",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "addr",
-                "type": "address"
-            }
-        ],
-        "name": "setFactoryV3",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "addr",
-                "type": "address"
-            }
-        ],
         "name": "setFeeCollector",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -589,6 +507,99 @@ const swapxABI = [
         "name": "setWETH",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "string[]",
+                        "name": "routes",
+                        "type": "string[]"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "path1",
+                        "type": "bytes"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "factory1",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "poolAddress1",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "path2",
+                        "type": "bytes"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "factory2",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "poolAddress2",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "deadline",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amountIn",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amountOutMinimum",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct SwapX.ExactInputMixedParams",
+                "name": "params",
+                "type": "tuple"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "feeCollector",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "feeRate",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct SwapX.ExtraFee[]",
+                "name": "extraFees",
+                "type": "tuple[]"
+            }
+        ],
+        "name": "swapMixedMultiHopExactIn",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "amountOut",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "payable",
         "type": "function"
     },
     {
@@ -698,6 +709,138 @@ const swapxABI = [
                 "internalType": "uint256",
                 "name": "amountIn",
                 "type": "uint256"
+            }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "tokenIn",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amountIn",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amountOutMin",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address[]",
+                "name": "path",
+                "type": "address[]"
+            },
+            {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "factory",
+                "type": "address"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "feeCollector",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "feeRate",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct SwapX.ExtraFee[]",
+                "name": "extraFees",
+                "type": "tuple[]"
+            }
+        ],
+        "name": "swapV2MultiHopExactIn",
+        "outputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "amounts",
+                "type": "uint256[]"
+            }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "tokenIn",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amountInMax",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amountOut",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address[]",
+                "name": "path",
+                "type": "address[]"
+            },
+            {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "factory",
+                "type": "address"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "feeCollector",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "feeRate",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct SwapX.ExtraFee[]",
+                "name": "extraFees",
+                "type": "tuple[]"
+            }
+        ],
+        "name": "swapV2MultiHopExactOut",
+        "outputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "amounts",
+                "type": "uint256[]"
             }
         ],
         "stateMutability": "payable",
@@ -869,6 +1012,157 @@ const swapxABI = [
             }
         ],
         "name": "swapV3ExactOut",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "amountIn",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "address[]",
+                        "name": "factoryAddresses",
+                        "type": "address[]"
+                    },
+                    {
+                        "internalType": "address[]",
+                        "name": "poolAddresses",
+                        "type": "address[]"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "path",
+                        "type": "bytes"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "deadline",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amountIn",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amountOutMinimum",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct SwapX.ExactInputParams",
+                "name": "params",
+                "type": "tuple"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "feeCollector",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "feeRate",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct SwapX.ExtraFee[]",
+                "name": "extraFees",
+                "type": "tuple[]"
+            }
+        ],
+        "name": "swapV3MultiHopExactIn",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "amountOut",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "address[]",
+                        "name": "factoryAddresses",
+                        "type": "address[]"
+                    },
+                    {
+                        "internalType": "address[]",
+                        "name": "poolAddresses",
+                        "type": "address[]"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "path",
+                        "type": "bytes"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "tokenIn",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "deadline",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amountOut",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amountInMaximum",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct SwapX.ExactOutputParams",
+                "name": "params",
+                "type": "tuple"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "feeCollector",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "feeRate",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct SwapX.ExtraFee[]",
+                "name": "extraFees",
+                "type": "tuple[]"
+            }
+        ],
+        "name": "swapV3MultiHopExactOut",
         "outputs": [
             {
                 "internalType": "uint256",

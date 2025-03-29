@@ -1,19 +1,27 @@
 import { BigNumber } from 'bignumber.js';
 
-export interface SwapTokenDto {
-  rpcUrl: string;
+export interface SwapTokenDto extends GetSwapCallDataDto, TradeSettingsDto {
+  privateKey: string;
+}
+
+export interface TradeSettingsDto {
+  gasMode?: 'LOW' | 'AVG' | 'HIGH' | 'CUSTOM';
+  maxFeePerGas?: string | BigNumber; // Gwei
+  maxPriorityFeePerGas?: string | BigNumber; // Gwei
+  mode?: 'FAST' | 'ANTI_MEV';
+  tip?: string | BigNumber; // Gwei, 1 = 0.000000000000000001 eth
+  slippage: number; // 0.01 = 1%
+}
+
+export interface GetSwapCallDataDto {
   chainName: string;
+  rpcUrl: string;
   inputTokenCA: string;
   outputTokenCA: string;
   amount: string | BigNumber;
   slippage: number; // 0.01 = 1%
-  mode?: 'FAST' | 'ANTI_MEV';
-  gasMode?: 'LOW' | 'AVG' | 'HIGH' | 'CUSTOM';
-  maxFeePerGas?: string | BigNumber; // Gwei
-  maxPriorityFeePerGas?: string | BigNumber; // Gwei
-  tip?: string | BigNumber; // Gwei, 1 = 0.000000000000000001 eth
-  privateKey: string;
   userWalletAddress: string;
+  exactFees?: ExactFee[];
 }
 
 export interface TransactionDto {
@@ -211,6 +219,69 @@ export interface OpenoceanSwapResponse {
   data?: OpenoceanSwapData;
 }
 
+
+export interface OpenoceanQuoteParams {
+  chainId: string;
+  gasPrice: string;
+  inTokenAddress: string;
+  outTokenAddress: string;
+  amount: string;
+  enabledDexIds?: string;
+}
+
+export interface OpenoceanQuoteResponse {
+  code: number;
+  data: QuoteData;
+}
+
+interface QuoteData {
+  inToken: TokenInfo;
+  outToken: TokenInfo;
+  inAmount: string;
+  outAmount: string;
+  estimatedGas: string;
+  path: SwapPath;
+  save: number;
+  price_impact: string;
+}
+
+interface TokenInfo {
+  address: string;
+  decimals: number;
+  symbol: string;
+  name: string;
+  usd: string;
+  volume: number;
+}
+
+interface SwapPath {
+  from: string;
+  to: string;
+  parts: number;
+  routes: Route[];
+}
+
+interface Route {
+  parts: number;
+  percentage: number;
+  subRoutes: SubRoute[];
+}
+
+interface SubRoute {
+  from: string;
+  to: string;
+  parts: number;
+  dexes: Dex[];
+}
+
+interface Dex {
+  dex: string;
+  id: string;
+  parts: number;
+  percentage: number;
+}
+
+
 export interface KyberSwapParams {
   chain: string;
   tokenIn: string;
@@ -252,7 +323,6 @@ export interface FourMemeTokenInfo {
   liquidityAdded: boolean;
 }
 
-
 export interface FourMemeTryBuy {
   tokenManager: string;
   quote: string;
@@ -279,10 +349,63 @@ export interface FourMemeSwapParams {
   amount: string;
   recipient: string;
   slippage: number;
+  exactFees: ExactFee[];
 }
 
 export interface FourMemeSwapResponse {
   to: string;
   data: string;
   value: string;
+}
+
+export interface SwapxGetPoolParams {
+  rpcUrl: string;
+  chainName: string;
+  token: string;
+  fee: number;
+}
+
+export interface ExactFee {
+  feeCollector: string;
+  feeRate: string;
+}
+
+export interface SwapxSwapV3ExactInParams {
+  chainName: string;
+  factoryAddress: string;
+  poolAddress: string;
+  tokenIn: string;
+  tokenOut: string;
+  fee: number;
+  recipient: string;
+  deadline: string;
+  amountIn: string;
+  amountOutMinimum: string;
+  sqrtPriceLimitX96: number;
+  exactFees: ExactFee[];
+}
+
+export interface SwapV3MultiHopExactInParams {
+  chainName: string;
+  factoryAddresses: string[];
+  poolAddresses: string[];
+  path: string;
+  recipient: string;
+  deadline: string;
+  amountIn: string;
+  amountOutMinimum: string;
+  exactFees: ExactFee[];
+}
+
+export interface SwapxParams {
+  chainName: string;
+  chainId: string;
+  tokenIn: string;
+  tokenOut: string;
+  amountIn: string;
+  deciaml: number;
+  to: string;
+  slippage: number; // min 0, max 1
+  exactFees: ExactFee[];
+  gasPrice?: string;
 }

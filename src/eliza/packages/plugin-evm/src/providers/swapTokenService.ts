@@ -1,4 +1,4 @@
-import { FourMemeSwapParams, FourMemeSwapResponse, KyberSwapParams, KyberSwapResponse, OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanSwapResponse, SwapTokenDto } from './type';
+import { FourMemeSwapParams, FourMemeSwapResponse, GetSwapCallDataDto, KyberSwapParams, KyberSwapResponse, OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanQuoteParams, OpenoceanQuoteResponse, OpenoceanSwapResponse, SwapTokenDto, SwapxParams, TradeSettingsDto } from './type';
 import { createWalletClient, encodeFunctionData, ethAddress, formatUnits, Hex, http, zeroAddress } from 'viem';
 import { bloxValidatorNodeService, jsonRpcNodeService } from './validatorNodeService.js';
 import okxService from './okxService.js';
@@ -10,15 +10,12 @@ import { base, bsc, mainnet } from 'viem/chains';
 import { EVMClient } from './evmClient.js';
 import BigNumber from 'bignumber.js';
 import swapxABI from './swapxABI.js';
+import swapxService from './swapxService.js';
 
 const DEFAULT_CONFIG = {
     EVM_SWAP_FEE_ACCOUNT: '0x1b455ab558518b7c32bafaff4661ede24cef005c',
     EVM_SWAP_FEE_BPS: 100,
 };
-
-const SWAPX_ADDRESS = {
-    ['bsc']: '0x25751494aa6187db7a6aebc6d53ddae876420f8d',
-}
 
 export function getSWAP_FEE_BPS() {
     return DEFAULT_CONFIG.EVM_SWAP_FEE_BPS;
@@ -28,9 +25,9 @@ export function getSWAP_FEE_ACCOUNT() {
     return DEFAULT_CONFIG.EVM_SWAP_FEE_ACCOUNT;
 }
 
-export async function getTradeSettings(agentId: string) {
-    const result = await fetch(`http://localhost:8080/agent/trade/settings?agentId=${agentId}`);
-    return await result.json() as { priorityFee, tip, slippage, mode };
+export async function getTradeSettings(agentId: string, chain: string): Promise<TradeSettingsDto> {
+    const result = await fetch(`http://localhost:8080/agent/trade/settings?agentId=${agentId}&chain=${chain}`);
+    return await result.json() as TradeSettingsDto;
 }
 
 export class SwapTokenService {
@@ -39,25 +36,8 @@ export class SwapTokenService {
     constructor() {
         this.logger = console;
     }
-
-    async swapToken({
-        rpcUrl,
-        chainName,
-        amount,
-        slippage,
-        inputTokenCA,
-        outputTokenCA,
-        mode = 'FAST',
-        gasMode = 'AVG',
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-        tip,
-        privateKey,
-        userWalletAddress,
-    }: SwapTokenDto): Promise<string> {
-        // transform gas Gwei to wei
-        const maxFeePerGasWei = maxFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
-        const maxPriorityFeePerGasWei = maxPriorityFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
+    
+    getChain(chainName: string) {
         let chain;
         let chainId;
         switch (chainName) {
@@ -76,6 +56,76 @@ export class SwapTokenService {
             default:
                 throw new Error(`Invalid chain name ${chainName}`);
         }
+        return { chain, chainId };
+    }
+
+    async swapToken(req: SwapTokenDto): Promise<string> {
+        const { chainName, rpcUrl, privateKey, userWalletAddress, mode = 'FAST', inputTokenCA, amount, gasMode, maxFeePerGas, maxPriorityFeePerGas, tip } = req;
+        const { chain, chainId } = this.getChain(chainName);
+        const account = privateKeyToAccount(req.privateKey as Hex);
+        const walletClient = createWalletClient({
+            chain,
+            transport: http(req.rpcUrl),
+            account,
+        });
+        const calldata = await this.getSwapTxCallData(req);
+        // set approval for token transfer
+        await new EVMClient({rpcUrl, chainName}).checkAndApproveTokenTransfer({
+            walletAddress: userWalletAddress,
+            walletPrivateKey: privateKey,
+            tokenAddress: inputTokenCA,
+            dexRouterAddress: calldata.to,
+            rawAmount: amount.toString(),
+        });
+        const request = await walletClient.prepareTransactionRequest({
+            account,
+            chain,
+            to: calldata.to,
+            data: calldata.data,
+            value: BigInt(calldata.value),
+            kzg: undefined,
+        });
+        const maxFeePerGasWei = maxFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
+        const maxPriorityFeePerGasWei = maxPriorityFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
+        if (gasMode === 'CUSTOM' && (maxFeePerGasWei && maxPriorityFeePerGasWei)) {
+            request.maxFeePerGas = BigInt(maxFeePerGasWei.toString());
+            request.maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasWei.toString());
+        } else if (gasMode === 'HIGH') {
+            request.maxFeePerGas = BigInt(request.maxFeePerGas) * 2n;
+            request.maxPriorityFeePerGas = BigInt(request.maxPriorityFeePerGas) * 2n;
+        }
+        if (request.maxFeePerGas < request.maxPriorityFeePerGas) {
+            throw new Error('Invalid max fee or max priority fee');
+        }
+
+        const serializedTransaction = await account.signTransaction(request);
+        const validatorNode =
+          mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
+        return await validatorNode.postTransaction({
+            walletClient,
+            serializedTransaction,
+            tip
+        })
+    }
+
+    async getSwapTxCallData({
+        rpcUrl,
+        chainName,
+        amount,
+        slippage,
+        inputTokenCA,
+        outputTokenCA,
+        userWalletAddress,
+        exactFees = [{
+            feeCollector: getSWAP_FEE_ACCOUNT(),
+            feeRate: getSWAP_FEE_BPS().toString(),
+        }],
+    }: GetSwapCallDataDto): Promise<{
+        to: string,
+        data: string,
+        value: string,
+    }> {
+        const { chainId } = this.getChain(chainName);
         if (inputTokenCA.toLowerCase() === zeroAddress) {
             inputTokenCA = ethAddress;
         }
@@ -96,18 +146,9 @@ export class SwapTokenService {
         );
 
         try {
-            const account = privateKeyToAccount(privateKey as Hex);
-            const walletClient = createWalletClient({
-                chain,
-                transport: http(rpcUrl),
-                account,
-            });
-
             const evmClient = new EVMClient({
                 rpcUrl, chainName
             });
-
-            const deciaml = await evmClient.getTokenDecimals(inputTokenCA);
 
             let tx;
             const fourMemeParams: FourMemeSwapParams = {
@@ -116,8 +157,9 @@ export class SwapTokenService {
                 inputTokenCA,
                 outputTokenCA,
                 amount: amount.toString(),
-                recipient: account.address,
-                slippage
+                recipient: userWalletAddress,
+                slippage,
+                exactFees
             };
             const fourMemeSwapResponse = await this.getFourMemeCallData(fourMemeParams);
             if (fourMemeSwapResponse) {
@@ -127,67 +169,50 @@ export class SwapTokenService {
                     value: fourMemeSwapResponse.value,
                 };
             } else {
-                if (slippage > 50) {
-                    throw new Error('Openocean error, exceed max slippage: 50%');
-                }
-                const openoceanParams: OpenoceanParams = {
+                const deciaml = await evmClient.getTokenDecimals(inputTokenCA);
+                const swapxResponse = await this.getSwapxCallData({
+                    chainName,
                     chainId,
-                    inTokenAddress: inputTokenCA,
-                    outTokenAddress: outputTokenCA,
-                    amount: formatUnits(BigInt(amount.toString()), deciaml),
-                    slippage: (slippage * 100).toString(),
-                    account: userWalletAddress
-                }
-                const openoceanResponse = await this.getOpenoceanCallData(openoceanParams);
-                if (!openoceanResponse.data) {
-                    throw new Error(`Failed to generate transaction, ${openoceanResponse?.data}`);
-                }
+                    tokenIn: inputTokenCA,
+                    tokenOut: outputTokenCA,
+                    amountIn: amount.toString(),
+                    deciaml,
+                    to: userWalletAddress,
+                    slippage,
+                    exactFees
+                });
+
                 tx = {
-                    to: openoceanResponse.data.to,
-                    value: openoceanResponse.data.value,
-                    data: openoceanResponse.data.data,
+                    to: swapxResponse.to,
+                    value: swapxResponse.value,
+                    data: swapxResponse.data,
                 };
+                // if (slippage > 50) {
+                //     throw new Error('Openocean error, exceed max slippage: 50%');
+                // }
+                // const deciaml = await evmClient.getTokenDecimals(inputTokenCA);
+                // const openoceanParams: OpenoceanParams = {
+                //     chainId,
+                //     inTokenAddress: inputTokenCA,
+                //     outTokenAddress: outputTokenCA,
+                //     amount: formatUnits(BigInt(amount.toString()), deciaml),
+                //     slippage: (slippage * 100).toString(),
+                //     account: userWalletAddress
+                // }
+                // const openoceanResponse = await this.getOpenoceanCallData(openoceanParams);
+                // if (!openoceanResponse.data) {
+                    // throw new Error(`Failed to generate transaction, ${openoceanResponse?.data}`);
+                // }
+                // tx = {
+                //     to: openoceanResponse.data.to,
+                //     value: openoceanResponse.data.value,
+                //     data: openoceanResponse.data.data,
+                // };
             }
-
-            await evmClient.checkAndApproveTokenTransfer({
-                walletAddress: userWalletAddress,
-                walletPrivateKey: privateKey,
-                tokenAddress: inputTokenCA,
-                dexRouterAddress: tx.to,
-                rawAmount: amount.toString(),
-            });
-
-            const request = await walletClient.prepareTransactionRequest({
-                account,
-                chain,
-                to: tx.to,
-                data: tx.data,
-                value: BigInt(tx.value),
-                kzg: undefined,
-            });
-
-            if (gasMode === 'CUSTOM' && (maxFeePerGasWei && maxPriorityFeePerGasWei)) {
-                request.maxFeePerGas = BigInt(maxFeePerGasWei.toString());;
-                request.maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasWei.toString());;
-            } else if (gasMode === 'HIGH') {
-                request.maxFeePerGas = BigInt(request.maxFeePerGas) * 2n;
-                request.maxPriorityFeePerGas = BigInt(request.maxPriorityFeePerGas) * 2n;
-            }
-            if (request.maxFeePerGas < request.maxPriorityFeePerGas) {
-                throw new Error('Invalid max fee or max priority fee');
-            }
-
-            const serializedTransaction = await account.signTransaction(request);
-            const validatorNode =
-                mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
-            return await validatorNode.postTransaction({
-                walletClient,
-                serializedTransaction,
-                tip
-            })
+            return tx;
         } catch (error) {
             throw new Error(
-                `Swap token failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+                `Get swap call data failed: ${error instanceof Error ? error.message : 'unknown error'}`,
             );
         }
     }
@@ -250,9 +275,86 @@ export class SwapTokenService {
         return await kyberSwapService.getCallData(params);
     }
 
+    private async getSwapxCallData(params: SwapxParams): Promise<{
+        to: string,
+        data: string,
+        value: string,
+    } > {
+        const response: OpenoceanGasPriceResponse = await openoceanService.getGasPrice({
+            chainId: params.chainId
+        });
+        if (!response.without_decimals) {
+            throw new Error(`Get gas price failed: ${JSON.stringify(response)}`);
+        }
+        params.gasPrice = response.without_decimals.fast.toString();
+
+        const routes = await this.getRoutes({
+            chainId: params.chainId,
+            inTokenAddress: params.tokenIn.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenIn,
+            outTokenAddress: params.tokenOut.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenOut,
+            amount: formatUnits(BigInt(params.amountIn), params.deciaml).toString(),
+            gasPrice: params.gasPrice,
+            enabledDexIds: '46' //PancakeV3
+        });
+        
+        if (routes.data.path.routes.length === 0) {
+            throw new Error(`Get routes failed: ${JSON.stringify(routes)}`);
+        }
+        const route = routes.data.path.routes[0];
+        if (route.subRoutes.length == 0) {
+            throw new Error(`Get routes failed: ${JSON.stringify(routes)}`);
+        }
+        const amountOut = routes.data.outAmount;
+        const amountOutMin = (BigInt(amountOut) * BigInt(100 - params.slippage * 100) / BigInt(100)).toString();
+        if (route.subRoutes.length == 1) {
+            const dex = routes.data.path.routes[0].subRoutes[0].dexes[0];
+            return swapxService.buildSwapV3ExactInTx({
+                chainName: params.chainName,
+                factoryAddress: swapxService.getFactoryAddress(params.chainName, dex.dex),
+                poolAddress: dex.id,
+                tokenIn: params.tokenIn.toLowerCase() === ethAddress ? zeroAddress : params.tokenIn,
+                tokenOut: params.tokenOut.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenOut,
+                fee: dex.parts * 10000 / dex.percentage,
+                recipient: params.to,
+                deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
+                amountIn: params.amountIn,
+                amountOutMinimum: amountOutMin,
+                sqrtPriceLimitX96: 0,
+                exactFees: params.exactFees,
+            });
+        } else {
+            const path: string[] = [];
+            const fees: number[] = [];
+            route.subRoutes.forEach((subRoute) => {
+                path.push(subRoute.from)
+                fees.push(subRoute.dexes[0].parts * 10000 / subRoute.dexes[0].percentage)
+            });
+            path.push(params.tokenOut);
+            return swapxService.buildSwapV3MultiHopExactInTx({
+                chainName: params.chainName,
+                factoryAddresses: route.subRoutes.map((subRoute) => swapxService.getFactoryAddress(params.chainName, subRoute.dexes[0].dex)),
+                poolAddresses: route.subRoutes.map((subRoute) => subRoute.dexes[0].id),
+                path: swapxService.encodePath(path, fees),
+                recipient: params.to,
+                deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
+                amountIn: params.amountIn,
+                amountOutMinimum: amountOutMin,
+                exactFees: params.exactFees
+            });
+        }
+    }
+
+    private async getRoutes(params: OpenoceanQuoteParams): Promise<OpenoceanQuoteResponse> {
+        const qoute = await openoceanService.getQuote(params);
+        return qoute;
+    }
+
     private async getFourMemeCallData(params: FourMemeSwapParams): Promise<FourMemeSwapResponse | undefined> {
-        const { rpcUrl, chainName, inputTokenCA, outputTokenCA, amount, slippage } = params;   
-        const swapxAddress = SWAPX_ADDRESS[chainName];     
+        const { rpcUrl, chainName, inputTokenCA, outputTokenCA, amount, slippage } = params;
+        const swapxAddress = swapxService.getContract(chainName);
+        if (inputTokenCA.toLowerCase() !== ethAddress && outputTokenCA.toLocaleLowerCase() != ethAddress) {
+            return undefined;
+        }
         if (chainName === 'bsc') {
             const side = inputTokenCA.toLowerCase() === ethAddress ? 'BUY' : 'SELL';
             const tokenInfo = await fourMemeService.getTokenInfo(rpcUrl, chainName, (side === 'BUY' ? outputTokenCA : inputTokenCA) as `0x${string}`);
@@ -263,7 +365,7 @@ export class SwapTokenService {
                     const buyData = encodeFunctionData({
                         abi: swapxABI,
                         functionName: 'buyMemeToken',
-                        args: [tokenInfo.tokenManager, outputTokenCA, params.recipient, amount, minBuyAmount, []],
+                        args: [tokenInfo.tokenManager, outputTokenCA, params.recipient, amount, minBuyAmount, params.exactFees],
                     });
                     return {
                         to: swapxAddress,
