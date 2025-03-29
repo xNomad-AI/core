@@ -10,10 +10,13 @@ import { autoTask } from './actions/autoSwap.js';
 import { airdrop } from './actions/airdrop.js';
 import { getAccountFromWalletService } from './providers/keypairUtils.js';
 import { getWalletPortfolio, WalletPortfolio, Item } from './providers/walletUtils.js';
+import { GetSwapCallDataDto, SwapTokenDto } from './providers/type.js';
 
 export {
   EVMClient,
   SwapTokenService,
+  SwapTokenDto,
+  GetSwapCallDataDto,
   getAccountFromWalletService,
   nativeTokenAddress,
   getWalletPortfolio,

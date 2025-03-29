@@ -1,4 +1,4 @@
-import { FourMemeSwapParams, FourMemeSwapResponse, KyberSwapParams, KyberSwapResponse, OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanQuoteParams, OpenoceanQuoteResponse, OpenoceanSwapResponse, SwapTokenDto, SwapxParams } from './type';
+import { FourMemeSwapParams, FourMemeSwapResponse, GetSwapCallDataDto, KyberSwapParams, KyberSwapResponse, OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanQuoteParams, OpenoceanQuoteResponse, OpenoceanSwapResponse, SwapTokenDto, SwapxParams, TradeSettingsDto } from './type';
 import { createWalletClient, encodeFunctionData, ethAddress, formatUnits, Hex, http, zeroAddress } from 'viem';
 import { bloxValidatorNodeService, jsonRpcNodeService } from './validatorNodeService.js';
 import okxService from './okxService.js';
@@ -25,9 +25,9 @@ export function getSWAP_FEE_ACCOUNT() {
     return DEFAULT_CONFIG.EVM_SWAP_FEE_ACCOUNT;
 }
 
-export async function getTradeSettings(agentId: string) {
-    const result = await fetch(`http://localhost:8080/agent/trade/settings?agentId=${agentId}`);
-    return await result.json() as { priorityFee, tip, slippage, mode };
+export async function getTradeSettings(agentId: string, chain: string): Promise<TradeSettingsDto> {
+    const result = await fetch(`http://localhost:8080/agent/trade/settings?agentId=${agentId}&chain=${chain}`);
+    return await result.json() as TradeSettingsDto;
 }
 
 export class SwapTokenService {
@@ -36,26 +36,8 @@ export class SwapTokenService {
     constructor() {
         this.logger = console;
     }
-
-    async swapToken({
-        rpcUrl,
-        chainName,
-        amount,
-        slippage,
-        inputTokenCA,
-        outputTokenCA,
-        mode = 'FAST',
-        gasMode = 'AVG',
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-        tip,
-        privateKey,
-        userWalletAddress,
-        exactFees = [],
-    }: SwapTokenDto): Promise<string> {
-        // transform gas Gwei to wei
-        const maxFeePerGasWei = maxFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
-        const maxPriorityFeePerGasWei = maxPriorityFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
+    
+    getChain(chainName: string) {
         let chain;
         let chainId;
         switch (chainName) {
@@ -74,6 +56,76 @@ export class SwapTokenService {
             default:
                 throw new Error(`Invalid chain name ${chainName}`);
         }
+        return { chain, chainId };
+    }
+
+    async swapToken(req: SwapTokenDto): Promise<string> {
+        const { chainName, rpcUrl, privateKey, userWalletAddress, mode = 'FAST', inputTokenCA, amount, gasMode, maxFeePerGas, maxPriorityFeePerGas, tip } = req;
+        const { chain, chainId } = this.getChain(chainName);
+        const account = privateKeyToAccount(req.privateKey as Hex);
+        const walletClient = createWalletClient({
+            chain,
+            transport: http(req.rpcUrl),
+            account,
+        });
+        const calldata = await this.getSwapTxCallData(req);
+        // set approval for token transfer
+        await new EVMClient({rpcUrl, chainName}).checkAndApproveTokenTransfer({
+            walletAddress: userWalletAddress,
+            walletPrivateKey: privateKey,
+            tokenAddress: inputTokenCA,
+            dexRouterAddress: calldata.to,
+            rawAmount: amount.toString(),
+        });
+        const request = await walletClient.prepareTransactionRequest({
+            account,
+            chain,
+            to: calldata.to,
+            data: calldata.data,
+            value: BigInt(calldata.value),
+            kzg: undefined,
+        });
+        const maxFeePerGasWei = maxFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
+        const maxPriorityFeePerGasWei = maxPriorityFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
+        if (gasMode === 'CUSTOM' && (maxFeePerGasWei && maxPriorityFeePerGasWei)) {
+            request.maxFeePerGas = BigInt(maxFeePerGasWei.toString());
+            request.maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasWei.toString());
+        } else if (gasMode === 'HIGH') {
+            request.maxFeePerGas = BigInt(request.maxFeePerGas) * 2n;
+            request.maxPriorityFeePerGas = BigInt(request.maxPriorityFeePerGas) * 2n;
+        }
+        if (request.maxFeePerGas < request.maxPriorityFeePerGas) {
+            throw new Error('Invalid max fee or max priority fee');
+        }
+
+        const serializedTransaction = await account.signTransaction(request);
+        const validatorNode =
+          mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
+        return await validatorNode.postTransaction({
+            walletClient,
+            serializedTransaction,
+            tip
+        })
+    }
+
+    async getSwapTxCallData({
+        rpcUrl,
+        chainName,
+        amount,
+        slippage,
+        inputTokenCA,
+        outputTokenCA,
+        userWalletAddress,
+        exactFees = [{
+            feeCollector: getSWAP_FEE_ACCOUNT(),
+            feeRate: getSWAP_FEE_BPS().toString(),
+        }],
+    }: GetSwapCallDataDto): Promise<{
+        to: string,
+        data: string,
+        value: string,
+    }> {
+        const { chainId } = this.getChain(chainName);
         if (inputTokenCA.toLowerCase() === zeroAddress) {
             inputTokenCA = ethAddress;
         }
@@ -94,13 +146,6 @@ export class SwapTokenService {
         );
 
         try {
-            const account = privateKeyToAccount(privateKey as Hex);
-            const walletClient = createWalletClient({
-                chain,
-                transport: http(rpcUrl),
-                account,
-            });
-
             const evmClient = new EVMClient({
                 rpcUrl, chainName
             });
@@ -112,7 +157,7 @@ export class SwapTokenService {
                 inputTokenCA,
                 outputTokenCA,
                 amount: amount.toString(),
-                recipient: account.address,
+                recipient: userWalletAddress,
                 slippage,
                 exactFees
             };
@@ -164,46 +209,10 @@ export class SwapTokenService {
                 //     data: openoceanResponse.data.data,
                 // };
             }
-
-            await evmClient.checkAndApproveTokenTransfer({
-                walletAddress: userWalletAddress,
-                walletPrivateKey: privateKey,
-                tokenAddress: inputTokenCA,
-                dexRouterAddress: tx.to,
-                rawAmount: amount.toString(),
-            });
-
-            const request = await walletClient.prepareTransactionRequest({
-                account,
-                chain,
-                to: tx.to,
-                data: tx.data,
-                value: BigInt(tx.value),
-                kzg: undefined,
-            });
-
-            if (gasMode === 'CUSTOM' && (maxFeePerGasWei && maxPriorityFeePerGasWei)) {
-                request.maxFeePerGas = BigInt(maxFeePerGasWei.toString());;
-                request.maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasWei.toString());;
-            } else if (gasMode === 'HIGH') {
-                request.maxFeePerGas = BigInt(request.maxFeePerGas) * 2n;
-                request.maxPriorityFeePerGas = BigInt(request.maxPriorityFeePerGas) * 2n;
-            }
-            if (request.maxFeePerGas < request.maxPriorityFeePerGas) {
-                throw new Error('Invalid max fee or max priority fee');
-            }
-
-            const serializedTransaction = await account.signTransaction(request);
-            const validatorNode =
-                mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
-            return await validatorNode.postTransaction({
-                walletClient,
-                serializedTransaction,
-                tip
-            })
+            return tx;
         } catch (error) {
             throw new Error(
-                `Swap token failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+                `Get swap call data failed: ${error instanceof Error ? error.message : 'unknown error'}`,
             );
         }
     }
