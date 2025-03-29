@@ -1,7 +1,8 @@
 import CryptoJS from 'crypto-js';
-import { SwapV3MultiHopExactInParams, SwapxSwapV3ExactInParams } from './type.js';
+import { SwapV2MultiHopExactInParams, SwapV3MultiHopExactInParams, SwapxSwapV2ExactInParams, SwapxSwapV3ExactInParams } from './type.js';
 import { encodeFunctionData, zeroAddress } from 'viem';
 import swapxABI from './swapxABI.js';
+import { EVMClient } from './evmClient.js';
 
 class SwapxService {
     private readonly logger: Console;
@@ -38,11 +39,15 @@ class SwapxService {
 
     getFactoryAddress(chainName: string, dex: string) {
         switch (chainName) {
-            case 'bsc': 
-                switch(dex) {
+            case 'bsc':
+                switch (dex) {
                     case 'PancakeV3':
                         return '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865';
-                    default :
+                    case 'UniswapV3':
+                        return '0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7';
+                    case 'PancakeV2':
+                        return '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
+                    default:
                         throw new Error(`Unsupport dex: ${dex}`);
                 }
             default:
@@ -52,14 +57,35 @@ class SwapxService {
 
     encodePath(tokens: string[], fees: number[]): string {
         if (tokens.length !== fees.length + 1) throw new Error("Invalid path")
-    
+
         let path = tokens[0].toLowerCase().slice(2)
         for (let i = 0; i < fees.length; i++) {
-        const feeHex = fees[i].toString(16).padStart(6, '0') // 3 bytes
-        const token = tokens[i + 1].toLowerCase().slice(2)
-        path += feeHex + token
+            const feeHex = fees[i].toString(16).padStart(6, '0') // 3 bytes
+            const token = tokens[i + 1].toLowerCase().slice(2)
+            path += feeHex + token
         }
         return '0x' + path
+    }
+
+    buildSwapV2ExactInTx(params: SwapxSwapV2ExactInParams) {
+        const contract = this.getContract(params.chainName);
+        const data = encodeFunctionData({
+            abi: swapxABI,
+            functionName: 'swapV2ExactIn',
+            args: [
+                params.tokenIn,
+                params.tokenOut,
+                params.amountIn,
+                params.amountOutMinimum,
+                params.poolAddress,
+                params.exactFees
+            ]
+        });
+        return {
+            to: contract,
+            data: data,
+            value: params.tokenIn.toLowerCase() === zeroAddress ? params.amountIn : '0',
+        }
     }
 
     buildSwapV3ExactInTx(params: SwapxSwapV3ExactInParams) {
@@ -90,6 +116,29 @@ class SwapxService {
         }
     }
 
+    buildSwapV2MultiHopExactInTx(params: SwapV2MultiHopExactInParams) {
+        const contract = this.getContract(params.chainName);
+        const data = encodeFunctionData({
+            abi: swapxABI,
+            functionName: 'swapV2MultiHopExactIn',
+            args: [
+                params.tokenIn,
+                params.amountIn,
+                params.amountOutMinimum,
+                params.path,
+                params.recipient,
+                params.deadline,
+                params.factory,
+                params.exactFees
+            ]
+        });
+        return {
+            to: contract,
+            data: data,
+            value: '0',
+        }
+    }
+
     buildSwapV3MultiHopExactInTx(params: SwapV3MultiHopExactInParams) {
         const contract = this.getContract(params.chainName);
         const data = encodeFunctionData({
@@ -114,8 +163,23 @@ class SwapxService {
             value: '0',
         }
     }
+
+
+    async getFee(rpcUrl: string, chainName: string, poolAddress: `0x${string}`): Promise<number> {
+        const evmClient = new EVMClient({ rpcUrl, chainName });
+        const fee = await evmClient.readContract(
+            poolAddress,
+            [
+                { "inputs": [], "name": "fee", "outputs": [{ "internalType": "uint24", "name": "", "type": "uint24" }], "stateMutability": "view", "type": "function" }
+            ],
+            'fee',
+            []
+        );
+        return Number(fee);
+    }
 }
 
 const swapxService = new SwapxService();
 
 export default swapxService;
+

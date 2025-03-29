@@ -171,6 +171,7 @@ export class SwapTokenService {
             } else {
                 const deciaml = await evmClient.getTokenDecimals(inputTokenCA);
                 const swapxResponse = await this.getSwapxCallData({
+                    rpcUrl,
                     chainName,
                     chainId,
                     tokenIn: inputTokenCA,
@@ -201,7 +202,7 @@ export class SwapTokenService {
                 // }
                 // const openoceanResponse = await this.getOpenoceanCallData(openoceanParams);
                 // if (!openoceanResponse.data) {
-                    // throw new Error(`Failed to generate transaction, ${openoceanResponse?.data}`);
+                // throw new Error(`Failed to generate transaction, ${openoceanResponse?.data}`);
                 // }
                 // tx = {
                 //     to: openoceanResponse.data.to,
@@ -279,7 +280,7 @@ export class SwapTokenService {
         to: string,
         data: string,
         value: string,
-    } > {
+    }> {
         const response: OpenoceanGasPriceResponse = await openoceanService.getGasPrice({
             chainId: params.chainId
         });
@@ -294,9 +295,9 @@ export class SwapTokenService {
             outTokenAddress: params.tokenOut.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenOut,
             amount: formatUnits(BigInt(params.amountIn), params.deciaml).toString(),
             gasPrice: params.gasPrice,
-            enabledDexIds: '46' //PancakeV3
+            enabledDexIds: '1,45,46' //PancakeV2, UniswapV3, PancakeV3
         });
-        
+
         if (routes.data.path.routes.length === 0) {
             throw new Error(`Get routes failed: ${JSON.stringify(routes)}`);
         }
@@ -308,39 +309,97 @@ export class SwapTokenService {
         const amountOutMin = (BigInt(amountOut) * BigInt(100 - params.slippage * 100) / BigInt(100)).toString();
         if (route.subRoutes.length == 1) {
             const dex = routes.data.path.routes[0].subRoutes[0].dexes[0];
-            return swapxService.buildSwapV3ExactInTx({
-                chainName: params.chainName,
-                factoryAddress: swapxService.getFactoryAddress(params.chainName, dex.dex),
-                poolAddress: dex.id,
-                tokenIn: params.tokenIn.toLowerCase() === ethAddress ? zeroAddress : params.tokenIn,
-                tokenOut: params.tokenOut.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenOut,
-                fee: dex.parts * 10000 / dex.percentage,
-                recipient: params.to,
-                deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
-                amountIn: params.amountIn,
-                amountOutMinimum: amountOutMin,
-                sqrtPriceLimitX96: 0,
-                exactFees: params.exactFees,
-            });
+            if (dex.dex === 'PancakeV2') {
+                return swapxService.buildSwapV2ExactInTx({
+                    chainName: params.chainName,
+                    poolAddress: dex.id,
+                    tokenIn: params.tokenIn.toLowerCase() === ethAddress ? zeroAddress : params.tokenIn,
+                    tokenOut: params.tokenOut.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenOut,
+                    deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
+                    amountIn: params.amountIn,
+                    amountOutMinimum: amountOutMin,
+                    exactFees: params.exactFees,
+                })
+            } else {
+                return swapxService.buildSwapV3ExactInTx({
+                    chainName: params.chainName,
+                    factoryAddress: swapxService.getFactoryAddress(params.chainName, dex.dex),
+                    poolAddress: dex.id,
+                    tokenIn: params.tokenIn.toLowerCase() === ethAddress ? zeroAddress : params.tokenIn,
+                    tokenOut: params.tokenOut.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenOut,
+                    fee: await swapxService.getFee(params.rpcUrl, params.chainName, dex.id as `0x${string}`),
+                    recipient: params.to,
+                    deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
+                    amountIn: params.amountIn,
+                    amountOutMinimum: amountOutMin,
+                    sqrtPriceLimitX96: 0,
+                    exactFees: params.exactFees,
+                });
+            }
         } else {
-            const path: string[] = [];
-            const fees: number[] = [];
-            route.subRoutes.forEach((subRoute) => {
-                path.push(subRoute.from)
-                fees.push(subRoute.dexes[0].parts * 10000 / subRoute.dexes[0].percentage)
-            });
-            path.push(params.tokenOut);
-            return swapxService.buildSwapV3MultiHopExactInTx({
-                chainName: params.chainName,
-                factoryAddresses: route.subRoutes.map((subRoute) => swapxService.getFactoryAddress(params.chainName, subRoute.dexes[0].dex)),
-                poolAddresses: route.subRoutes.map((subRoute) => subRoute.dexes[0].id),
-                path: swapxService.encodePath(path, fees),
-                recipient: params.to,
-                deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
-                amountIn: params.amountIn,
-                amountOutMinimum: amountOutMin,
-                exactFees: params.exactFees
-            });
+            const pancakeV2Routes = route.subRoutes.filter((subRoute) => subRoute.dexes[0].dex === "PancakeV2");
+            if (pancakeV2Routes.length === route.subRoutes.length) {
+                const path: string[] = [];
+                route.subRoutes.forEach((subRoute) => {
+                    path.push(subRoute.from)
+                });
+                path.push(params.tokenOut);
+                const tx = swapxService.buildSwapV2MultiHopExactInTx({
+                    chainName: params.chainName,
+                    tokenIn: params.tokenIn,
+                    tokenOut: params.tokenOut,
+                    amountIn: params.amountIn,
+                    amountOutMinimum: amountOutMin,
+                    path: path,
+                    recipient: params.to,
+                    deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
+                    factory: swapxService.getFactoryAddress(params.chainName, 'PancakeV2'),
+                    exactFees: params.exactFees
+                });
+                if (params.tokenIn.toLowerCase() === ethAddress) {
+                    tx.value = params.amountIn;
+                }
+                return tx;
+            } else if (pancakeV2Routes.length === 0) {
+                const feeResults = await Promise.all(
+                    route.subRoutes.map(async (subRoute) => {
+                        const fee = await swapxService.getFee(
+                            params.rpcUrl,
+                            params.chainName,
+                            subRoute.dexes[0].id as `0x${string}`
+                        );
+                        return {
+                            from: subRoute.from,
+                            to: subRoute.to,
+                            fee
+                        };
+                    })
+                );
+                const path: string[] = [];
+                const fees: number[] = [];
+                feeResults.forEach((item, index) => {
+                  if (index === 0) path.push(item.from);
+                  path.push(item.to); 
+                  fees.push(item.fee);
+                });
+                const tx = swapxService.buildSwapV3MultiHopExactInTx({
+                    chainName: params.chainName,
+                    factoryAddresses: route.subRoutes.map((subRoute) => swapxService.getFactoryAddress(params.chainName, subRoute.dexes[0].dex)),
+                    poolAddresses: route.subRoutes.map((subRoute) => subRoute.dexes[0].id),
+                    path: swapxService.encodePath(path, fees),
+                    recipient: params.to,
+                    deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
+                    amountIn: params.amountIn,
+                    amountOutMinimum: amountOutMin,
+                    exactFees: params.exactFees
+                });
+                if (params.tokenIn.toLowerCase() === ethAddress) {
+                    tx.value = params.amountIn;
+                }
+                return tx;
+            } else {
+                throw new Error(`No matching swap route found: ${JSON.stringify(route.subRoutes)}`);
+            }
         }
     }
 
