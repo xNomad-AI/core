@@ -213,6 +213,7 @@ export class TradeMonitorService {
     address: string;
     creatorAddress: string;
     nftId: string;
+    logo?: string;
     bound: boolean; // whether the token is bound to an nft
   }) {
     try {
@@ -224,6 +225,7 @@ export class TradeMonitorService {
             address: params.address,
             creatorAddress: params.creatorAddress,
             nftId: params.nftId,
+            logo: params.logo,
             bound: params.bound,
           },
           {

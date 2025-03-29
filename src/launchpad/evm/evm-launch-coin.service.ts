@@ -120,6 +120,7 @@ export class EvmLaunchCoinService {
       address,
       creatorAddress: agentWallet.address,
       nftId: coin.nftId,
+      logo: coin.coinInfo.image,
       bound: true,
     });
 
