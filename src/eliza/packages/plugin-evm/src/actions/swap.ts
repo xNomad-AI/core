@@ -131,11 +131,12 @@ async function handleExecuteSwap(
   const rpcUrl = getChainRPC(runtime, chain);
   const evmClient = getEvmClient(runtime, chain);
   const { address, privateKey } = await getWalletKey(runtime, true);
-  const {slippage, mode } = await getTradeSettings(runtime.agentId);
+  const tradeSettings = await getTradeSettings(runtime.agentId, chain);
   const decimals = await evmClient.getTokenDecimals(parameters.inputTokenCA);
 
   const txid = await new SwapTokenService().swapToken(
     {
+      ...tradeSettings,
       rpcUrl,
       chainName: chain,
       userWalletAddress: address,
@@ -143,8 +144,6 @@ async function handleExecuteSwap(
       inputTokenCA : parameters.inputTokenCA,
       outputTokenCA: parameters.outputTokenCA,
       amount: BigNumber(parameters.inputTokenAmount).multipliedBy(10 ** decimals).toFixed(0),
-      slippage,
-      mode,
     });
   
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);

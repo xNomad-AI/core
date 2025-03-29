@@ -10,12 +10,14 @@ import { AddressService } from './address.service.js';
 import { NonceType } from '../shared/mongo/types.js';
 import { AuthService } from '../shared/auth/auth.service.js';
 import { normalizeBlockchainAddress } from '../nft/nft.types.js';
-
+import { SwapTokenService, GetSwapCallDataDto } from '@elizaos/plugin-evm';
+import { ConfigService } from '@nestjs/config';
 @Controller('/address')
 export class AddressController {
   constructor(
     private readonly addressService: AddressService,
     private readonly authService: AuthService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get('/nonce')
@@ -63,4 +65,15 @@ export class AddressController {
       accessToken,
     };
   }
+
+  @Post('/swap/calldata')
+  async getSwapTxCallData(
+    @Body() req: GetSwapCallDataDto) {
+      const rpcUrl = this.configService.get(`${req.chainName.toUpperCase()}_RPC_URL`);
+      const txReq = await new SwapTokenService().getSwapTxCallData({
+        ...req,
+        rpcUrl,
+      });
+      return txReq;
+    }
 }

@@ -1,18 +1,25 @@
 import { BigNumber } from 'bignumber.js';
 
-export interface SwapTokenDto {
-  rpcUrl: string;
+export interface SwapTokenDto extends GetSwapCallDataDto, TradeSettingsDto {
+  privateKey: string;
+}
+
+export interface TradeSettingsDto {
+  gasMode?: 'LOW' | 'AVG' | 'HIGH' | 'CUSTOM';
+  maxFeePerGas?: string | BigNumber; // Gwei
+  maxPriorityFeePerGas?: string | BigNumber; // Gwei
+  mode?: 'FAST' | 'ANTI_MEV';
+  tip?: string | BigNumber; // Gwei, 1 = 0.000000000000000001 eth
+  slippage: number; // 0.01 = 1%
+}
+
+export interface GetSwapCallDataDto {
   chainName: string;
+  rpcUrl: string;
   inputTokenCA: string;
   outputTokenCA: string;
   amount: string | BigNumber;
   slippage: number; // 0.01 = 1%
-  mode?: 'FAST' | 'ANTI_MEV';
-  gasMode?: 'LOW' | 'AVG' | 'HIGH' | 'CUSTOM';
-  maxFeePerGas?: string | BigNumber; // Gwei
-  maxPriorityFeePerGas?: string | BigNumber; // Gwei
-  tip?: string | BigNumber; // Gwei, 1 = 0.000000000000000001 eth
-  privateKey: string;
   userWalletAddress: string;
   exactFees?: ExactFee[];
 }
