@@ -363,6 +363,17 @@ export interface ExactFee {
   feeRate: string;
 }
 
+export interface SwapxSwapV2ExactInParams {
+  chainName: string;
+  tokenIn: string;
+  tokenOut: string;
+  amountIn: string;
+  amountOutMinimum: string;
+  deadline: string;
+  poolAddress: string;
+  exactFees: ExactFee[];
+}
+
 export interface SwapxSwapV3ExactInParams {
   chainName: string;
   factoryAddress: string;
@@ -375,6 +386,19 @@ export interface SwapxSwapV3ExactInParams {
   amountIn: string;
   amountOutMinimum: string;
   sqrtPriceLimitX96: number;
+  exactFees: ExactFee[];
+}
+
+export interface SwapV2MultiHopExactInParams {
+  chainName: string;
+  tokenIn: string;
+  tokenOut: string;
+  amountIn: string;
+  amountOutMinimum: string;
+  path: string[];
+  recipient: string;
+  deadline: string;
+  factory: string;
   exactFees: ExactFee[];
 }
 
@@ -391,6 +415,7 @@ export interface SwapV3MultiHopExactInParams {
 }
 
 export interface SwapxParams {
+  rpcUrl: string;
   chainName: string;
   chainId: string;
   tokenIn: string;
