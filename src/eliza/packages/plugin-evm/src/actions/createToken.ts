@@ -197,6 +197,7 @@ export default {
       chain,
       address: tokenAddress,
       creatorAddress: address,
+      logo: uploadedImageUrl,
       nftId: getRuntimeKey(runtime, 'NFT_ID'),
     });
     callback({
