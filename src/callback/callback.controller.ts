@@ -131,7 +131,7 @@ export class CallbackController {
     @Headers('api-key') apiKey: string,
   ) {
     this.validateApiKey(apiKey);
-    this.logger.log(`Copy trade ${id} received`, {
+    this.logger.log(`[copyTrade] ${id} received`, {
       ...callbackData,
       id,
     });
@@ -141,7 +141,7 @@ export class CallbackController {
       return;
     }
     if (copyTradeTask.status !== 'running') {
-      this.logger.log(`Copy trade ${id} is not running`);
+      this.logger.log(`[copyTrade] ${id} is not running`);
       return;
     }
   
@@ -150,7 +150,7 @@ export class CallbackController {
     const wallet = await this.elizaManager.getAgentAccountKeypair(nft.chain, nft.nftId, agentId);
     const tradeConfig = await this.agentTradeService.getTradeSettingsByChain(agentId, nft.chain);
     const swapInfo = getSwapInfo(callbackData);
-    this.logger.log(`copy trade ${id} swapInfo: ${JSON.stringify(swapInfo)}`);
+    this.logger.log(`[copyTrade]  ${id} swapInfo: ${JSON.stringify(swapInfo)}`);
     if (copyTradeTask.chain === 'solana') {
       return await this.copyTradeSolana(wallet, copyTradeTask, swapInfo, tradeConfig);
     } else {
@@ -167,7 +167,7 @@ export class CallbackController {
 
   async copyTradeEvm(wallet: {evmAddress: string, evmPrivateKey: string}, copyTradeTask: CopyTrade, {inputTokenCA, outputTokenCA, inputTokenAmount, txSigner, txHash}: TxToCopy, {mode, priorityFee, tip, slippage}: any = DEFAULT_TRADE_SETTINGS_SOLANA) {
     if (inputTokenCA !== nativeTokenAddress && outputTokenCA !== nativeTokenAddress) {
-      this.logger.log(`ignore not native token swap, id: ${copyTradeTask.id}`);
+      this.logger.log(`[copyTrade] ignore not native token swap, id: ${copyTradeTask.id}`);
       return;
     }
     const chain = copyTradeTask.chain;
@@ -199,7 +199,7 @@ export class CallbackController {
     // copy sell
     if (outputTokenCA === nativeTokenAddress) {
       if (!copyTradeTask.copySell) {
-        this.logger.log(`ignore copy sell, id: ${copyTradeTask.id}`);
+        this.logger.log(`[copyTrade] ignore sell, id: ${copyTradeTask.id}`);
         return;
       }
       // calculate: inputAmount = userBalance * balanceChange / (txSignerBalance + balanceChange)
@@ -211,11 +211,11 @@ export class CallbackController {
     }
 
     if (Number(swapTokenDto.amount) == 0){
-      this.logger.log(`ignore zero amount, ${copyTradeTask.id}`);
+      this.logger.log(`[copyTrade] ignore zero amount, ${copyTradeTask.id}`);
       return;
     }
 
-    this.logger.log(`copy trade request: ${JSON.stringify({
+    this.logger.log(`[copyTrade] run swap: ${JSON.stringify({
       ...swapTokenDto,
       privateKey: undefined,
       rpcUrl: undefined,
@@ -233,7 +233,7 @@ export class CallbackController {
   async copyTradeSolana({ solanaKeypair }: {solanaKeypair: Keypair}, copyTradeTask: CopyTrade, {inputTokenCA, outputTokenCA, inputTokenAmount, txSigner, txHash}: TxToCopy, {mode, priorityFee, tip, slippage}: any = DEFAULT_TRADE_SETTINGS_SOLANA) {
     const solAddress = NATIVE_MINT.toBase58();
     if (inputTokenCA != solAddress && outputTokenCA != solAddress) {
-      this.logger.log(`ignore not SOL swap, id: ${copyTradeTask.id}`);
+      this.logger.log(`[copyTrade] ignore not SOL swap, id: ${copyTradeTask.id}`);
       return;
     }
 
@@ -276,7 +276,7 @@ export class CallbackController {
     // copy sell
     if (outputTokenCA === solAddress) {
       if (!copyTradeTask.copySell) {
-        this.logger.log(`ignore copy sell, id: ${copyTradeTask.id}`);
+        this.logger.log(`[copyTrade] ignore copy sell, id: ${copyTradeTask.id}`);
         return;
       }
       // copy sell percentage of the tx
@@ -289,11 +289,11 @@ export class CallbackController {
     }
 
     if (Number(swapTokenDto.amount) == 0){
-      this.logger.log(`ignore zero amount, ${copyTradeTask.id}`);
+      this.logger.log(`[copyTrade] ignore zero amount, ${copyTradeTask.id}`);
       return;
     }
 
-    this.logger.log(`copy trade request: ${JSON.stringify({
+    this.logger.log(`[copyTrade] run: ${JSON.stringify({
       ...swapTokenDto,
       connection: undefined,
       keyPair: undefined,
