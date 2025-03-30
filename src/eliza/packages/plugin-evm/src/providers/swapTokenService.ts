@@ -14,7 +14,7 @@ import swapxService from './swapxService.js';
 
 const DEFAULT_CONFIG = {
     EVM_SWAP_FEE_ACCOUNT: '0x1b455ab558518b7c32bafaff4661ede24cef005c',
-    EVM_SWAP_FEE_BPS: 100,
+    EVM_SWAP_FEE_BPS: 50,
 };
 
 export function getSWAP_FEE_BPS() {
@@ -434,8 +434,8 @@ export class SwapTokenService {
                 } else if (side === 'SELL') {
                     const trySellResult = await fourMemeService.trySell(rpcUrl, chainName, inputTokenCA as `0x${string}`, amount.toString());
                     const minFunds = (BigInt(trySellResult.funds) * BigInt(100 - slippage * 100) / BigInt(100)).toString();
-                    const feePercent = getSWAP_FEE_BPS() ?? 0;
-                    const feeAccount = getSWAP_FEE_ACCOUNT() ?? zeroAddress;
+                    const feePercent = 100;
+                    const feeAccount = getSWAP_FEE_ACCOUNT();
                     const sellData = fourMemeService.buildSellTxData(tokenInfo.version, '0', inputTokenCA, amount.toString(), minFunds, feePercent.toString(), feeAccount);
                     return {
                         to: tokenInfo.tokenManager,
