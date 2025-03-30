@@ -8,7 +8,6 @@ import {
   Post,
   Query,
   Request,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -18,9 +17,10 @@ import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { ElevenlabsService } from '../shared/elevenlabs.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { CreateAgentDto, TradeSettingsDTO, validateTradeSettings } from './agent.types.js';
+import { CreateAgentDto, SolanaTradeSettingsDTO, EvmTradeSettingsDTO, validateTradeSettingsSolana, validateTradeSettingsEvm } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
-import { CopyTrade, DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
+import { CopyTrade } from '../shared/mongo/types.js';
+import { AgentTradeService } from './agent-trade.service.js';
 
 @Controller('/agent')
 export class AgentController {
@@ -30,6 +30,7 @@ export class AgentController {
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
     private mongo: MongoService,
+    private readonly tradeService: AgentTradeService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -68,7 +69,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    return await this.elizaManager.getAgentAutotasks(agentId);
+    return await this.tradeService.getAgentAutotasks(agentId);
   }
 
   @UseGuards(AuthGuard)
@@ -90,25 +91,21 @@ export class AgentController {
   @Get('/trade/settings')
   async getTradeSettings(
     @Request() request,
+    @Query('chain') chain: string = 'solana',
     @Query('agentId') agentId: string,
   ) {
-    const {nftId} = await this.mongo.nfts.findOne({agentId});
-    const nftConfig = await this.mongo.nftConfigs.findOne({nftId});
-    return nftConfig?.trade || DEFAULT_TRADE_SETTINGS;
+    return await this.tradeService.getTradeSettingsByChain(agentId, chain);
   }
 
   @UseGuards(AuthGuard)
   @Post('/trade/settings')
-  async updateTradeSettings(
+  async updateSolanaTradeSettings(
     @Request() request,
+    @Query('chain') chain: string = 'solana',
     @Query('agentId') agentId: string,
-    @Body() tradeSettingsDTO: TradeSettingsDTO
+    @Body() tradeSettingsDTO: SolanaTradeSettingsDTO
   ) {
-    validateTradeSettings(tradeSettingsDTO);
-    let { slippage, priorityFee, tip, mode } = tradeSettingsDTO;
-    if (!tip || !isFinite(tip)) {
-      tip = DEFAULT_TRADE_SETTINGS.tip;
-    }
+    validateTradeSettingsSolana(tradeSettingsDTO);
     await this.elizaManager.ensureAgentOwner(
       agentId,
       request['X-USER-ADDRESS'],
@@ -119,7 +116,36 @@ export class AgentController {
       { nftId },
       {
         $set: {
-          trade: { slippage, priorityFee, tip, mode },
+          [`tradeSettings.${chain}`]: tradeSettingsDTO,
+        },
+        $setOnInsert: { nftId },
+      },
+      { upsert: true },
+    );
+    return { success: true };
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/trade/settings/evm')
+  async updateEvmTradeSettings(
+    @Request() request,
+    @Query('chain') chain: string = 'bsc',
+    @Query('agentId') agentId: string,
+    @Body() tradeSettingsDTO: EvmTradeSettingsDTO
+  ) {
+    tradeSettingsDTO.chain = chain;
+    validateTradeSettingsEvm(tradeSettingsDTO);
+    await this.elizaManager.ensureAgentOwner(
+      agentId,
+      request['X-USER-ADDRESS'],
+    );
+    const { nftId } = await this.mongo.nfts.findOne({ agentId });
+
+    await this.mongo.nftConfigs.updateOne(
+      { nftId },
+      {
+        $set: {
+          [`tradeSettings.${chain}`]: tradeSettingsDTO,
         },
         $setOnInsert: { nftId },
       },
@@ -138,7 +164,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    return await this.elizaManager.getCopyTrades(agentId);
+    return await this.tradeService.getCopyTrades(agentId);
   }
 
   @UseGuards(AuthGuard)
@@ -153,7 +179,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    await this.elizaManager.updateCopyTradeStatus(agentId, id, status);
+    await this.tradeService.updateCopyTradeStatus(agentId, id, status);
   }
 
   @UseGuards(AuthGuard)
@@ -167,7 +193,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    await this.elizaManager.cancelCopyTrade(agentId, id);
+    await this.tradeService.cancelCopyTrade(agentId, id);
   }
 
   @UseGuards(AuthGuard)
@@ -182,7 +208,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    await this.elizaManager.updateCopyTrade(agentId, id, copyTrade);
+    await this.tradeService.updateCopyTrade(agentId, id, copyTrade);
   }
 
   @Get('/account')

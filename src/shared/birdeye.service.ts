@@ -3,6 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { TransientLoggerService } from './transient-logger.service.js';
+import { NATIVE_MINT } from '@solana/spl-token';
+import { ethAddress } from 'viem';
 
 class BirdEyeAPIResponse<T> {
   success: boolean;
@@ -120,6 +122,7 @@ export class BirdeyeService {
   }
 
   async getTxs(params: {
+    chain: string ;
     address: string;
     beforeTime?: number;
     afterTime?: number;
@@ -132,6 +135,7 @@ export class BirdeyeService {
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apikey,
+        'x-chain': params.chain,
       },
     };
     const response = await firstValueFrom(this.httpService.request(config));
@@ -173,6 +177,7 @@ export class BirdeyeService {
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apikey,
+        'x-chain': params.chain,
       },
       params: {
         keyword: params.query,
@@ -199,5 +204,38 @@ export class BirdeyeService {
       return [];
     }
     return birdEyeResponse.data.items[0].result;
+  }
+
+  transformNativeToken(chain: string, tokenCA: string) {
+    if (chain === 'solana' && (tokenCA === '11111111111111111111111111111111' || tokenCA === 'So11111111111111111111111111111111')) {
+      return NATIVE_MINT.toBase58();
+    }
+    if (chain === 'bsc' && tokenCA.toLocaleLowerCase() === ethAddress) {
+      return '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'.toLowerCase(); // WBNB
+    }
+    return tokenCA;
+  }
+
+  async getTokenPrice(
+    chain: string,
+    tokenCA: string,
+  ): Promise<number | undefined> {
+    try {
+      tokenCA = this.transformNativeToken(chain, tokenCA);
+      const birdeyeApiKey = this.apikey;
+      const url = `https://public-api.birdeye.so/defi/price?address=${tokenCA}`;
+      const response = await fetch(url, {
+        headers: {
+          'X-API-KEY': birdeyeApiKey,
+          accept: 'application/json',
+          'x-chain': chain,
+        },
+      });
+      const result = await response.json();
+      return result?.data?.value;
+    } catch (error) {
+      this.logger.error(`Error fetching token price: ${error}`);
+      return undefined;
+    }
   }
 }

@@ -8,7 +8,7 @@ import {
   elizaLogger,
   composeContext,
   generateObjectDeprecated,
-  ModelClass,
+  ModelClass, ActionStatus,
 } from '@elizaos/core';
 import { convertNullStrings } from '../providers/swapUtils.js';
 import { isValidAddress } from '../providers/tokenUtils.js';
@@ -18,6 +18,7 @@ import { isAgentAdmin, NotAgentAdminResponse } from '../providers/walletUtils';
 
 type CopyTradeParameters = {
   name: string;
+  chain: string;
   targetAddress: string;
   mode: 'fixedAmount' | 'percentage';
   fixedAmount: number | undefined;
@@ -31,7 +32,7 @@ type CopyTradeParameters = {
 const userConfirmTemplate = `
 {{recentMessages}}
 
-Analyzing the user’s response to the confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
+Analyzing the user's response to the confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
 Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
 Respond with a JSON:  
 \`\`\`json
@@ -47,7 +48,7 @@ Decision Criteria:
 
 Additional Rules:
 •If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
-•Analyze the last five messages to understand the user’s intent in context.
+•Analyze the last five messages to understand the user's intent in context.
 •If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
 •If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
@@ -90,7 +91,7 @@ export const copyTrade: Action = {
         mode: {
           type: ['string'],
           description:
-            'The mode of copying trade, enum can be "fixed" or "percentage"',
+            'The mode of copying trade, enum can be "fixedAmount" or "percentage"',
         },
         copySell: {
           type: 'boolean',
@@ -123,12 +124,12 @@ export const copyTrade: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     // check if the swap request is from agent owner or public chat
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
       callback?.(NotAgentAdminResponse);
-      return null;
+      return 'rejected';
     }
 
     let response = convertNullStrings(
@@ -143,7 +144,7 @@ export const copyTrade: Action = {
         text: `Please provide a valid wallet address to copy trade.`,
         action: 'COPY_TRADE',
       });
-      return;
+      return 'pending';
     }
 
     if (Number.isFinite(response.fixedAmount) && response.fixedAmount > 0) {
@@ -159,14 +160,16 @@ export const copyTrade: Action = {
         text: `Please provide a valid input amount or percentage to copy trade.`,
         action: 'COPY_TRADE',
       });
-      return;
+      return 'pending';
     }
 
     const wallet = await getWalletKey(runtime, true);
     response.walletAddress = wallet.keypair.publicKey.toBase58();
     response.agentId = runtime.agentId;
+    response.chain = 'solana';
     const records = await runtime.databaseAdapter.find?.('copyTrades', {
       agentId: response.agentId,
+      chain: response.chain,
       targetAddress: response.targetAddress,
       walletAddress: response.walletAddress,
     });
@@ -174,7 +177,7 @@ export const copyTrade: Action = {
       callback({
         text: 'You have already set copy trade of this address. You can edit the copy trade on the [Tasks] subpage.'
       });
-      return;
+      return 'failed';
     }
     elizaLogger.log('COPY_TRADE:', response);
 
@@ -195,20 +198,23 @@ export const copyTrade: Action = {
         text: 'ok. I will not set this.',
       };
       callback?.(responseMsg);
-      return null;
+      return 'cancelled';
     }
 
     if (confirmResponse.userAcked == 'pending') {
       const responseMsg = {
         text: `${formatConfirmMessage(response)}`,
+        result: 'Pending user confirmation',
+        action: 'COPY_TRADE',
       };
       callback?.(responseMsg);
-      return null;
+      return 'pending';
     }
 
     const {id} = await SharedProvider.get<any>(
       'tradeMonitorService',
     ).createCopyTrade({
+      chain: response.chain,
       targetAddress: response.targetAddress,
       walletAddress: response.walletAddress,
       expiredAt: response.expiredAt || 0,
@@ -224,7 +230,7 @@ export const copyTrade: Action = {
       text: `Copy trade created successfully.`,
       action: `COPY_TRADE`,
     });
-    return true;
+    return 'success';
   },
 
   examples: [] as ActionExample[][],

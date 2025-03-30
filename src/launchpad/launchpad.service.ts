@@ -70,7 +70,7 @@ export class LaunchpadService {
         telegram?: string;
         website?: string;
       };
-      buyAmountSol: number;
+      buyAmount: number;
     };
   }) {
     this.logger.log(
@@ -124,7 +124,7 @@ export class LaunchpadService {
           website: createToken.tokenInfo.website,
         },
         metadataUri: null,
-        initialBuyAmountSol: createToken.buyAmountSol,
+        initialBuyAmountSol: createToken.buyAmount,
         mintAddress: mintKeypair.publicKey.toBase58(),
         mintSecretKey: bs58.encode(mintKeypair.secretKey),
         created: false,
@@ -140,7 +140,7 @@ export class LaunchpadService {
           fromPubkey: new PublicKey(userAddress),
           toPubkey: agentKeypair.publicKey,
           lamports:
-            (createToken.buyAmountSol +
+            (createToken.buyAmount +
               CREATE_TOKEN_COST +
               MIN_BALANCE_FOR_RENT_EXEMPTION) *
             LAMPORTS_PER_SOL,

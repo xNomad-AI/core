@@ -10,9 +10,9 @@ import { CollectionTxs, NftgoService } from '../shared/nftgo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { stringToUuid } from '@elizaos/core';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
+import { AICollection } from '../shared/mongo/types';
 
 const SYNC_NFTS_INTERVAL = 1000 * 60 * 2;
 const SYNC_TXS_INTERVAL = 1000 * 10;
@@ -25,7 +25,6 @@ export class NftSyncService implements OnApplicationBootstrap {
     private readonly mongo: MongoService,
     private readonly config: ConfigService,
     private readonly elizaManager: ElizaManagerService,
-    private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(NftSyncService.name);
   }
@@ -41,40 +40,49 @@ export class NftSyncService implements OnApplicationBootstrap {
     for (const collection of await this.getAICollections()) {
       startIntervalTask(
         'syncCollectionTxs',
-        () => this.syncCollectionTxs(collection.id),
+        () => this.syncCollectionTxs(collection.id, collection.chain),
         SYNC_TXS_INTERVAL,
       );
       startIntervalTask(
         'syncCollectionNfts',
-        () => this.syncCollectionNfts(collection.id),
+        () => this.syncCollectionNfts(collection.id, collection.chain),
         SYNC_NFTS_INTERVAL,
       );
     }
   }
 
   async getAICollections() {
-    const cids = this.config.get<string>('NFTGO_SOLANA_AI_COLLECTIONS');
-    if (!cids) {
-      this.logger.warn('NFTGO_SOLANA_AI_COLLECTIONS is not set');
-      return [];
-    }
-    const collections = (await this.nftgo.getAICollections('solana', cids)).map(
-      transformToAICollection,
-    );
-    this.logger.log(`Fetched ${collections.length} AI collections`);
+    const configedCollections = await this.mongo.collectionConfigs.find({}).toArray();
+    const chainCollections = configedCollections.reduce((acc, cur) => {
+      if (!acc[cur.chain]) {
+        acc[cur.chain] = [];
+      }
+      acc[cur.chain].push(cur.id);
+      return acc;
+    }, {});
 
-    const bulkOperations = collections.map((coll) => ({
+    const aiCollections: AICollection[] = [];
+    for (const chain in chainCollections) {
+      this.logger.log(`Fetched ${chain} ${chainCollections[chain]?.length} AI collections`);
+      const collections = await this.nftgo.getAICollections(chain, chainCollections[chain]);
+      aiCollections.push(...collections.map(transformToAICollection));
+    }
+
+
+    const bulkOperations = aiCollections.map((coll) => ({
       updateOne: {
-        filter: { id: coll.id },
+        filter: { id: coll.id, chain: coll.chain },
         update: { $set: coll },
         upsert: true,
       },
     }));
-    await this.mongo.collections.bulkWrite(bulkOperations);
-    return collections;
+    if (bulkOperations.length > 0) {
+      await this.mongo.collections.bulkWrite(bulkOperations);
+    }
+    return aiCollections;
   }
 
-  async syncCollectionTxs(collectionId: string) {
+  async syncCollectionTxs(collectionId: string, chain: string) {
     const key = `collection-${collectionId}-txs-progress`;
     let cursor = await this.mongo.getKeyStore(key);
     let startTime = undefined;
@@ -90,7 +98,7 @@ export class NftSyncService implements OnApplicationBootstrap {
     do {
       try {
         const result = await this.nftgo.getCollectionTxs(
-          'solana',
+          chain,
           collectionId,
           {
             limit: 50,
@@ -114,13 +122,13 @@ export class NftSyncService implements OnApplicationBootstrap {
     } while (cursor);
   }
 
-  async syncCollectionNfts(collectionId: string) {
+  async syncCollectionNfts(collectionId: string, chain: string) {
     const key = `collection-${collectionId}-nfts-progress`;
     let cursor = await this.mongo.getKeyStore(key);
     do {
       try {
         const result = await this.nftgo.getCollectionNfts(
-          'solana',
+          chain,
           collectionId,
           {
             limit: 50,
@@ -141,7 +149,7 @@ export class NftSyncService implements OnApplicationBootstrap {
           }
           transformedNft.agentId = stringToUuid(transformedNft.nftId);
           transformedNft.agentAccount = await this.elizaManager.getAgentAccount(
-            'solana',
+            chain,
             transformedNft.nftId,
           );
           nfts.push(transformedNft);

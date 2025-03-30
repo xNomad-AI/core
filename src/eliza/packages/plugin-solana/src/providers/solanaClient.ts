@@ -36,6 +36,7 @@ export class SolanaClient {
     this.publicKey = publicKey;
   }
 
+
   async getMintDecimals(token: string): Promise<number | undefined> {
     if (token === STANDARD_SOL_ADDRESS) {
       return 9;
@@ -59,11 +60,12 @@ export class SolanaClient {
         token.toUpperCase() === 'SOL' ||
         token.toUpperCase() === 'WSOL'
       ) {
-        return this.getSOLBalance();
+        return await this.getSOLBalance();
       }
-      return this.getSPLBalance(token);
+      return await this.getSPLBalance(token);
     } catch (e) {
       if (e.message?.includes('Invalid param: could not find account')) {
+        elizaLogger.warn(`Invalid param: could not find account, token=${token}, address=${this.publicKey.toBase58()}`);
         return 0;
       } else {
         throw e;

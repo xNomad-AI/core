@@ -54,34 +54,30 @@ class JitoValidatorNodeService extends ValidatorNodeService {
   }
 
   async postSubmit(content: string): Promise<string> {
-    try {
-      const body = {
-        id: 1,
-        jsonrpc: '2.0',
-        method: 'sendTransaction',
-        params: [
-          content,
-          {
-            encoding: 'base64',
-          },
-        ],
-      };
-
-      const response = await fetch(
-        'https://mainnet.block-engine.jito.wtf/api/v1/transactions',
+    const body = {
+      id: 1,
+      jsonrpc: '2.0',
+      method: 'sendTransaction',
+      params: [
+        content,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(body),
+          encoding: 'base64',
         },
-      );
-      const responseData = (await response.json()) as JitoResponse<string>;
-      return responseData.result;
-    } catch (error) {
-      return error.message;
-    }
+      ],
+    };
+
+    const response = await fetch(
+      'https://mainnet.block-engine.jito.wtf/api/v1/transactions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+    );
+    const responseData = (await response.json()) as JitoResponse<string>;
+    return responseData.result;
   }
 }
 
@@ -113,20 +109,58 @@ class BloxValidatorNodeService extends ValidatorNodeService {
   }
 
   async postSubmit(content: string): Promise<string> {
-    try {
-      const { signature } = await this.provider.postSubmit({
-        transaction: {
-          content,
-          isCleanup: true,
+    const { signature } = await this.provider.postSubmit({
+      transaction: {
+        content,
+        isCleanup: true,
+      },
+      skipPreFlight: true,
+      frontRunningProtection: false,
+      useStakedRPCs: true,
+    });
+    return signature;
+  }
+}
+
+class DefaultRPCNodeService extends ValidatorNodeService {
+  private readonly rpcUrl = process.env.SOLANA_RPC_URL;
+
+  constructor() {
+    super();
+  }
+
+  async makeTransferInstruction(
+    fromPubkey: PublicKey,
+    lamports: number,
+  ): Promise<TransactionInstruction[]> {
+    return [];
+  }
+
+  async postSubmit(content: string): Promise<string> {
+    const body = {
+      id: 1,
+      jsonrpc: '2.0',
+      method: 'sendTransaction',
+      params: [
+        content,
+        {
+          encoding: 'base64',
         },
-        skipPreFlight: true,
-        frontRunningProtection: false,
-        useStakedRPCs: true,
-      });
-      return signature;
-    } catch (error) {
-      return error.message;
-    }
+      ],
+    };
+
+    const response = await fetch(
+      this.rpcUrl,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+    );
+    const responseData = (await response.json()) as JitoResponse<string>;
+    return responseData.result;
   }
 }
 

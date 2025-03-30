@@ -1,7 +1,15 @@
 import { Character } from '@elizaos/core';
+import { ObjectId } from 'mongodb';
 import { COLLECTIONS } from './configs.js';
+import { OrderStatus, OrderType } from '../../order/order.types.js';
 
+import { BigNumber } from 'bignumber.js';
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
+
+export interface CollectionConfig {
+  id: string;
+  chain: string;
+}
 
 export interface AICollection {
   id: string;
@@ -98,22 +106,50 @@ export interface NftConfig {
   nftId: string;
   chain?: string;
   characterConfig?: CharacterConfig;
-  trade?: TradeSettings;
+  trade?: TradeSettingsSolana | TradeSettingsEvm;
+  tradeSettings?: {
+    [key: string]: TradeSettingsSolana | TradeSettingsEvm;
+  };
 }
 
-export interface TradeSettings {
+export interface TradeSettingsSolana {
   slippage: number;
   priorityFee: number;
   tip: number;
   mode: 'FAST' | 'ANTI_MEV';
 }
 
-export const DEFAULT_TRADE_SETTINGS: TradeSettings = {
+export interface TradeSettingsEvm {
+  chain: string;
+  slippage: number; // 0.01 = 1%
+  mode?: 'FAST' | 'ANTI_MEV';
+  gasMode?: 'LOW' | 'AVG' | 'HIGH' | 'CUSTOM';
+  maxFeePerGas?: number; // Gwei, fill this when gasMode is CUSTOM
+  maxPriorityFeePerGas?: number; // Gwei
+  tip?: number; // Gwei
+}
+
+export function getChainDefaultTradeSettings(chain: string): TradeSettingsSolana | TradeSettingsEvm {
+  if (chain === 'solana') {
+    return DEFAULT_TRADE_SETTINGS_SOLANA;
+  }
+  return DEFAULT_TRADE_SETTINGS_EVM;
+}
+
+export const DEFAULT_TRADE_SETTINGS_SOLANA: TradeSettingsSolana = {
   slippage: 0.25,
   priorityFee: 0.006,
   tip: 0.001,
   mode: 'FAST',
-}
+};
+
+export const DEFAULT_TRADE_SETTINGS_EVM: TradeSettingsEvm = {
+  chain: undefined,
+  slippage: 0.25,
+  mode: 'FAST',
+  gasMode: 'AVG',
+  tip: 0,
+};
 
 export interface CoreSettings {
   category: 'httpProxy';
@@ -180,6 +216,7 @@ export interface CopyTrade {
   id: number;
   agentId: string;
   name: string;
+  chain: string;
   targetAddress: string;
   walletAddress: string;
   copySell: boolean;
@@ -187,8 +224,97 @@ export interface CopyTrade {
   fixedAmount?: number;
   percentage?: number;
   expiredAt?: number;
-  status: 'running' | 'paused';
+  status: 'running' | 'paused' | string;
   createdAt: Date;
 }
 
+export interface LimitOrder {
+  id: string;
+  chain: string;
+  agentId: string;
+  inputTokenSymbol: string | null;
+  outputTokenSymbol: string | null;
+  inputTokenCA: string | null;
+  outputTokenCA: string | null;
+  inputTokenAmount: number | string | null;
+  inputTokenPercentage: number | null;
+  outputTokenAmount: number | string | null;
+  delay: string | null;
+  startAt: Date | null;
+  expireAt: Date;
+  priceCondition: 'below' | 'above' | null;
+  targetPrice: number | null;
+  targetToken: string | null;
+  targetTokenCA: string;
+}
+
 export type NonceType = 'claim' | 'login';
+
+export type SwarmMintStageKind = 'public' | 'whitelist';
+
+export interface SwarmMintStage {
+  name: string;
+  price: number;
+  maxMintsPerAddress: number;
+  startTime: number;
+  endTime: number;
+  whitelistAddresses?: string[];
+}
+
+export interface Swarm {
+  _id: ObjectId;
+  chain: string;
+  name: string;
+  logo: string;
+  description: string;
+  creatorInfo: {
+    address: string;
+    email: string;
+    recipientAddress: string;
+    royaltyBps: number;
+  };
+  socialMedia: {
+    website: string;
+    discord: string;
+    twitter: string;
+  };
+  aiAgentSettings: {
+    background: string;
+    style: string[];
+  };
+  mintStages: SwarmMintStage[];
+  allowBindAgentToken: boolean;
+
+  collectionAddress: string;
+  candyMachine: {
+    prefixName: string;
+    prefixUri: string;
+    address: string;
+    itemsLoaded: number;
+  };
+  maxSupply: number;
+  collectionMetadataUri: string;
+  nftMetadataUploaded: boolean;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Order {
+  _id?: string;
+  txHash: string;
+  nftId: string;
+  chain: string;
+  contractAddress: string;
+  tokenId: string;
+  type: OrderType;
+  status: OrderStatus;
+  price: number;
+  from: string;
+  to: string;
+  timestamp: Date;
+  marketplace: string;
+  blockNumber?: number;
+  updatedAt: Date;
+  createdAt: Date;
+}

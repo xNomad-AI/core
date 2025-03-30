@@ -12,10 +12,12 @@ import { initializeClients } from './clients/index.js';
 import { getTokenForProvider } from './config/index.js';
 import { initializeDatabase } from './database/index.js';
 import { solanaPlugin } from '@elizaos/plugin-solana';
+import { chatPlugin } from '@elizaos/plugin-chat';
+import { evmPlugin } from '@elizaos/plugin-evm';
 import { MongoClient } from 'mongodb';
 
 function getSecret(character: Character, secret: string) {
-  return character.settings?.secrets?.[secret] || process.env[secret];
+  return character.settings?.secrets?.[secret] || character.settings?.[secret] ||  process.env[secret];
 }
 
 export async function createAgent(
@@ -35,13 +37,26 @@ export async function createAgent(
     throw new Error('Invalid TEE configuration');
   }
 
+  const plugins = [chatPlugin];
+  const nftChain = getSecret(character, 'NFT_CHAIN');
+  
+  if (nftChain === 'solana') {
+    plugins.push(solanaPlugin);
+  } else {
+    plugins.push(evmPlugin);
+  }
+
+  elizaLogger.info(
+    `Agent: ${character.name} | Chain: ${nftChain} | Plugins: ${plugins.map(p => p.name).join(', ')}`
+  );
+
   const runtime = new AgentRuntime({
     databaseAdapter: db,
     token,
     modelProvider: character.modelProvider,
     evaluators: [],
     character,
-    plugins: [solanaPlugin].filter(Boolean),
+    plugins: plugins.filter(Boolean),
     providers: [],
     actions: [],
     services: [],

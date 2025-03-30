@@ -10,7 +10,7 @@ steps:
       build_args:
         - ENV=dev
       build_args_from_env: []
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.debug
       password:
         from_secret: docker_dev_password
       registry:

@@ -9,7 +9,6 @@ import { airdrop } from './actions/airdrop.js';
 import { transfer } from './actions/transfer.js';
 import { analyze } from './actions/analyze.js';
 import { walletPortfolio } from './actions/wallet.js';
-import { none } from './actions/none.js';
 import { copyTrade } from './actions/copyTrade.js';
 import {SwapTokenService} from './providers/swapTokenService.js';
 export {
@@ -23,7 +22,6 @@ export const solanaPlugin: Plugin = {
   name: 'solana',
   description: 'Solana Plugin for Eliza',
   actions: [
-    none,
     walletPortfolio,
     analyze,
     transfer,
@@ -37,11 +35,6 @@ export const solanaPlugin: Plugin = {
   providers: [],
 };
 export default solanaPlugin;
-export {
-  AutoSwapTaskTable,
-  executeAutoTokenSwapTask,
-  AutoSwapTask,
-} from './actions/autoSwap.js';
 
 export class SharedProvider {
   private static instances = new Map<string, any>();

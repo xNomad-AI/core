@@ -11,12 +11,15 @@ import {
   AINftActivity,
   AINftOwner,
   CollectionName,
+  CopyTrade,
+  CoreSettings,
   KeyStore,
   NftConfig,
   NftPrimaryCoin,
   NftPrologues,
-  CoreSettings,
-  CopyTrade,
+  Swarm,
+  Order, CollectionConfig,
+  LimitOrder,
 } from './types.js';
 
 @Injectable()
@@ -96,6 +99,10 @@ export class MongoService implements OnModuleInit {
     return this.client.db(collection.db).collection<T>(collection.name);
   }
 
+  get collectionConfigs() {
+    return this.getCollection<CollectionConfig>('collectionConfigs');
+  }
+
   get collections() {
     return this.getCollection<AICollection>('collections');
   }
@@ -128,12 +135,20 @@ export class MongoService implements OnModuleInit {
     return this.getCollection<NftPrimaryCoin>('nftPrimaryCoins');
   }
 
+  get swarms() {
+    return this.getCollection<Swarm>('swarms');
+  }
+
   get addressNonces() {
     return this.getCollection<AddressNonce>('addressNonces');
   }
 
   get copyTrades() {
     return this.client.db('agent').collection<CopyTrade>('copyTrades');
+  }
+
+  get limitOrders() {
+    return this.client.db('agent').collection<LimitOrder>('limitOrders');
   }
 
   // global key-value storage
@@ -152,5 +167,9 @@ export class MongoService implements OnModuleInit {
   async getKeyStore(key: string, session?) {
     const result = await this.keyStore.findOne({ key }, { session });
     return result?.value;
+  }
+
+  get orders() {
+    return this.getCollection<Order>('orders');
   }
 }

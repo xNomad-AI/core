@@ -3,8 +3,9 @@ import {
   createTransferInstruction,
   createAssociatedTokenAccountInstruction,
   ACCOUNT_SIZE,
+  NATIVE_MINT,
 } from '@solana/spl-token';
-import { elizaLogger } from '@elizaos/core';
+import { ActionStatus, elizaLogger } from '@elizaos/core';
 import {
   Connection,
   LAMPORTS_PER_SOL,
@@ -123,7 +124,6 @@ export const transfer: Action = {
       required: ['tokenSymbol', 'tokenAddress', 'recipient', 'amount'],
     },
   },
-  similes: ['TRANSFER_TOKEN', 'TRANSFER', 'WITHDRAW_TOKEN', 'WITHDRAW'],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
@@ -135,11 +135,11 @@ export const transfer: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     const isAdmin = await isAgentAdmin(runtime, message);
     if (!isAdmin) {
       callback?.(NotAgentAdminResponse);
-      return false;
+      return 'rejected';
     }
     const content = convertNullStrings(
       state.actionParameters,
@@ -149,17 +149,17 @@ export const transfer: Action = {
       callback({
         text: `Please provide the amount of tokens to transfer`,
       });
-      return true;
+      return 'pending';
     }
 
     if (!content.recipient) {
       callback({
         text: `Please provide the address to transfer the tokens to`,
       });
-      return true;
+      return 'pending';
     }
 
-    if (!content.tokenAddress && content.tokenSymbol?.toUpperCase() === 'SOL') {
+    if ((!content.tokenAddress || content.tokenAddress === NATIVE_MINT.toBase58()) && content.tokenSymbol?.toUpperCase() === 'SOL') {
       content.tokenAddress = STANDARD_SOL_ADDRESS;
     }
 
@@ -176,7 +176,7 @@ export const transfer: Action = {
         callback({
           text: `Please provide the token CA to transfer`,
         });
-        return false;
+        return 'pending';
       }
     }
 
@@ -197,7 +197,7 @@ export const transfer: Action = {
         text: 'ok. I will not execute this transaction.',
       };
       callback?.(responseMsg);
-      return null;
+      return 'success';
     }
 
     const solanaClient = new SolanaClient(
@@ -219,6 +219,8 @@ export const transfer: Action = {
       );
       const responseMsg = {
         text: `${transferInfo}`,
+        result: 'Pending user confirmation',
+        action: 'SEND_TOKEN',
       };
       callback?.(responseMsg);
       return null;
@@ -244,7 +246,7 @@ export const transfer: Action = {
         callback({
           text: `Token ${content.tokenAddress} not found. Please provide a valid token address.`,
         });
-        return false;
+        return 'pending';
       }
       const mintAmount = BigInt(
         new BigNumber(content.amount)
@@ -255,14 +257,16 @@ export const transfer: Action = {
       const solBalance = await connection.getBalance(senderKeypair.publicKey);
       let solTransferOut =
         content.tokenAddress === STANDARD_SOL_ADDRESS ? Number(mintAmount) : 0;
-
+      let estimatedFee = 0.001 * LAMPORTS_PER_SOL;
+      const rentExemption =
+        await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
       const transaction = new Transaction();
       if (content.tokenAddress === STANDARD_SOL_ADDRESS) {
-        if (solBalance < solTransferOut) {
+        if (solBalance < (solTransferOut + estimatedFee + rentExemption)) {
           callback({
-            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+            text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.(${rentExemption / LAMPORTS_PER_SOL} SOL for account rent exemption, ${estimatedFee / LAMPORTS_PER_SOL} SOL for transaction fee)`,
           });
-          return;
+          return 'failed';
         }
         transaction.add(
           SystemProgram.transfer({
@@ -296,7 +300,7 @@ export const transfer: Action = {
           callback({
             text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${solTransferOut / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
           });
-          return;
+          return 'failed';
         }
         const senderTokenBalance =
           await connection.getTokenAccountBalance(senderATA);
@@ -307,7 +311,7 @@ export const transfer: Action = {
           callback({
             text: `Insufficient token balance. Sender has ${senderTokenBalance.value.uiAmount} ${content.tokenSymbol}, but needs ${content.amount} to complete the transfer.`,
           });
-          return;
+          return 'failed';
         }
         const instructions = [];
         if (!recipientATAInfo) {
@@ -337,14 +341,12 @@ export const transfer: Action = {
       const recentBlockhash = await connection.getLatestBlockhash('confirmed');
       transaction.feePayer = senderKeypair.publicKey;
       transaction.recentBlockhash = recentBlockhash.blockhash;
-      const estimatedFee = await transaction.getEstimatedFee(connection);
-      const rentExemption =
-        await connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE);
+      estimatedFee = await transaction.getEstimatedFee(connection);
       if (solBalance < solTransferOut + estimatedFee + rentExemption) {
         callback({
-          text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.`,
+          text: `Insufficient sol balance. Sender has ${solBalance / LAMPORTS_PER_SOL} SOL, but tx needs ${(estimatedFee + solTransferOut + rentExemption) / LAMPORTS_PER_SOL} SOL to complete the transfer.(${rentExemption / LAMPORTS_PER_SOL} SOL for account rent exemption, ${estimatedFee / LAMPORTS_PER_SOL} SOL for transaction fee)`,
         });
-        return;
+        return 'failed';
       }
       const signature = await sendAndConfirmTransaction(
         connection,
@@ -368,8 +370,7 @@ export const transfer: Action = {
           },
         });
       }
-
-      return true;
+      return 'success';
     } catch (error) {
       elizaLogger.error('Error during token transfer:', error);
       if (callback) {
@@ -378,27 +379,11 @@ export const transfer: Action = {
           content: { error: error.message },
         });
       }
-      return false;
+      return 'failed';
     }
   },
 
-  examples: [
-    [
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'Send 69 EZSIS BieefG47jAHCGZBxi2q87RDuHyGZyYC3vAzxpyu8pump to 9jW8FPr6BSSsemWPV22UUCzSqkVdTp6HTyPqeqyuBbCa',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'Sending the tokens now...',
-          action: 'SEND_TOKEN',
-        },
-      },
-    ],
-  ] as ActionExample[][],
+  examples: [] as ActionExample[][],
 } as Action;
 
 function formatTransferInfo(from: string, content): string {

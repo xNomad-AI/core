@@ -9,7 +9,7 @@ import {
   AICollection,
   AINft,
   CharacterConfig,
-  DEFAULT_TRADE_SETTINGS,
+  DEFAULT_TRADE_SETTINGS_SOLANA,
   NftConfig,
 } from '../shared/mongo/types.js';
 import { NftgoService } from '../shared/nftgo.service.js';
@@ -20,23 +20,28 @@ import {
   AssetsByCollection,
   NEW_AI_NFT_EVENT,
   NftSearchOptions,
+  normalizeBlockchainAddress,
 } from './nft.types.js';
+import { AgentTradeService } from '../agent/agent-trade.service.js';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
-  private queue: PQueue;
-
+  private queue: PQueue; // queue for starting agents
+  private backgroundQueue: PQueue; // queue for background agents
+  
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly nftgo: NftgoService,
     private readonly mongo: MongoService,
     private readonly elizaManager: ElizaManagerService,
     private readonly addressService: AddressService,
+    private readonly agentTradeService: AgentTradeService,
     private readonly eventEmitter: EventEmitter2,
     private readonly tradeMonitorService: TradeMonitorService,
   ) {
     this.logger.setContext(NftService.name);
-    this.queue = new PQueue({ concurrency: 3 });
+    this.backgroundQueue = new PQueue({ concurrency: 2 });
+    this.queue = new PQueue({ concurrency: 3});
   }
 
   onApplicationBootstrap() {
@@ -51,22 +56,23 @@ export class NftService implements OnApplicationBootstrap {
     const configedNfts = await this.mongo.nftConfigs.find().toArray();
     const configedNftIds = configedNfts.map((nft) => nft.nftId);
     const cursor = this.mongo.nfts
-      .find({ chain: 'solana', nftId: { $in: configedNftIds } })
+      .find({ nftId: { $in: configedNftIds } })
       .addCursorFlag('noCursorTimeout', true);
     while (await cursor.hasNext()) {
       const nft = await cursor.next();
-      await this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft]);
+      this.eventEmitter.emit(NEW_AI_NFT_EVENT, [nft], true, true);
     }
   }
 
   @OnEvent(NEW_AI_NFT_EVENT, { async: true })
-  async handleNewAINfts(nfts: AINft[], restart?: boolean): Promise<void> {
+  async handleNewAINfts(nfts: AINft[], restart?: boolean, isBackground?: boolean): Promise<void> {
     for (const nft of nfts) {
       if (nft?.aiAgent?.engine !== 'eliza') {
         continue;
       }
+      const queue = isBackground ? this.backgroundQueue : this.queue;
 
-      await this.queue.add(async () => {
+      await queue.add(async () => {
         const isAgentRunning = await this.elizaManager.isAgentRunning(
           nft.agentId,
         );
@@ -120,7 +126,6 @@ export class NftService implements OnApplicationBootstrap {
     const nft = await this.mongo.nfts.findOne({ nftId });
     void this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
-      this.logger.error(e);
     });
 
     // hiden the http proxy
@@ -134,19 +139,19 @@ export class NftService implements OnApplicationBootstrap {
 
   async getNftConfig(
     nftId: string,
+    chain: string,
     options?: {
       ignoreTwitterHttpProxy?: boolean;
     },
   ): Promise<NftConfig> {
+    const {agentId} = await this.mongo.nfts.findOne({nftId});
     let nftConfig: NftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
 
-    nftConfig = nftConfig || {nftId, chain: 'solana'};
-    if (!nftConfig?.trade){
-      nftConfig.trade =  DEFAULT_TRADE_SETTINGS;
-    }
-
+    nftConfig = nftConfig || {nftId, chain,};
+    nftConfig.tradeSettings = await this.agentTradeService.getAgentTradeSettings(agentId);
+    nftConfig.trade = await this.agentTradeService.getTradeSettingsByChain(agentId, chain);
     // default hiden the http proxy
     if (
       (options?.ignoreTwitterHttpProxy ?? true) &&
@@ -157,8 +162,8 @@ export class NftService implements OnApplicationBootstrap {
     return nftConfig;
   }
 
-  async getTwitterHttpProxy(nftId: string) {
-    const nftConfig = await this.getNftConfig(nftId, {
+  async getTwitterHttpProxy(nftId: string, chain: string) {
+    const nftConfig = await this.getNftConfig(nftId, chain, {
       ignoreTwitterHttpProxy: false,
     });
     return nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
@@ -169,7 +174,6 @@ export class NftService implements OnApplicationBootstrap {
     const nft = await this.mongo.nfts.findOne({ nftId });
     void this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
-      this.logger.error(e);
     });
   }
 
@@ -191,7 +195,7 @@ export class NftService implements OnApplicationBootstrap {
     if (!nft) {
       return false;
     }
-
+    address = normalizeBlockchainAddress(nft.chain, address);
     const owner = await this.mongo.nftOwners.findOne({
       chain: nft.chain,
       contractAddress: nft.contractAddress,
@@ -458,16 +462,15 @@ export class NftService implements OnApplicationBootstrap {
       throw new Error('Agent has already bound primary coin');
     }
 
-    const { solana: agentWallet } = await this.elizaManager.getAgentAccount(
-      chain,
-      nftId,
-    );
+    const agentWallet = await this.elizaManager
+      .getAgentAccount(chain, nftId)
+      .then((res) => (chain === 'solana' ? res.solana : res.evm));
 
     const token = await this.tradeMonitorService.getAgentCreateToken(address);
     if (!token) {
       throw new Error('token not indexed');
     }
-    if (token.creatorAddress !== agentWallet) {
+    if (token.creatorAddress.toLowerCase() !== agentWallet.toLowerCase()) {
       throw new Error('agent is not the creator of the token');
     }
     await this.tradeMonitorService.bindAgentCreatedTokenToNft({

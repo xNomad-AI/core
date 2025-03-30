@@ -7,10 +7,15 @@ import {
   type Memory,
   ModelClass,
   type State,
-  type Action,
+  type Action, ActionStatus,
 } from '@elizaos/core';
 
 const chatTemplate = `
+# Task: Carefully analyze the conversation context and generate response message.
+**Format** 
+    { 
+    "text": "<string>"
+} 
 # Knowledge 
 {{knowledge}} 
  
@@ -21,13 +26,7 @@ About {{agentName}}:
 {{attachments}} 
   
 {{recentMessages}} 
-
-# Task: Carefully analyze the conversation context and generate response message.
-**Format** 
-    { 
-    "user": "{{agentName}}", 
-    "text": "<string>",  
-} `;
+`;
 export const none: Action = {
   functionCallSpec: {
     name: 'none',
@@ -53,7 +52,7 @@ export const none: Action = {
     state: State,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback,
-  ): Promise<boolean> => {
+  ): Promise<ActionStatus> => {
     const chatContext = composeContext({
       state,
       template: chatTemplate,
@@ -65,7 +64,7 @@ export const none: Action = {
       modelClass: ModelClass.MEDIUM,
     });
     callback?.(response);
-    return true;
+    return 'success';
   },
   examples: [
     [

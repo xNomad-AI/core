@@ -4,6 +4,12 @@ export const AGENT_DB_NAME = 'agent';
 export const COLLECTIONS = [
   {
     db: DB_NAME,
+    name: 'collectionConfigs',
+    indexes: [],
+    uniqueIndexes: [{ id: 1 }],
+  },
+  {
+    db: DB_NAME,
     name: 'collections',
     indexes: [],
     uniqueIndexes: [{ id: 1 }],
@@ -145,5 +151,25 @@ export const COLLECTIONS = [
         targetAddress: 1,
       },
     ],
+  },
+  {
+    db: DB_NAME,
+    name: 'orders',
+    indexes: [
+      { txHash: 1 },
+      { nftId: 1 },
+      { 'from': 1 },
+      { 'to': 1 },
+      { timestamp: -1 }
+    ],
+    uniqueIndexes: [
+      { txHash: 1 }
+    ],
+  },
+  {
+    db: DB_NAME,
+    name: 'swarms',
+    indexes: [],
+    uniqueIndexes: [],
   },
 ] as const;

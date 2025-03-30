@@ -40,6 +40,7 @@ interface CreateOrderParams {
 }
 
 interface CreateCopyTradeParams {
+  chain: string;
   targetAddress: string;
   walletAddress: string;
   expiredAt: number;
@@ -213,6 +214,7 @@ export class TradeMonitorService {
     address: string;
     creatorAddress: string;
     nftId: string;
+    logo?: string;
     bound: boolean; // whether the token is bound to an nft
   }) {
     try {
@@ -224,6 +226,7 @@ export class TradeMonitorService {
             address: params.address,
             creatorAddress: params.creatorAddress,
             nftId: params.nftId,
+            logo: params.logo,
             bound: params.bound,
           },
           {
@@ -243,6 +246,7 @@ export class TradeMonitorService {
   }
 
   async getAgentCreatedTokens(params: {
+    chain: string;
     sortBy: 'deployedTime' | 'volume24h' | 'marketCap';
     sortOrder: 'desc' | 'asc';
     offset: number;
@@ -254,6 +258,7 @@ export class TradeMonitorService {
       const response = await firstValueFrom(
         this.httpService.get(`${this.endpoint}/ai-agent-coin/coins`, {
           params: {
+            chain: params.chain,
             sortBy: params.sortBy,
             sortOrder: params.sortOrder,
             offset: params.offset,

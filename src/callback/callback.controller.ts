@@ -3,17 +3,23 @@ import { ConfigService } from '@nestjs/config';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { Body, Headers, HttpCode, UnauthorizedException } from '@nestjs/common';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { SwapTokenService } from '@elizaos/plugin-solana';
-import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import {
-  getWalletKeyFromWalletService,
+  getWalletKeyFromWalletService as getSolanaWallet,
+  SwapTokenService as SolanaSwapTokenService,
   SolanaClient,
 } from '@elizaos/plugin-solana';
-import { TEEMode } from '@elizaos/plugin-tee';
+import { 
+  getAccountFromWalletService as getEvmWallet, 
+  SwapTokenService as EvmSwapTokenService,
+  nativeTokenAddress,
+  EVMClient,
+} from '@elizaos/plugin-evm';
 import { BigNumber } from 'bignumber.js';
-import { DEFAULT_TRADE_SETTINGS } from '../shared/mongo/types.js';
+import { CopyTrade, DEFAULT_TRADE_SETTINGS_SOLANA } from '../shared/mongo/types.js';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
-
+import { NATIVE_MINT } from '@solana/spl-token';
+import { AgentTradeService } from '../agent/agent-trade.service.js';
 class BaseCallbackDto {
   monitorId: number;
   clientId: string;
@@ -33,7 +39,16 @@ class AddressCallbackDto extends BaseCallbackDto {
   transfers: OKXTransfer[];
 }
 
-function getSwapInfo(callback: AddressCallbackDto) {
+class TxToCopy {
+  inputTokenCA: string;
+  txSigner: string;
+  txHash: string;
+  inputTokenAmount: string;
+  outputTokenCA: string;
+  outputTokenAmount: string;
+}
+
+function getSwapInfo(callback: AddressCallbackDto) : TxToCopy {
   if (callback.transfers.length !== 2) {
     throw new Error('Invalid swap transfer length');
   }
@@ -71,6 +86,7 @@ export class CallbackController {
     private appConfig: ConfigService,
     private logger: TransientLoggerService,
     private elizaManager: ElizaManagerService,
+    private agentTradeService: AgentTradeService,
     private mongo: MongoService,
   ) {
     this.apikey = this.appConfig.get<string>('TRADE_MONITOR_SERVICE_API_KEY')!;
@@ -115,58 +131,126 @@ export class CallbackController {
     @Headers('api-key') apiKey: string,
   ) {
     this.validateApiKey(apiKey);
-    this.logger.log('Received address monitor callback', {
+    this.logger.log(`Copy trade ${id} received`, {
       ...callbackData,
       id,
     });
-
-    const solAddress = this.appConfig.get<string>('SOL_ADDRESS');
-
-    const { inputTokenCA, inputTokenAmount, outputTokenCA, txSigner, txHash } =
-      getSwapInfo(callbackData);
-    if (inputTokenCA != solAddress && outputTokenCA != solAddress) {
-      this.logger.log(`ignore not SOL swap, ${id}`);
-      return;
-    }
-
     const copyTradeTask = await this.mongo.copyTrades.findOne({id: Number(id)});
     if (!copyTradeTask) {
-      throw new Error('Copy trade not found');
+      this.logger.log(`Copy trade ${id} not found`);
+      return;
+    }
+    if (copyTradeTask.status !== 'running') {
+      this.logger.log(`Copy trade ${id} is not running`);
+      return;
+    }
+  
+    const agentId = copyTradeTask.agentId;
+    const nft = await this.mongo.nfts.findOne({ agentId });
+    const wallet = await this.elizaManager.getAgentAccountKeypair(nft.chain, nft.nftId, agentId);
+    const tradeConfig = await this.agentTradeService.getTradeSettingsByChain(agentId, nft.chain);
+    const swapInfo = getSwapInfo(callbackData);
+    this.logger.log(`copy trade ${id} swapInfo: ${JSON.stringify(swapInfo)}`);
+    if (copyTradeTask.chain === 'solana') {
+      return await this.copyTradeSolana(wallet, copyTradeTask, swapInfo, tradeConfig);
+    } else {
+      return await this.copyTradeEvm(wallet, copyTradeTask, swapInfo, tradeConfig);
+    }
+  }
+  
+
+  private validateApiKey(apiKey: string) {
+    if (apiKey !== this.apikey) {
+      throw new UnauthorizedException('Invalid API key');
+    }
+  }
+
+  async copyTradeEvm(wallet: {evmAddress: string, evmPrivateKey: string}, copyTradeTask: CopyTrade, {inputTokenCA, outputTokenCA, inputTokenAmount, txSigner, txHash}: TxToCopy, {mode, priorityFee, tip, slippage}: any = DEFAULT_TRADE_SETTINGS_SOLANA) {
+    if (inputTokenCA !== nativeTokenAddress && outputTokenCA !== nativeTokenAddress) {
+      this.logger.log(`ignore not native token swap, id: ${copyTradeTask.id}`);
+      return;
+    }
+    const chain = copyTradeTask.chain;
+    const rpcUrl = this.appConfig.get<string>(`${chain.toUpperCase()}_RPC_URL`);
+    const {evmAddress: address, evmPrivateKey: privateKey} = wallet;
+    const evmClient = new EVMClient({rpcUrl, chainName: chain});
+    const tokenDecimals = await evmClient.getTokenDecimals(inputTokenCA);
+
+    const swapTokenDto: any = {
+      amount: '0',
+      chainName: chain,
+      rpcUrl,
+      inputTokenCA,
+      outputTokenCA,
+      mode,
+      slippage,
+      privateKey,
+      userWalletAddress: address,
+    }
+    // copy buy
+    if (inputTokenCA === nativeTokenAddress) {
+      if (copyTradeTask.mode == 'fixedAmount') {
+        swapTokenDto.amount = BigNumber(copyTradeTask.fixedAmount).multipliedBy(10 ** tokenDecimals).toString();
+      } else {
+        const userBalance = await evmClient.getTokenUIBalance(inputTokenCA, address);
+        swapTokenDto.amount = BigNumber(userBalance).multipliedBy(copyTradeTask.percentage).multipliedBy(10 ** tokenDecimals).toFixed(0);
+      }
+    }
+    // copy sell
+    if (outputTokenCA === nativeTokenAddress) {
+      if (!copyTradeTask.copySell) {
+        this.logger.log(`ignore copy sell, id: ${copyTradeTask.id}`);
+        return;
+      }
+      // calculate: inputAmount = userBalance * balanceChange / (txSignerBalance + balanceChange)
+      const txSignerBalance = await evmClient.getTokenUIBalance(inputTokenCA, txSigner);
+      const balanceChange = inputTokenAmount;
+      const percentage = Number(balanceChange) / (Number(balanceChange) + Number(txSignerBalance));
+      const userBalance = await evmClient.getTokenUIBalance(inputTokenCA, address);
+      swapTokenDto.amount = BigNumber(userBalance).multipliedBy(percentage).multipliedBy(10 ** tokenDecimals).toFixed(0);
     }
 
-    if (copyTradeTask.status !== 'running') {
-      this.logger.log(`Copy trade is not running ${id}`);
+    if (Number(swapTokenDto.amount) == 0){
+      this.logger.log(`ignore zero amount, ${copyTradeTask.id}`);
       return;
     }
 
-    const agentId = copyTradeTask.agentId;
-    const nft = await this.mongo.nfts.findOne({ agentId });
-    const nftConfig = await this.mongo.nftConfigs.findOne({ nftId: nft.nftId });
-    const { slippage, mode, priorityFee, tip } =
-      nftConfig?.trade || DEFAULT_TRADE_SETTINGS;
-    const connection = await new Connection(
+    this.logger.log(`copy trade request: ${JSON.stringify({
+      ...swapTokenDto,
+      privateKey: undefined,
+      rpcUrl: undefined,
+    })}`);
+    const txId = await new EvmSwapTokenService().swapToken(swapTokenDto);
+    return {
+      success: true,
+      txId,
+      message: `copy trade processed successfully, id: ${copyTradeTask.id}, tx: ${txId}`,
+    };
+  }
+
+
+
+  async copyTradeSolana({ solanaKeypair }: {solanaKeypair: Keypair}, copyTradeTask: CopyTrade, {inputTokenCA, outputTokenCA, inputTokenAmount, txSigner, txHash}: TxToCopy, {mode, priorityFee, tip, slippage}: any = DEFAULT_TRADE_SETTINGS_SOLANA) {
+    const solAddress = NATIVE_MINT.toBase58();
+    if (inputTokenCA != solAddress && outputTokenCA != solAddress) {
+      this.logger.log(`ignore not SOL swap, id: ${copyTradeTask.id}`);
+      return;
+    }
+
+    const connection = new Connection(
       this.appConfig.get('SOLANA_RPC_URL'),
       'confirmed',
     );
-    const keypairResult = await getWalletKeyFromWalletService({
-      teeMode: this.appConfig.get<string>('TEE_MODE') as TEEMode,
-      walletSecretSalt: this.elizaManager.getAgentSecretSalt('solana', nft.nftId),
-      agentId,
-      requirePrivateKey: true,
-      endpoint: this.appConfig.get<string>('WALLET_SERVICE_ENDPOINT'),
-      walletServiceSecretToken: this.appConfig.get<string>(
-        'WALLET_SERVICE_SECRET_TOKEN',
-      ),
-    });
+
     const solanaClient = new SolanaClient(
       this.appConfig.get<string>('SOLANA_RPC_URL'),
-      keypairResult.keypair.publicKey,
+      solanaKeypair.publicKey,
     );
     const swapTokenDto: any = {
       amount: '0',
       connection,
       inputTokenCA,
-      keyPair: keypairResult.keypair,
+      keyPair: solanaKeypair,
       mode,
       outputTokenCA,
       priorityFee: priorityFee,
@@ -192,11 +276,12 @@ export class CallbackController {
     // copy sell
     if (outputTokenCA === solAddress) {
       if (!copyTradeTask.copySell) {
-        this.logger.log(`ignore copy sell, ${id}`);
+        this.logger.log(`ignore copy sell, id: ${copyTradeTask.id}`);
         return;
       }
+      // copy sell percentage of the tx
       const tokenAccount = await new SolanaClient(connection.rpcEndpoint, new PublicKey(txSigner)).getTokenAccount(inputTokenCA);
-      const {preBalance, postBalance} = await SwapTokenService.getTokenBalanceChange(connection, txHash, tokenAccount);
+      const {preBalance, postBalance} = await SolanaSwapTokenService.getTokenBalanceChange(connection, txHash, tokenAccount);
       const sellPercentage = preBalance == '0'? 1: BigNumber(preBalance).minus(postBalance).dividedBy(preBalance);
       const balance = await solanaClient.getRawBalance(inputTokenCA);
       this.logger.log(`copy sell tx ${txHash} sell percentage: ${sellPercentage}, balance: ${balance}`);
@@ -204,7 +289,7 @@ export class CallbackController {
     }
 
     if (Number(swapTokenDto.amount) == 0){
-      this.logger.log(`ignore zero amount, ${id}`);
+      this.logger.log(`ignore zero amount, ${copyTradeTask.id}`);
       return;
     }
 
@@ -213,17 +298,13 @@ export class CallbackController {
       connection: undefined,
       keyPair: undefined,
     })}`);
-    const txId = await new SwapTokenService().swapToken(swapTokenDto);
+    const txId = await new SolanaSwapTokenService().swapToken(swapTokenDto);
     return {
       success: true,
       txId,
-      message: `copy trade callback processed successfully, ${txId}`,
+      message: `copy trade processed successfully, id: ${copyTradeTask.id}, tx: ${txId}`,
     };
-  }
-
-  private validateApiKey(apiKey: string) {
-    if (apiKey !== this.apikey) {
-      throw new UnauthorizedException('Invalid API key');
-    }
-  }
 }
+}
+
+

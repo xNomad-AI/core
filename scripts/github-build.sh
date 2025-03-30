@@ -3,28 +3,31 @@
 set -e
 
 VERSION=$1
-
 TARGET_DIR="data/eliza"
+
 # check if dir exists
 if [ -d "$TARGET_DIR" ]; then
-  echo "exists"
+  echo "Directory exists. Updating to $VERSION..."
+  cd $TARGET_DIR
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  git fetch --all
+  if [ "$CURRENT_BRANCH" == "$VERSION" ]; then
+      git fetch --all
+      git pull origin "$VERSION" --rebase
+      echo "Latest changes pulled."
+    else
+      echo "Switching to branch $VERSION..."
+      git fetch --all
+      git checkout "$VERSION"
+      git pull origin "$VERSION"
+    fi
 else
-  git clone -b feat/function-call https://github.com/xNomad-AI/eliza.git $TARGET_DIR
+  git clone -b $VERSION https://github.com/xNomad-AI/eliza.git $TARGET_DIR
+  cd $TARGET_DIR
 fi
 
-cd $TARGET_DIR
-git fetch --all
-git checkout $VERSION
-
-# pnpm run clean || true
-
-node --version
+# Install dependencies and build
 pnpm install --no-frozen-lockfile
 pnpm run build
-# pnpm run build --filter=@elizaos/core
-# pnpm run build --filter=@elizaos/client-direct
-# pnpm run build --filter=@elizaos/plugin-tee
-# pnpm run build --filter=@elizaos/client-telegram
-# pnpm run build --filter=@elizaos/adapter-mongodb
 
-echo elizaos build done
+echo "elizaos build done"

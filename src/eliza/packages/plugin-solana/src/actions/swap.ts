@@ -8,7 +8,7 @@ import {
   ModelClass,
   type State,
   type Action,
-  elizaLogger,
+  elizaLogger, ActionStatus,
 } from '@elizaos/core';
 import {
   Connection, LAMPORTS_PER_SOL,
@@ -143,53 +143,13 @@ export const executeSwap: Action = {
   },
   name: 'EXECUTE_SWAP',
   suppressInitialMessage: true,
-  similes: [
-    'SWAP_TOKENS',
-    'TOKEN_SWAP',
-    'TRADE_TOKENS',
-    'EXCHANGE_TOKENS',
-    'BUY_TOKENS',
-    'SELL_TOKENS',
-  ],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
   description:
     'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
   handler: handleExecuteSwap,
-  examples: [
-    [
-      {
-        user: '{{user1}}',
-        content: {
-          inputTokenSymbol: 'SOL',
-          inputTokenCA: 'So11111111111111111111111111111111111111112',
-          outputTokenSymbol: 'USDC',
-          outputTokenCA: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-          amount: 0.1,
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'Swap Request:--- swap 0.1 SOL for USDC -----, please confirm by replying with "yes" or "ok"',
-        },
-      },
-      {
-        user: '{{user1}}',
-        content: {
-          text: 'yes',
-        },
-      },
-      {
-        user: '{{user2}}',
-        content: {
-          text: 'Swap completed successfully! Transaction ID: ...',
-        },
-      },
-    ],
-    // Add more examples as needed
-  ] as ActionExample[][],
+  examples: [] as ActionExample[][],
 } as Action;
 
 async function handleExecuteSwap(
@@ -198,22 +158,22 @@ async function handleExecuteSwap(
   state: State,
   _options: { [key: string]: unknown },
   callback?: HandlerCallback,
-): Promise<boolean> {
-  const response = await checkResponse(
+): Promise<ActionStatus> {
+  const {parameters, status} = await checkResponse(
     runtime,
     message,
     state,
     _options,
     callback,
   );
-  if (!response) {
-    return true;
+  if (!status || status != 'success') {
+    return status || 'failed';
   }
 
   const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
   const connection = new Connection(rpcUrl);
   const { keypair } = await getWalletKey(runtime, true);
-  const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(response.inputTokenCA);
+  const decimals = await new SolanaClient(rpcUrl, keypair.publicKey).getMintDecimals(parameters.inputTokenCA);
   const {slippage, priorityFee, tip, mode } = await getTradeSettings(runtime.agentId);
   let txid: string;
   try {
@@ -221,9 +181,9 @@ async function handleExecuteSwap(
       {
         connection,
         userWalletAddress: keypair.publicKey.toBase58(),
-        inputTokenCA : response.inputTokenCA,
-        outputTokenCA: response.outputTokenCA,
-        amount: BigNumber(response.inputTokenAmount).multipliedBy(10 ** decimals).integerValue(),
+        inputTokenCA : parameters.inputTokenCA,
+        outputTokenCA: parameters.outputTokenCA,
+        amount: BigNumber(parameters.inputTokenAmount).multipliedBy(10 ** decimals).integerValue(),
         slippage,
         priorityFee,
         keyPair :keypair,
@@ -236,14 +196,14 @@ async function handleExecuteSwap(
       text: `${e}`,
       isError: true,
     });
-    return false;
+    return 'failed';
   }
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
   const responseMsg = {
     text: `Swap completed successfully! Transaction ID: ${txid}`,
   };
   callback?.(responseMsg);
-  return true;
+  return 'success';
 }
 
 async function checkResponse(
@@ -253,24 +213,27 @@ async function checkResponse(
   _options: { [key: string]: unknown },
   callback?: HandlerCallback,
 ): Promise<{
-  inputTokenAmount: number | null;
-  inputTokenSymbol: string;
-  inputTokenPercentage: number | null;
-  outputTokenSymbol: string;
-  inputTokenCA: string;
-  outputTokenAmount: number | null;
-  outputTokenCA: string;
-  programId: PublicKey;
+  status: ActionStatus;
+  parameters?: {
+    inputTokenAmount: number | null;
+    inputTokenSymbol: string;
+    inputTokenPercentage: number | null;
+    outputTokenSymbol: string;
+    inputTokenCA: string;
+    outputTokenAmount: number | null;
+    outputTokenCA: string;
+    programId: PublicKey;
+}
 }> {
   const isAdmin = await isAgentAdmin(runtime, message);
   if (!isAdmin) {
     callback?.(NotAgentAdminResponse);
-    return null;
+    return { status: 'rejected' };
   }
 
   // generate formatted response from chat
   let swapReq = convertNullStrings(state.actionParameters) as SwapTokenRequest;
-  elizaLogger.log('Swap request:', swapReq);
+  elizaLogger.info('Swap request:', swapReq);
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
   swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
   swapReq.outputTokenAmount = Number(swapReq.outputTokenAmount);
@@ -298,9 +261,10 @@ async function checkResponse(
     if (!swapReq.inputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid inputToken CA you want to sell',
+        result: 'Pending inputToken CA',
       };
       callback?.(responseMsg);
-      return null;
+      return { status: 'pending'};
     }
   }
 
@@ -312,9 +276,10 @@ async function checkResponse(
     if (!swapReq.outputTokenCA) {
       const responseMsg = {
         text: 'Please provide a valid outputToken CA you want to buy',
+        result: 'Pending outputToken CA',
       };
       callback?.(responseMsg);
-      return null;
+      return { status: 'pending'};
     }
   }
 
@@ -327,13 +292,16 @@ async function checkResponse(
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
+      result: 'Pending outputToken Amount',
     });
+    return { status: 'pending'};
   }
 
   if (
     !Number.isFinite(swapReq.inputTokenAmount) &&
     Number.isFinite(swapReq.inputTokenPercentage) &&
     swapReq.inputTokenPercentage != 0
+
   ) {
     const balance = await client.getUIBalance(swapReq.inputTokenCA);
     swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
@@ -346,25 +314,29 @@ async function checkResponse(
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
       action: 'EXECUTE_SWAP',
+      result: 'Pending inputToken Amount',
     };
     callback?.(responseMsg);
-    return null;
+    return { status: 'pending'};
   }
 
   const balance = await client.getUIBalance(swapReq.inputTokenCA);
   if (!balance) {
     const responseMsg = {
-      text: 'Your input balance is 0.',
+      text: `Your input ${swapReq.inputTokenSymbol}(${swapReq.inputTokenCA})  balance is 0.`,
+      result: 'Insufficient inputToken Balance',
     };
     callback?.(responseMsg);
+    return { status: 'failed'};
   }
 
   if (balance < swapReq.inputTokenAmount) {
     const responseMsg = {
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
+      result: 'Insufficient balance for swap',
     };
     callback?.(responseMsg);
-    return null;
+    return { status: 'failed'};
   }
 
   const WSOL_AMOUNT = await client.getUIBalance(NATIVE_MINT.toBase58());
@@ -379,9 +351,10 @@ async function checkResponse(
         text:
           `Insufficient balance for swap gas fee, required: ${GAS_BALANCE} SOL but only have: ` +
           balance,
+        result: 'Insufficient balance for swap gas fee',
       };
       callback?.(responseMsg);
-      return null;
+      return { status: 'failed'};
     }
   } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BALANCE) {
     // buy with SOL
@@ -391,9 +364,10 @@ async function checkResponse(
       text:
         `Insufficient balance for swap gas fee, required: ${requiredAmount} SOL but only have: ` +
         WSOL_AMOUNT,
+      result: 'Insufficient balance for swap gas fee',
     };
     callback?.(responseMsg);
-    return null;
+    return { status: 'failed'};
   }
 
   elizaLogger.info(`checking if user confirm to execute swap`);
@@ -413,9 +387,11 @@ async function checkResponse(
   if (confirmResponse.userAcked == 'rejected') {
     const responseMsg = {
       text: 'ok. I will not execute this transaction.',
+      result: 'User rejected the swap',
+      action: 'EXECUTE_SWAP',
     };
     callback?.(responseMsg);
-    return null;
+    return { status: 'cancelled'};
   }
 
   if (confirmResponse.userAcked == 'pending') {
@@ -430,12 +406,16 @@ async function checkResponse(
     const responseMsg = {
       text: `${swapInfo}`,
       action: 'EXECUTE_SWAP',
+      result: 'Pending user confirmation',
     };
     callback?.(responseMsg);
-    return null;
+    return { status: 'pending'};
   }
 
-  return { ...swapReq, programId };
+  return {
+    status: 'success',
+    parameters: { ...swapReq, programId },
+  };
 }
 
 function formatConfirmSwapInfo(params: {

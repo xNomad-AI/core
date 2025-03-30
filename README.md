@@ -35,23 +35,61 @@ With this setup, you can confidently manage NFT-related assets in a fully privat
 ### Start Application Locally
 
 ```shell
-# vscode reopen and rebuild in devcontainer
+# install nvm
+# curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+# export NVM_DIR="$HOME/.nvm"
+# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+# nvm install 23.5
+# nvm use 23.5
+# npm install -g pnpm
 
+# start dependencies
+docker compose -f docker-compose-core.yml up -d
+
+pnpm preinstall
 pnpm install
 
 # copy and edit the .env file
 cp .env.example .env
 # change the apikeys in .env
-# https://openai.com/api/
+# WALLET_SERVICE_ENDPOINT=http://localhost:8081
+# MONGODB_URL=mongodb://localhost:27017/?directConnection=true&serverSelectionTimeoutMS=2000
 # OPENAI_API_KEY=..
 # BIRDEYE_API_KEY=..
 # NFTGO_API_KEY=..
-# ...
 
-# start tee wallet service
-pnpm start:wallet
 # start core service
 pnpm start:local
+# visit the link to test the agent http://localhost:5173/
+# if there not exists an agent, then start one
+curl -XPOST 'http://localhost:8080/agent' -d '{ "nftId": "your nft id", "chain": "solana", "restart": true}' -H 'Content-Type: application/json'
+```
+
+### Start Application in a remote host with devcontainer
+
+if you start the app in local devcontainer, you should start at `5`.
+
+```bash
+# 1. open the vscode and add remote host using remote-explorer
+# 2. mkdir and cd to target dir, change the `example` to your name
+mkdir example && cd example
+# 3. clone code
+git clone -b develop https://github.com/xNomad-AI/core.git
+#   3.1 multi user in one remote host (docker ps and if there exists a mongodb instance)
+#   replace the `$USERNAME` in the .devcontainer/docker-compose.yml to your username
+#   in the .devcontainer/devcontainer.json, replace `"service": "core"` -> `"service": "core-$USERNAME"`, $USERNAME is your username
+#   in the .devcontainer/devcontainer.json, replace `"docker-compose.yml"` -> `"core-docker-compose.yml"`
+# 4. open the devcontainer, windows(ctrl+shift+p) and type `rebuild without cache` and then click the first selection
+# 5. set env, change the required apikey [OPENAI_API_KEY, BIRDEYE_API_KEY, NFTGO_API_KEY] in the .env
+cp .env.example .env
+# 6. install packages
+pnpm preinstall && pnpm install
+# 7. start app
+pnpm start:local
+# 8. vscode add portforward, [3000, 8080]
+# 9. visit the link agent http://remoteIP:5173/
+# 10. if there not exists an agent, then start one
+curl -XPOST 'http://localhost:8080/agent' -d '{ "nftId": "you nft id", "chain": "solana", "restart": true}' -H 'Content-Type: application/json'
 ```
 
 ### Start Application on Phala Network
