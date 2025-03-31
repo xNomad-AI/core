@@ -403,11 +403,11 @@ function formatTaskInfo({
   const displayedOutputSymbol = trimTokenSymbol(`$${outputTokenSymbol || outputTokenCA}`);
   const displayedtargetToken = trimTokenSymbol(`$${targetToken} (${targetTokenCA})`);
 
-  const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'buy' : 'sell';
-  const tokenInfo = swapType === 'sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
+  const swapType = inputTokenCA === NATIVE_MINT.toBase58() ? 'Buy' : 'Sell';
+  const tokenInfo = swapType === 'Sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
 
   const amountInfo =
-    swapType === 'sell'
+    swapType === 'Sell'
       ? `${inputTokenAmount}(${(inputTokenPercentage * 100)?.toFixed(1)}%)`
       : `${inputTokenAmount} ${displayedInputSymbol}`;
   const trigger = priceCondition
