@@ -24,7 +24,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "preinstall": "/bin/bash ./scripts/github-build.sh zg/agent-router"
+    "preinstall": "/bin/bash ./scripts/github-build.sh zg/agent-router && /bin/bash ./scripts/client-twitter.sh ab7d5832fa3d2e798089bb4339f6023609715590"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
@@ -61,8 +61,10 @@
     "@types/dockerode": "^3.3.34",
     "@web3-storage/w3up-client": "^17.1.2",
     "@willsoto/nestjs-prometheus": "^6.0.2",
-    "@xnomad/task-manager": "file:../client-twitter/packages/task-manager",
-    "agent-twitter-client": "https://github.com/xNomad-AI/agent-twitter-client.git#main",
+    "agent-twitter-client": "https://github.com/xNomad-AI/agent-twitter-client.git#0.0.1",
+    "@elizaos/client-twitter": "file:data/client-twitter/packages/client-twitter",
+    "@xnomad/task-manager-cli": "file:data/client-twitter/packages/task-manager-cli",
+    "@xnomad/task-manager": "file:data/client-twitter/packages/task-manager",
     "amqplib": "^0.10.5",
     "async-retry": "^1.3.3",
     "axios": "^1.7.9",
@@ -122,8 +124,10 @@
   "pnpm": {
     "overrides": {
       "@elizaos/core": "file:data/eliza/packages/core",
-      "@elizaos/client-twitter": "file:../client-twitter/packages/client-twitter",
-      "@xnomad/task-manager-cli": "file:../client-twitter/packages/task-manager-cli",
+      "@elizaos/client-twitter": "file:data/client-twitter/packages/client-twitter",
+      "@xnomad/task-manager-cli": "file:data/client-twitter/packages/task-manager-cli",
+      "@xnomad/task-manager": "file:data/client-twitter/packages/task-manager",
+      "agent-twitter-client": "https://github.com/xNomad-AI/agent-twitter-client.git#0.0.1",
       "elliptic": ">=6.6.1",
       "ws": ">=7.5.10",
       "node-fetch": ">=2.6.7",
