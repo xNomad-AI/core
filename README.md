@@ -66,7 +66,7 @@ cp .env.example .env
 pnpm start:local
 # visit the link to test the agent http://localhost:5173/
 # if there not exists an agent, then start one
-curl -XPOST 'http://localhost:8080/agent' -d '{ "nftId": "solana:9eVMKfs3X4KoEkf9LZdzFZpSuAyTzh9dvaougZBwJysJ:9eVMKfs3X4KoEkf9LZdzFZpSuAyTzh9dvaougZBwJysJ", "chain": "solana", "restart": true}' -H 'Content-Type: application/json'
+# curl -XPOST 'http://localhost:8080/agent' -d '{ "nftId": "solana:xx:xx", "chain": "solana", "restart": true}' -H 'Content-Type: application/json'
 ```
 
 ### Start Application in a remote host with devcontainer
