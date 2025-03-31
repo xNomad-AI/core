@@ -83,9 +83,7 @@ export class AgentController {
       agentId,
       request['X-USER-ADDRESS'],
     );
-    await this.elizaManager.deleteAgentMemory(agentId, {
-      memoryId: taskId,
-    });
+    await this.tradeService.cancelLimitOrder(agentId, taskId);
   }
 
   @Get('/trade/settings')

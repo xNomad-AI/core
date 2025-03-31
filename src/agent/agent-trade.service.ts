@@ -65,6 +65,10 @@ export class AgentTradeService {
     await this.mongo.copyTrades.deleteOne({ agentId, id });
   }
 
+  async cancelLimitOrder(agentId: string, id: string) {
+    await this.mongo.limitOrders.deleteOne({agentId, id});
+  }
+
   async updateCopyTradeStatus(agentId: string, id: number, status: string) {
     await this.mongo.copyTrades.updateOne({ agentId, id }, { $set: { status } });
   }
