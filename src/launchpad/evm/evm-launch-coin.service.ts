@@ -99,8 +99,16 @@ export class EvmLaunchCoinService {
       address: tokenAddress,
       creatorAddress: agentWallet.address,
       nftId: coin.nftId,
-      logo: coin.coinInfo.image,
       bound: true,
+      name: coin.coinInfo.name,
+      symbol: coin.coinInfo.symbol,
+      decimals: 18,
+      description: coin.coinInfo.description,
+      logo: coin.coinInfo.image,
+      twitter: coin.coinInfo.twitter,
+      telegram: coin.coinInfo.telegram,
+      website: coin.coinInfo.website,
+      deployedTime: Date.now(),
     });
 
     return txid;
