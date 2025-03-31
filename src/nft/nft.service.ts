@@ -42,7 +42,9 @@ export class NftService implements OnApplicationBootstrap {
   }
 
   onApplicationBootstrap() {
-    this.startAIAgents().catch((e) => {
+    this.startAIAgents().then(()=>{
+      this.logger.log('AI agents started');
+    }).catch((e) => {
       this.logger.error(e);
     });
   }
@@ -121,7 +123,7 @@ export class NftService implements OnApplicationBootstrap {
       { upsert: true },
     );
     const nft = await this.mongo.nfts.findOne({ nftId });
-    void this.handleNewAINfts([nft], true).catch((e) => {
+    this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
     });
 

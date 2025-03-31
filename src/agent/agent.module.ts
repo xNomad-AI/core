@@ -9,7 +9,7 @@ import { NftConfigService } from '../nft/nft-config.service.js';
 import { AgentTradeService } from './agent-trade.service.js';
 @Module({
   imports: [WalletModule, HttpModule],
-  providers: [ElizaManagerService, SettingsService, NftConfigService, AgentTradeService],
+  providers: [ElizaManagerService, AgentTradeService],
   controllers: [AgentController, AgentAccountController],
   exports: [ElizaManagerService, AgentTradeService],
 })
