@@ -1,9 +1,9 @@
 // import { AutoClientInterface } from '@elizaos/client-auto';
 // import { DiscordClientInterface } from '@elizaos/client-discord';
 // import { TelegramClientInterface } from '@elizaos/client-telegram';
-import { TwitterClientInterface } from '@elizaos/client-twitter';
 import { Character, IAgentRuntime } from '@elizaos/core';
 import TelegramClientInterface from '@elizaos/client-telegram';
+import { TwitterClientStarter } from '@xnomad/task-manager';
 
 export type ClientName = 'client-telegram' | 'client-twitter';
 
@@ -59,8 +59,9 @@ export async function initializeClients(
         console.log(`Suspended Twitter client for ${character.name}`);
       } else {
         console.log(`Starting Twitter client for ${character.name}`);
-        const twitterClients = await TwitterClientInterface.start(runtime);
-        clients['client-twitter'] = twitterClients;
+        const client = new TwitterClientStarter();
+        await client.start(runtime);
+        clients['client-twitter'] = client;
       }
     } catch (e) {
       errors['client-twitter'] = e.message;

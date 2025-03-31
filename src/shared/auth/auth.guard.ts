@@ -8,6 +8,8 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 
+import { DISABLE_API_SERVER_AUTH } from '../../static-settings.js';
+
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
@@ -18,6 +20,12 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
+
+    // if in local debug mode, return true
+    if (DISABLE_API_SERVER_AUTH) {
+      return true;
+    }
+
     if (!token) {
       throw new UnauthorizedException();
     }
