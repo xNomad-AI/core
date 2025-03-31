@@ -214,8 +214,16 @@ export class TradeMonitorService {
     address: string;
     creatorAddress: string;
     nftId: string;
-    logo?: string;
     bound: boolean; // whether the token is bound to an nft
+    name?: string;
+    symbol?: string;
+    decimals?: number;
+    description?: string;
+    logo?: string;
+    twitter?: string;
+    telegram?: string;
+    website?: string;
+    deployedTime?: number;
   }) {
     try {
       const response = await firstValueFrom(
@@ -228,6 +236,14 @@ export class TradeMonitorService {
             nftId: params.nftId,
             logo: params.logo,
             bound: params.bound,
+            name: params.name,
+            symbol: params.symbol,
+            decimals: params.decimals,
+            description: params.description,
+            twitter: params.twitter,
+            telegram: params.telegram,
+            website: params.website,
+            deployedTime: params.deployedTime,
           },
           {
             headers: {

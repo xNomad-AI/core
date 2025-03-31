@@ -197,8 +197,16 @@ export default {
       chain,
       address: tokenAddress,
       creatorAddress: address,
-      logo: uploadedImageUrl,
       nftId: getRuntimeKey(runtime, 'NFT_ID'),
+      name,
+      symbol,
+      decimals: 18,
+      description,
+      logo: uploadedImageUrl,
+      twitter,
+      telegram,
+      website,
+      deployedTime: Date.now(),
     });
     callback({
       text: `Transaction submitted, please wait for confirmation.\nCheck token on: https://four.meme/token/${tokenAddress}\nTransaction hash: ${txid}`,
