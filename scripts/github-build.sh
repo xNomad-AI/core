@@ -22,7 +22,8 @@ if [ -d "$TARGET_DIR" ]; then
       git pull origin "$VERSION"
     fi
 else
-  git clone -b $VERSION https://github.com/xNomad-AI/eliza.git $TARGET_DIR
+  git clone https://github.com/xNomad-AI/eliza.git $TARGET_DIR
+  git checkout "$VERSION"
   cd $TARGET_DIR
 fi
 

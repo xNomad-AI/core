@@ -58,11 +58,15 @@ cp .env.example .env
 # BIRDEYE_API_KEY=..
 # NFTGO_API_KEY=..
 
+# insert xnomad into mongodb
+# use core
+# db.collectionConfigs.insertOne({ "id": "d767895962f658681f490b3b7f9ff9de", "chain": "solana" });
+
 # start core service
 pnpm start:local
 # visit the link to test the agent http://localhost:5173/
 # if there not exists an agent, then start one
-curl -XPOST 'http://localhost:8080/agent' -d '{ "nftId": "your nft id", "chain": "solana", "restart": true}' -H 'Content-Type: application/json'
+# curl -XPOST 'http://localhost:8080/agent' -d '{ "nftId": "solana:xx:xx", "chain": "solana", "restart": true}' -H 'Content-Type: application/json'
 ```
 
 ### Start Application in a remote host with devcontainer

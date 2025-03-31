@@ -25,6 +25,7 @@ import {
 import { convertNullStrings, getEvmClient, getRuntimeDefaultChain } from '../providers/environment.js';
 import { userConfirmTemplate } from '../providers/type.js';
 import { nativeTokenAddress } from '../providers/evmClient.js';
+import { BigNumber } from 'bignumber.js';
 export const LimitOrderTable = 'limitOrders';
 export interface LimitOrder {
   id: string;
@@ -34,9 +35,9 @@ export interface LimitOrder {
   outputTokenSymbol: string | null;
   inputTokenCA: string | null;
   outputTokenCA: string | null;
-  inputTokenAmount: number | string | null;
+  inputTokenAmount: string | null;
   inputTokenPercentage: number | null;
-  outputTokenAmount: number | string | null;
+  outputTokenAmount: string | null;
   delay: string | null;
   startAt: Date | null;
   expireAt: Date;
@@ -79,7 +80,7 @@ export const autoTask: Action = {
             'Contract address of the token to buy. If omitted in a sell order, native token of the chain will be used by default. Either outputTokenSymbol or outputTokenCA must be provided.',
         },
         inputTokenAmount: {
-          type: ['number', 'null'],
+          type: ['string', 'null'],
           description:
             'Exact amount of inputToken to swap. Either inputTokenAmount or inputTokenPercentage must be provided.',
         },
@@ -100,7 +101,7 @@ export const autoTask: Action = {
         targetToken: {
           type: ['string', 'null'],
           description:
-            'Token symbol or contract address used for price trigger evaluation',
+            'Token symbol or CA used for price trigger evaluation',
         },
         delay: {
           type: ['string', 'null'],
@@ -117,6 +118,7 @@ export const autoTask: Action = {
         'inputTokenPercentage',
         'priceCondition',
         'targetPrice',
+        'targetToken',
         'delay',
       ],
     },
@@ -181,8 +183,6 @@ async function checkResponse(
   const chain = getRuntimeDefaultChain(runtime);
   const client = getEvmClient(runtime, chain);
   const { address } = await getWalletKey(runtime, true);
-  swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
-  swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
   swapReq.chain = chain;
   swapReq.agentId = runtime.agentId;
 
@@ -208,12 +208,13 @@ async function checkResponse(
     swapReq.outputTokenSymbol,
   );
 
-  swapReq.targetTokenCA = swapReq.targetTokenCA || await getTokenCABySymbol(
-    runtime,
-    chain,
-    swapReq.targetToken,
-  ) || swapReq.targetToken === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : swapReq.outputTokenCA;
-  
+    // try to get targetTokenCA from swapReq.targetTokenCA, swapReq.inputTokenCA, swapReq.outputTokenCA, or getTokenCABySymbol
+  swapReq.targetTokenCA = 
+    (client.isNativeToken(swapReq.targetToken) ? nativeTokenAddress : null) ||
+    swapReq.targetTokenCA ||
+    (swapReq.targetToken === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : null) ||
+    (swapReq.targetToken === swapReq.outputTokenSymbol ? swapReq.outputTokenCA : null) ||
+    await getTokenCABySymbol(runtime, chain, swapReq.targetToken);
 
   if (!swapReq.inputTokenCA) {
     callback?.({
@@ -237,8 +238,8 @@ async function checkResponse(
   }
 
   if (
-    Number.isFinite(swapReq.outputTokenAmount) &&
-    swapReq.outputTokenAmount != 0
+    swapReq.outputTokenAmount &&
+    +swapReq.outputTokenAmount > 0
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
@@ -246,18 +247,17 @@ async function checkResponse(
     return {status: 'pending'};
   }
 
-  if (
-    Number.isFinite(swapReq.inputTokenPercentage) &&
-    swapReq.inputTokenPercentage != 0
-  ) {
-    const balance = await client.getTokenUIBalance(swapReq.inputTokenCA, address);
-    swapReq.inputTokenAmount = Number(balance) * swapReq.inputTokenPercentage;
-  }
+  const uiBalance = await client.getTokenUIBalance(swapReq.inputTokenCA, address);
 
   if (
-    !Number.isFinite(swapReq.inputTokenAmount) ||
-    swapReq.inputTokenAmount <= 0
+    !swapReq.inputTokenAmount &&
+    swapReq.inputTokenPercentage &&
+    +swapReq.inputTokenPercentage > 0
   ) {
+    swapReq.inputTokenAmount = BigNumber(uiBalance).multipliedBy(swapReq.inputTokenPercentage).toString();
+  }
+
+  if (!swapReq.inputTokenAmount || +swapReq.inputTokenAmount <= 0) {
     callback?.({
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount to perform the swap`,
       action: 'AUTO_TASK',
@@ -265,17 +265,16 @@ async function checkResponse(
     return {status: 'pending'};
   }
 
-  const balance = await client.getTokenUIBalance(swapReq.inputTokenCA, address);
-  if (!balance) {
+  if (!uiBalance) {
     callback?.({
       text: 'Your input balance is 0.',
     });
     return {status: 'failed'};
   }
 
-  if (Number(balance) < swapReq.inputTokenAmount) {
+  if (BigNumber(uiBalance).lt(swapReq.inputTokenAmount)) {
     callback?.({
-      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
+      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${uiBalance} available.`,
     });
     return {status: 'failed'};
   }
@@ -296,13 +295,6 @@ async function checkResponse(
     swapReq.startAt = new Date(Date.now() + seconds);
   } else {
     swapReq.startAt = new Date();
-  }
-
-  if (!isValidAddress(swapReq.targetTokenCA)) {
-    swapReq.targetTokenCA =
-      swapReq.targetToken === swapReq.inputTokenSymbol
-        ? swapReq.inputTokenCA
-        : swapReq.outputTokenCA;
   }
 
   if (!isValidAddress(swapReq.targetTokenCA)) {
@@ -332,7 +324,7 @@ async function checkResponse(
   }
 
   if (confirmResponse.userAcked == 'pending') {
-    swapReq.inputTokenPercentage = (swapReq.inputTokenAmount/Number(balance));
+    swapReq.inputTokenPercentage = BigNumber(swapReq.inputTokenAmount).div(uiBalance).toNumber();
     const swapInfo = formatTaskInfo(swapReq);
     const responseMsg = {
       text: `${swapInfo}`,
@@ -362,11 +354,11 @@ function formatTaskInfo({
   const displayedOutputSymbol = trimTokenSymbol(`$${outputTokenSymbol || outputTokenCA}`);
   const displayedtargetToken =  trimTokenSymbol(`$${targetToken} (${targetTokenCA})`);
 
-  const swapType = inputTokenCA === nativeTokenAddress ? 'buy' : 'sell';
-  const tokenInfo = swapType === 'sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
+  const swapType = inputTokenCA === nativeTokenAddress ? 'Buy' : 'Sell';
+  const tokenInfo = swapType === 'Sell' ? `${displayedInputSymbol} (${inputTokenCA})` : `${displayedOutputSymbol} (${outputTokenCA})`;
 
   const amountInfo =
-    swapType === 'sell'
+    swapType === 'Sell'
       ? `${inputTokenAmount}(${(inputTokenPercentage * 100)?.toFixed(1)}%)`
       : `${inputTokenAmount} ${displayedInputSymbol}`;
   const trigger = priceCondition

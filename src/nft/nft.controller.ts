@@ -23,9 +23,8 @@ import { CharacterConfig } from '../shared/mongo/types.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { testTwitterConfig } from '../shared/twitter.service.js';
-import { CORE_ADMIN_API_KEY, DELEGATION_MODE } from '../static-settings.js';
-import { SettingsService } from './core-settings.service.js';
-import { UpdateCoreSettingsDto, UpdateTwitterConfigDto } from './nft.dto.js';
+import { DISABLE_NFT_ADMIN_CHECK } from '../static-settings.js';
+import { UpdateTwitterConfigDto } from './nft.dto.js';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto, normalizeBlockchainAddress } from './nft.types.js';
 
@@ -33,7 +32,6 @@ import { NftSearchQueryDto, normalizeBlockchainAddress } from './nft.types.js';
 export class NftController {
   constructor(
     private readonly nftService: NftService,
-    private settingsService: SettingsService,
     private tradeMonitorService: TradeMonitorService,
     private config: ConfigService,
     private logger: TransientLoggerService,
@@ -112,7 +110,7 @@ export class NftController {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
     if (
-      !DELEGATION_MODE &&
+      !DISABLE_NFT_ADMIN_CHECK &&
       !(await this.nftService.isNftAdmin(chain, address, nftId))
     ) {
       throw new UnauthorizedException('You are not the owner of this NFT');
@@ -128,21 +126,26 @@ export class NftController {
       updateTwitterConfigDto.characterConfig.settings.secrets
         .TWITTER_2FA_SECRET;
 
-    const result = await testTwitterConfig(
-      username,
-      password,
-      email,
-      twitter2faSecret,
-      updateTwitterConfigDto.testContent,
-    );
-    if (!result.isLogin) {
-      return result;
+    if (updateTwitterConfigDto.testContent) {
+      // if the twitter client is already running, using this function will cause `Authentication error: DenyLoginSubtask`
+      // TODO, read latest task status as test result of the twitter account
+      const result = await testTwitterConfig(
+        username,
+        password,
+        email,
+        twitter2faSecret,
+        updateTwitterConfigDto.testContent,
+      );
+      if (!result.isLogin) {
+        return result;
+      }
     }
+
     await this.nftService.updateNftConfig({
       nftId,
       characterConfig: instanceToPlain(updateTwitterConfigDto.characterConfig),
     });
-    return result;
+    return { isLogin: true };
   }
 
   @UseGuards(AuthGuard)
@@ -155,7 +158,7 @@ export class NftController {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
     if (
-      !DELEGATION_MODE &&
+      !DISABLE_NFT_ADMIN_CHECK &&
       !(await this.nftService.isNftAdmin(chain, address, nftId))
     ) {
       throw new UnauthorizedException('You are not the owner of this NFT');
@@ -175,10 +178,6 @@ export class NftController {
         },
       },
     });
-
-    if (httpProxy) {
-      await this.settingsService.decreaseHttpProxyCount(httpProxy);
-    }
   }
 
   @UseGuards(AuthGuard)
@@ -191,7 +190,10 @@ export class NftController {
   ) {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
-    if (!(await this.nftService.isNftAdmin(chain, address, nftId))) {
+    if (
+      !DISABLE_NFT_ADMIN_CHECK &&
+      !(await this.nftService.isNftAdmin(chain, address, nftId))
+    ) {
       throw new UnauthorizedException('You are not the owner of this NFT');
     }
     return await this.nftService.updateNftConfig({
@@ -210,7 +212,7 @@ export class NftController {
     const address = request['X-USER-ADDRESS'];
     chain = request['X-USER-CHAIN'];
     if (
-      !DELEGATION_MODE &&
+      !DISABLE_NFT_ADMIN_CHECK &&
       !(await this.nftService.isNftAdmin(chain, address, nftId))
     ) {
       throw new UnauthorizedException('You are not the owner of this NFT');
@@ -244,26 +246,6 @@ export class NftController {
     const owner = await this.nftService.getAgentOwner(agentId);
     return {
       isAdmin: owner?.ownerAddress === normalizeBlockchainAddress(chain, address),
-    };
-  }
-
-  @Post('/settings')
-  async updateNftGlobalSettings(
-    @Request() request: ExpressRequest,
-    @Body() body: UpdateCoreSettingsDto[],
-  ) {
-    if (!CORE_ADMIN_API_KEY) {
-      throw new UnauthorizedException('Admin API key is not set');
-    }
-    if (
-      request.headers['X-ADMIN-API-KEY'.toLowerCase()] !== CORE_ADMIN_API_KEY
-    ) {
-      throw new UnauthorizedException('Invalid admin API key');
-    }
-
-    const inserted = await this.settingsService.upsertCoreSettings(body);
-    return {
-      inserted,
     };
   }
 

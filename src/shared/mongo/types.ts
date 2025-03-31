@@ -3,7 +3,6 @@ import { ObjectId } from 'mongodb';
 import { COLLECTIONS } from './configs.js';
 import { OrderStatus, OrderType } from '../../order/order.types.js';
 
-import { BigNumber } from 'bignumber.js';
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
 export interface CollectionConfig {
@@ -236,9 +235,9 @@ export interface LimitOrder {
   outputTokenSymbol: string | null;
   inputTokenCA: string | null;
   outputTokenCA: string | null;
-  inputTokenAmount: number | string | null;
+  inputTokenAmount:  string | null;
   inputTokenPercentage: number | null;
-  outputTokenAmount: number | string | null;
+  outputTokenAmount: string | null;
   delay: string | null;
   startAt: Date | null;
   expireAt: Date;

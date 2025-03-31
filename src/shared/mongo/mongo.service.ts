@@ -37,6 +37,9 @@ export class MongoService implements OnModuleInit {
     const maskedSource = `${source.slice(0, 10)}*****${source.slice(-15)}`;
     this.client = new MongoClient(source, {
       tlsAllowInvalidCertificates: true,
+      tlsAllowInvalidHostnames: true,
+      // tlsCAFile: mongodbCaFile,
+      // tls: mongodbCaFile ? true: false,
     });
     this.logger.log(`Initialized mongo: ${maskedSource}`);
     void this.ensureIndexes();
@@ -123,10 +126,6 @@ export class MongoService implements OnModuleInit {
     return this.getCollection<NftConfig>('nftConfigs');
   }
 
-  get coreSettings() {
-    return this.getCollection<CoreSettings>('coreSettings');
-  }
-
   get nftPrologues() {
     return this.getCollection<NftPrologues>('nftPrologues');
   }
@@ -149,6 +148,10 @@ export class MongoService implements OnModuleInit {
 
   get limitOrders() {
     return this.client.db('agent').collection<LimitOrder>('limitOrders');
+  }
+
+  get agentCreatedCoins() {
+    return this.getCollection('AgentCreatedCoin');
   }
 
   // global key-value storage

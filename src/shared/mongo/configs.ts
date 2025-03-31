@@ -114,22 +114,6 @@ export const COLLECTIONS = [
   },
   {
     db: DB_NAME,
-    name: 'coreSettings',
-    // indexes: [],
-    indexes: [
-      {
-        category: 1,
-        'value.product': 1,
-      },
-    ],
-    uniqueIndexes: [
-      {
-        'value.httpProxy': 1,
-      },
-    ],
-  },
-  {
-    db: DB_NAME,
     name: 'nftPrimaryCoins',
     indexes: [],
     uniqueIndexes: [
@@ -169,6 +153,12 @@ export const COLLECTIONS = [
   {
     db: DB_NAME,
     name: 'swarms',
+    indexes: [],
+    uniqueIndexes: [],
+  },
+  {
+    db: DB_NAME,
+    name: 'AgentCreatedCoin',
     indexes: [],
     uniqueIndexes: [],
   },

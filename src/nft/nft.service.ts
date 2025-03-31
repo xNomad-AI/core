@@ -2,14 +2,12 @@ import { stringToUuid } from '@elizaos/core';
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import PQueue from 'p-queue';
-import { AddressService } from '../address/address.service.js';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import {
   AICollection,
   AINft,
   CharacterConfig,
-  DEFAULT_TRADE_SETTINGS_SOLANA,
   NftConfig,
 } from '../shared/mongo/types.js';
 import { NftgoService } from '../shared/nftgo.service.js';
@@ -34,7 +32,6 @@ export class NftService implements OnApplicationBootstrap {
     private readonly nftgo: NftgoService,
     private readonly mongo: MongoService,
     private readonly elizaManager: ElizaManagerService,
-    private readonly addressService: AddressService,
     private readonly agentTradeService: AgentTradeService,
     private readonly eventEmitter: EventEmitter2,
     private readonly tradeMonitorService: TradeMonitorService,
@@ -45,7 +42,9 @@ export class NftService implements OnApplicationBootstrap {
   }
 
   onApplicationBootstrap() {
-    this.startAIAgents().catch((e) => {
+    this.startAIAgents().then(()=>{
+      this.logger.log('AI agents started');
+    }).catch((e) => {
       this.logger.error(e);
     });
   }
@@ -124,7 +123,7 @@ export class NftService implements OnApplicationBootstrap {
       { upsert: true },
     );
     const nft = await this.mongo.nfts.findOne({ nftId });
-    void this.handleNewAINfts([nft], true).catch((e) => {
+    this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
     });
 

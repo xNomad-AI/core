@@ -36,15 +36,15 @@ interface SwapTokenRequest {
   inputTokenCA: string;
   outputTokenSymbol: string;
   outputTokenCA: string;
-  inputTokenAmount: number | null;
+  inputTokenAmount: string | null;
   inputTokenPercentage: number | null;
-  outputTokenAmount: number | null;
+  outputTokenAmount: string | null;
 }
 
 const userConfirmTemplate = `
 {{recentMessages}}
 
-Analyzing the user’s response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
+Analyzing the user's response to the transfer confirmation. Carefully read and understand the above conversation.Pay attention to distinguishing between completed conversations and newly initiated unconfirmed requests.
 Consider the latest messages from the conversation history above. Determine the user's response status regarding the confirmation.
 Respond with a JSON:  
 \`\`\`json
@@ -54,12 +54,12 @@ Respond with a JSON:
 \`\`\`  
 
 **Decision Criteria:**  
-"confirmed" → The user has explicitly confirmed the swap using words like “yes”, “confirm”, “okay”, “sure”, etc.
+"confirmed" → The user has explicitly confirmed the swap using words like "yes", "confirm", "okay", "sure", etc.
 "rejected" → The user has responded with anything other than a confirmation.
 "pending" → The user has provided a complete swap request, but User2 has not yet sent the confirmation prompt.
 
 **Additional Rules:**  
-•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as “pending”.
+•If the user issues a new instruction without explicitly confirming or rejecting the previous one, treat it as "pending".
 •If the user has rejected a previous request but has now provided a new request, set userAcked to "pending".
 •If the user has rejected a previous request and has not provided a new request, set userAcked to "rejected".
 **Examples:**  
@@ -117,7 +117,7 @@ export const executeSwap: Action = {
             'Contract address of the token to buy. Either outputTokenSymbol or outputTokenCA must be provided.',
         },
         inputTokenAmount: {
-          type: ['number', 'null'],
+          type: ['string', 'null'],
           description:
             'Exact amount of the input token to swap. Required if inputTokenPercentage is not provided.',
         },
@@ -127,7 +127,7 @@ export const executeSwap: Action = {
             'Percentage of the input token balance to swap. Required if inputTokenAmount is not provided. When extracting percentages, convert values like "50%" into decimal form (e.g., 0.5 instead of 50).',
         },
         outputTokenAmount: {
-          type: ['number', 'null'],
+          type: ['string', 'null'],
           description: 'Expected amount of the output token to receive.',
         },
       },
@@ -215,12 +215,12 @@ async function checkResponse(
 ): Promise<{
   status: ActionStatus;
   parameters?: {
-    inputTokenAmount: number | null;
+    inputTokenAmount: string | null;
     inputTokenSymbol: string;
     inputTokenPercentage: number | null;
     outputTokenSymbol: string;
     inputTokenCA: string;
-    outputTokenAmount: number | null;
+    outputTokenAmount: string | null;
     outputTokenCA: string;
     programId: PublicKey;
 }
@@ -235,14 +235,12 @@ async function checkResponse(
   let swapReq = convertNullStrings(state.actionParameters) as SwapTokenRequest;
   elizaLogger.info('Swap request:', swapReq);
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
-  swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
-  swapReq.outputTokenAmount = Number(swapReq.outputTokenAmount);
 
   if (swapReq.inputTokenSymbol?.toUpperCase() === 'SOL') {
-    swapReq.inputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
+    swapReq.inputTokenCA = NATIVE_MINT.toBase58();
   }
   if (swapReq.outputTokenSymbol?.toUpperCase() === 'SOL') {
-    swapReq.outputTokenCA = getRuntimeKey(runtime, 'SOL_ADDRESS');
+    swapReq.outputTokenCA = NATIVE_MINT.toBase58();
   }
   swapReq.inputTokenCA = validateAndAssignCA(
     swapReq.inputTokenSymbol,
@@ -287,8 +285,8 @@ async function checkResponse(
   const programId = await client.getTokenProgramId(swapReq.inputTokenCA);
 
   if (
-    Number.isFinite(swapReq.outputTokenAmount) &&
-    swapReq.outputTokenAmount != 0
+    swapReq.outputTokenAmount &&
+    +swapReq.outputTokenAmount > 0
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
@@ -298,18 +296,16 @@ async function checkResponse(
   }
 
   if (
-    !Number.isFinite(swapReq.inputTokenAmount) &&
-    Number.isFinite(swapReq.inputTokenPercentage) &&
-    swapReq.inputTokenPercentage != 0
-
+    !swapReq.inputTokenAmount &&
+    swapReq.inputTokenPercentage > 0
   ) {
     const balance = await client.getUIBalance(swapReq.inputTokenCA);
-    swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
+    swapReq.inputTokenAmount = BigNumber(balance).multipliedBy(swapReq.inputTokenPercentage).toString();
   }
 
   if (
-    !Number.isFinite(swapReq.inputTokenAmount) ||
-    swapReq.inputTokenAmount <= 0
+    !swapReq.inputTokenAmount ||
+    +swapReq.inputTokenAmount <= 0
   ) {
     const responseMsg = {
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
@@ -330,7 +326,7 @@ async function checkResponse(
     return { status: 'failed'};
   }
 
-  if (balance < swapReq.inputTokenAmount) {
+  if (BigNumber(balance).lt(swapReq.inputTokenAmount)) {
     const responseMsg = {
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
       result: 'Insufficient balance for swap',
@@ -356,7 +352,7 @@ async function checkResponse(
       callback?.(responseMsg);
       return { status: 'failed'};
     }
-  } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BALANCE) {
+  } else if (WSOL_AMOUNT - Number(swapReq.inputTokenAmount) < GAS_BALANCE) {
     // buy with SOL
     const requiredAmount = GAS_BALANCE + Number(swapReq.inputTokenAmount);
     elizaLogger.error('Insufficient balance for swap gas fee');
@@ -401,7 +397,7 @@ async function checkResponse(
       outputTokenSymbol: swapReq.outputTokenSymbol,
       outputTokenCA: swapReq.outputTokenCA,
       inputTokenAmount: swapReq.inputTokenAmount,
-      inputPercentage: ((swapReq.inputTokenAmount / balance) * 100).toFixed(1),
+      inputPercentage: BigNumber(swapReq.inputTokenAmount).div(balance).multipliedBy(100).toFixed(1),
     });
     const responseMsg = {
       text: `${swapInfo}`,
@@ -423,7 +419,7 @@ function formatConfirmSwapInfo(params: {
   inputTokenCA: string;
   outputTokenSymbol: string;
   outputTokenCA: string;
-  inputTokenAmount: number;
+  inputTokenAmount: string;
   inputPercentage: string;
 }): string {
   const displayedInputSymbol = trimTokenSymbol(`$${params.inputTokenSymbol || params.inputTokenCA}`);
