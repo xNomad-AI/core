@@ -182,7 +182,7 @@ export function transformToOwner(activity: AINftActivity): AINftOwner {
 }
 
 export function transformToAICollection(coll: Collection): AICollection {
-  coll.contracts = coll.contracts.map(contract => 
+  coll.contracts = coll.contracts.map(contract =>
     normalizeBlockchainAddress(coll.blockchain, contract)
   );
 

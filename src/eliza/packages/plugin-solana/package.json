@@ -29,7 +29,7 @@
 		"bs58": "6.0.0",
 		"crypto-js": "^4.2.0",
 		"node-cache": "5.1.2",
-		"pumpdotfun-sdk": "github:rckprtr/pumpdotfun-sdk#576b978b25e1c8404bfecc55951bdfdcf44a1e1d",
+		"pumpdotfun-sdk": "git+https://github.com/rckprtr/pumpdotfun-sdk.git#576b978b25e1c8404bfecc55951bdfdcf44a1e1d",
 		"tsup": "8.3.5",
 		"tweetnacl": "^1.0.3",
 		"vitest": ">=2.1.9",

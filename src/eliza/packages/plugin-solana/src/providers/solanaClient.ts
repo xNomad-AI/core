@@ -65,6 +65,7 @@ export class SolanaClient {
       return await this.getSPLBalance(token);
     } catch (e) {
       if (e.message?.includes('Invalid param: could not find account')) {
+        elizaLogger.warn(`Invalid param: could not find account, token=${token}, address=${this.publicKey.toBase58()}`);
         return 0;
       } else {
         throw e;

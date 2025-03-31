@@ -10,6 +10,7 @@ import { autoTask } from './actions/autoSwap.js';
 import { airdrop } from './actions/airdrop.js';
 import { getAccountFromWalletService } from './providers/keypairUtils.js';
 import { getWalletPortfolio, WalletPortfolio, Item } from './providers/walletUtils.js';
+import createToken from './actions/createToken.js';
 import { GetSwapCallDataDto, SwapTokenDto } from './providers/type.js';
 import { getSwapTokenFees } from './providers/swapUtils.js';
 
@@ -37,6 +38,7 @@ export const evmPlugin: Plugin = {
     copyTrade,
     autoTask,
     airdrop,
+    createToken,
   ],
   evaluators: [],
   providers: [],

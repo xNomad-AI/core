@@ -39,7 +39,7 @@ importers:
         specifier: file:data/eliza/packages/client-telegram
         version: file:data/eliza/packages/client-telegram(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/client-twitter':
-        specifier: github:xNomad-AI/client-twitter#f6253269a9b9188031886e72a380d13ea7e1f536
+        specifier: https://github.com/xNomad-AI/client-twitter.git#f6253269a9b9188031886e72a380d13ea7e1f536
         version: https://codeload.github.com/xNomad-AI/client-twitter/tar.gz/f6253269a9b9188031886e72a380d13ea7e1f536(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/core':
         specifier: file:data/eliza/packages/core
@@ -64,7 +64,7 @@ importers:
         version: 1.2.0(@metaplex-foundation/umi@1.1.1)(@noble/hashes@1.7.1)
       '@metaplex-foundation/mpl-core-candy-machine':
         specifier: ^0.3.0
-        version: 0.3.0(@metaplex-foundation/mpl-core@1.2.0(@metaplex-foundation/umi@1.0.0)(@noble/hashes@1.7.1))(@metaplex-foundation/umi@1.0.0)
+        version: 0.3.0(@metaplex-foundation/mpl-core@1.2.0(@metaplex-foundation/umi@1.1.1)(@noble/hashes@1.7.1))(@metaplex-foundation/umi@1.1.1)
       '@metaplex-foundation/mpl-token-metadata':
         specifier: 3.4.0
         version: 3.4.0(@metaplex-foundation/umi@1.1.1)
@@ -123,7 +123,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.2))(prom-client@15.1.3)
       agent-twitter-client:
-        specifier: git+https://github.com/xNomad-AI/agent-twitter-client.git#main
+        specifier: https://github.com/xNomad-AI/agent-twitter-client.git#main
         version: https://codeload.github.com/xNomad-AI/agent-twitter-client/tar.gz/8af978f5fbf5e02555efa423d2355ba1a8cb804a(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       amqplib:
         specifier: ^0.10.5
@@ -133,7 +133,7 @@ importers:
         version: 1.3.3
       axios:
         specifier: ^1.7.9
-        version: 1.8.1(debug@4.4.0)
+        version: 1.8.1
       bignumber.js:
         specifier: 9.1.2
         version: 9.1.2
@@ -183,7 +183,7 @@ importers:
         specifier: ^15.1.3
         version: 15.1.3
       pumpdotfun-sdk:
-        specifier: github:rckprtr/pumpdotfun-sdk#576b978b25e1c8404bfecc55951bdfdcf44a1e1d
+        specifier: https://github.com/rckprtr/pumpdotfun-sdk.git#576b978b25e1c8404bfecc55951bdfdcf44a1e1d
         version: https://codeload.github.com/rckprtr/pumpdotfun-sdk/tar.gz/576b978b25e1c8404bfecc55951bdfdcf44a1e1d(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.8)(typescript@5.7.3)(utf-8-validate@5.0.10)
       reflect-metadata:
         specifier: ^0.1.13
@@ -310,7 +310,7 @@ importers:
         version: 1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
       axios:
         specifier: ^1.7.9
-        version: 1.8.1(debug@4.4.0)
+        version: 1.8.1
       bignumber.js:
         specifier: 9.1.2
         version: 9.1.2
@@ -324,7 +324,7 @@ importers:
         specifier: 5.1.2
         version: 5.1.2
       pumpdotfun-sdk:
-        specifier: github:rckprtr/pumpdotfun-sdk#576b978b25e1c8404bfecc55951bdfdcf44a1e1d
+        specifier: git+https://github.com/rckprtr/pumpdotfun-sdk.git#576b978b25e1c8404bfecc55951bdfdcf44a1e1d
         version: https://codeload.github.com/rckprtr/pumpdotfun-sdk/tar.gz/576b978b25e1c8404bfecc55951bdfdcf44a1e1d(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(rollup@4.34.8)(typescript@5.7.3)(utf-8-validate@5.0.10)
       tsup:
         specifier: 8.3.5
@@ -1954,11 +1954,22 @@ packages:
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
     engines: {node: '>=8'}
 
+  '@metaplex-foundation/mpl-core-candy-machine@0.3.0':
+    resolution: {integrity: sha512-J2eo6aggZ0BrKyJ6qusEfANM7eSsGzneyLTp/KxfcxUTI0etzdAbivj+cBzTLYVzTC/lHNyvSDA3J96lYwFaSA==}
+    peerDependencies:
+      '@metaplex-foundation/mpl-core': '>= 0.4.7'
+      '@metaplex-foundation/umi': '>= 0.8.2 <= 1'
+
   '@metaplex-foundation/mpl-core@1.2.0':
     resolution: {integrity: sha512-gFWIJprd69JW4dxC4t1G9Q+GTTWQMS0ydDeegB2j7MNt82RLSvZn9Qw1ffmSMYEDOpLSLFkfPVeEGMzTbJ5Dwg==}
     peerDependencies:
       '@metaplex-foundation/umi': '>=0.8.2 <= 1.0'
       '@noble/hashes': ^1.3.1
+
+  '@metaplex-foundation/mpl-token-metadata@3.0.0-alpha.27':
+    resolution: {integrity: sha512-MSERz5HB2XZ/K+FOMh0tPeqcZZEpGVzdy7e+Cy3MHg7x52JtbGBDtWIoxBJn1OBZayCBfX9gytEoqrXe2YRGqQ==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^0.8.2
 
   '@metaplex-foundation/mpl-token-metadata@3.4.0':
     resolution: {integrity: sha512-AxBAYCK73JWxY3g9//z/C9krkR0t1orXZDknUPS4+GjwGH2vgPfsk04yfZ31Htka2AdS9YE/3wH7sMUBHKn9Rg==}
@@ -1969,6 +1980,11 @@ packages:
     resolution: {integrity: sha512-84KD1L5cFyw5xnntHwL4uPwfcrkKSiwuDeypiVr92qCUFuF3ZENa2zlFVPu+pQcjTlod2LmEX3MhBmNjRMpdKg==}
     peerDependencies:
       '@metaplex-foundation/umi': '>= 0.8.2 <= 1'
+
+  '@metaplex-foundation/mpl-toolbox@0.9.4':
+    resolution: {integrity: sha512-fd6JxfoLbj/MM8FG2x91KYVy1U6AjBQw4qjt7+Da3trzQaWnSaYHDcYRG/53xqfvZ9qofY1T2t53GXPlD87lnQ==}
+    peerDependencies:
+      '@metaplex-foundation/umi': '>= 0.8.2 < 1'
 
   '@metaplex-foundation/umi-bundle-defaults@1.1.1':
     resolution: {integrity: sha512-U62x8PafAL1TlqOYwnR2TsPx9dExyCXTdAdRrzLb9HRqMJ4+5Zu2VWPjaANx6hOdTx4JyoqKr2gOUdIVCt/ZYg==}
@@ -3706,6 +3722,9 @@ packages:
 
   buffer-more-ints@1.0.0:
     resolution: {integrity: sha512-EMetuGFz5SLsT0QTnXzINh4Ksr+oo4i+UGTXEshiGCQWnsgSs7ZhJ8fzlwQ+OzEMs0MpDAMr1hxnblp5a4vcHg==}
+
+  buffer-reverse@1.0.1:
+    resolution: {integrity: sha512-M87YIUBsZ6N924W57vDwT/aOu8hw7ZgdByz6ijksLjmHJELBASmYTTlNHRgjE+pTsT9oJXGaDSgqqwfdHotDUg==}
 
   buffer-xor@1.0.3:
     resolution: {integrity: sha512-571s0T7nZWK6vB67HI5dyUF7wXiNcfaPPPTl6zYCNApANjIvYJTg7hlud/+cJpdAhS7dVzqMLmfhfHR3rAcOjQ==}
@@ -5671,6 +5690,9 @@ packages:
   libphonenumber-js@1.11.20:
     resolution: {integrity: sha512-/ipwAMvtSZRdiQBHqW1qxqeYiBMzncOQLVA+62MWYr7N4m7Q2jqpJ0WgT7zlOEOpyLRSqrMXidbJpC0J77AaKA==}
 
+  lie@3.3.0:
+    resolution: {integrity: sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==}
+
   lilconfig@3.1.3:
     resolution: {integrity: sha512-/vlFKAoH5Cgt3Ie+JLhRbwOsCQePABiU3tJ1egGvyQ+33R/vcwM2Zl2QR/LzjsBeItPt3oSVXapn+m4nQDvpzw==}
     engines: {node: '>=14'}
@@ -5860,6 +5882,10 @@ packages:
   merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
+
+  merkletreejs@0.3.11:
+    resolution: {integrity: sha512-LJKTl4iVNTndhL+3Uz/tfkjD0klIWsHlUzgtuNnNrsf7bAlXR30m+xYB7lHr5Z/l6e/yAIsr26Dabx6Buo4VGQ==}
+    engines: {node: '>= 7.6.0'}
 
   methods@1.1.2:
     resolution: {integrity: sha512-iclAHeNqNm68zFtnZ0e+1L2yUIdvzNoauKU4WBA3VvH/vPFieF7qfRlwUZU+DA9P9bPXIS90ulxoUoCH23sV2w==}
@@ -6363,6 +6389,9 @@ packages:
   package-json@10.0.1:
     resolution: {integrity: sha512-ua1L4OgXSBdsu1FPb7F3tYH0F48a6kxvod4pLUlGY9COeJAJQNX/sNH2IiEmsxw7lqYiAwrdHMjz1FctOsyDQg==}
     engines: {node: '>=18'}
+
+  pako@1.0.11:
+    resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
 
   pako@2.1.0:
     resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
@@ -7313,6 +7342,10 @@ packages:
   tree-kill@1.2.2:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
+
+  treeify@1.1.0:
+    resolution: {integrity: sha512-1m4RA7xVAJrSGrrXGs0L3YTwyvBs2S8PbRHaLZAkFw7JR8oIFwYtysxlBZhYIa7xSyiYJKZ3iGrrk55cGA3i9A==}
+    engines: {node: '>=0.6'}
 
   ts-api-utils@1.4.3:
     resolution: {integrity: sha512-i3eMG77UTMD0hZhgRS562pv83RC6ukSAC2GMNWc+9dieh/+jDM5u5YG+NHX6VNDRHQcHwmsTHctP9LhbC3WxVw==}
@@ -9278,7 +9311,7 @@ snapshots:
     dependencies:
       '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3(encoding@0.1.13))(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(encoding@0.1.13)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       agent-twitter-client: https://codeload.github.com/xNomad-AI/agent-twitter-client/tar.gz/8af978f5fbf5e02555efa423d2355ba1a8cb804a(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      axios: 1.8.1(debug@4.4.0)
+      axios: 1.8.1
       discord.js: 14.16.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       glob: 11.0.0
       https-proxy-agent: 7.0.6
@@ -10485,11 +10518,25 @@ snapshots:
 
   '@lukeed/csprng@1.1.0': {}
 
+  '@metaplex-foundation/mpl-core-candy-machine@0.3.0(@metaplex-foundation/mpl-core@1.2.0(@metaplex-foundation/umi@1.1.1)(@noble/hashes@1.7.1))(@metaplex-foundation/umi@1.1.1)':
+    dependencies:
+      '@metaplex-foundation/mpl-core': 1.2.0(@metaplex-foundation/umi@1.1.1)(@noble/hashes@1.7.1)
+      '@metaplex-foundation/mpl-token-metadata': 3.0.0-alpha.27(@metaplex-foundation/umi@1.1.1)
+      '@metaplex-foundation/mpl-toolbox': 0.9.4(@metaplex-foundation/umi@1.1.1)
+      '@metaplex-foundation/umi': 1.1.1
+      '@noble/hashes': 1.7.1
+      merkletreejs: 0.3.11
+
   '@metaplex-foundation/mpl-core@1.2.0(@metaplex-foundation/umi@1.1.1)(@noble/hashes@1.7.1)':
     dependencies:
       '@metaplex-foundation/umi': 1.1.1
       '@msgpack/msgpack': 3.1.0
       '@noble/hashes': 1.7.1
+
+  '@metaplex-foundation/mpl-token-metadata@3.0.0-alpha.27(@metaplex-foundation/umi@1.1.1)':
+    dependencies:
+      '@metaplex-foundation/mpl-toolbox': 0.9.4(@metaplex-foundation/umi@1.1.1)
+      '@metaplex-foundation/umi': 1.1.1
 
   '@metaplex-foundation/mpl-token-metadata@3.4.0(@metaplex-foundation/umi@1.1.1)':
     dependencies:
@@ -10500,9 +10547,9 @@ snapshots:
     dependencies:
       '@metaplex-foundation/umi': 1.1.1
 
-  '@metaplex-foundation/mpl-toolbox@0.9.4(@metaplex-foundation/umi@1.0.0)':
+  '@metaplex-foundation/mpl-toolbox@0.9.4(@metaplex-foundation/umi@1.1.1)':
     dependencies:
-      '@metaplex-foundation/umi': 1.0.0
+      '@metaplex-foundation/umi': 1.1.1
 
   '@metaplex-foundation/umi-bundle-defaults@1.1.1(@metaplex-foundation/umi@1.1.1)(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))':
     dependencies:
@@ -10721,7 +10768,7 @@ snapshots:
   '@nestjs/axios@3.1.3(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.2))(axios@1.8.1)(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.2)
-      axios: 1.8.1(debug@4.4.0)
+      axios: 1.8.1
       rxjs: 7.8.2
 
   '@nestjs/cache-manager@3.0.0(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@10.4.15)(cache-manager@6.4.0)(rxjs@7.8.2)':
@@ -11665,7 +11712,7 @@ snapshots:
 
   '@tavily/core@0.0.2':
     dependencies:
-      axios: 1.8.1(debug@4.4.0)
+      axios: 1.8.1
       js-tiktoken: 1.0.19
     transitivePeerDependencies:
       - debug
@@ -12806,6 +12853,8 @@ snapshots:
   buffer-layout@1.2.2: {}
 
   buffer-more-ints@1.0.0: {}
+
+  buffer-reverse@1.0.1: {}
 
   buffer-xor@1.0.3: {}
 
@@ -15129,7 +15178,7 @@ snapshots:
       zod-to-json-schema: 3.24.3(zod@3.23.8)
     optionalDependencies:
       '@langchain/groq': 0.1.3(@langchain/core@0.3.40(openai@4.73.0(encoding@0.1.13)(zod@3.23.8)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      axios: 1.8.1(debug@4.4.0)
+      axios: 1.8.1
       handlebars: 4.7.8
     transitivePeerDependencies:
       - encoding
@@ -15153,7 +15202,7 @@ snapshots:
       zod-to-json-schema: 3.24.3(zod@3.23.8)
     optionalDependencies:
       '@langchain/groq': 0.1.3(@langchain/core@0.3.40(openai@4.85.4(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(encoding@0.1.13)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      axios: 1.8.1(debug@4.4.0)
+      axios: 1.8.1
       handlebars: 4.7.8
     transitivePeerDependencies:
       - encoding
@@ -15207,6 +15256,10 @@ snapshots:
       type-check: 0.4.0
 
   libphonenumber-js@1.11.20: {}
+
+  lie@3.3.0:
+    dependencies:
+      immediate: 3.0.6
 
   lilconfig@3.1.3: {}
 
@@ -15384,6 +15437,14 @@ snapshots:
   merge-stream@2.0.0: {}
 
   merge2@1.4.1: {}
+
+  merkletreejs@0.3.11:
+    dependencies:
+      bignumber.js: 9.1.2
+      buffer-reverse: 1.0.1
+      crypto-js: 4.2.0
+      treeify: 1.1.0
+      web3-utils: 1.10.4
 
   methods@1.1.2: {}
 
@@ -15906,6 +15967,8 @@ snapshots:
       registry-auth-token: 5.1.0
       registry-url: 6.0.1
       semver: 7.7.1
+
+  pako@1.0.11: {}
 
   pako@2.1.0: {}
 
@@ -16964,6 +17027,8 @@ snapshots:
       punycode: 2.3.1
 
   tree-kill@1.2.2: {}
+
+  treeify@1.1.0: {}
 
   ts-api-utils@1.4.3(typescript@5.7.3):
     dependencies:

@@ -93,7 +93,6 @@ export const analyze: Action = {
         (response.tokenAddress ? `${response.tokenSymbol} (${response.tokenAddress})` : response.tokenSymbol) 
         : response.tokenAddress}`,
       status: 'success',
-      status: 'success',
       action: `ANALYZE_TOKEN`,
       webAction: 'analyze',
     });

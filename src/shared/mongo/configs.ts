@@ -154,12 +154,6 @@ export const COLLECTIONS = [
   },
   {
     db: DB_NAME,
-    name: 'AgentCreatedCoin',
-    indexes: [],
-    uniqueIndexes: [],
-  },
-  {
-    db: DB_NAME,
     name: 'orders',
     indexes: [
       { txHash: 1 },
@@ -175,6 +169,12 @@ export const COLLECTIONS = [
   {
     db: DB_NAME,
     name: 'swarms',
+    indexes: [],
+    uniqueIndexes: [],
+  },
+  {
+    db: DB_NAME,
+    name: 'AgentCreatedCoin',
     indexes: [],
     uniqueIndexes: [],
   },

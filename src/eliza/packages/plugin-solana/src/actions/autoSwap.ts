@@ -10,7 +10,7 @@ import {
   type Action,
   elizaLogger,
   ActionStatus,
-  stringToUuid, ActionStatus,
+  stringToUuid,
 } from '@elizaos/core';
 import {
   isAgentAdmin,
@@ -131,6 +131,7 @@ export const autoTask: Action = {
   },
   name: 'AUTO_TASK',
   suppressInitialMessage: true,
+  similes: [],
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
@@ -289,7 +290,6 @@ async function checkResponse(
     callback?.({
       text: 'Your input balance is 0.',
     });
-    return {status: 'failed'};
     return {status: 'failed'};
   }
 
