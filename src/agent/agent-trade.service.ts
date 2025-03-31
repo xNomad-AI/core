@@ -8,7 +8,7 @@ import { sleep } from "../shared/utils.service.js";
 import { ElizaManagerService } from "./eliza-manager.service.js";
 import { ConfigService } from "@nestjs/config";
 import { SolanaClient, SwapTokenService as SolanaSwapService } from "@elizaos/plugin-solana";
-import { EVMClient, SwapTokenService as EVMSwapService } from "@elizaos/plugin-evm";
+import { EVMClient, SwapTokenService as EVMSwapService, getSwapTokenFees } from "@elizaos/plugin-evm";
 import { BigNumber } from "bignumber.js";
 import { BirdeyeService } from "../shared/birdeye.service.js";
 import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -158,6 +158,7 @@ async executeEvmLimitOrder(
     const evmClient = new EVMClient({rpcUrl, chainName: chain});
     const decimals = await evmClient.getTokenDecimals(inputTokenCA);
     const {slippage, mode, tip, gasMode, maxFeePerGas } = await this.getTradeSettingsByChain(agentId, chain) as TradeSettingsEvm;
+    const fees = await getSwapTokenFees(await this.elizaManager.initAgentDB(), chain, inputTokenCA, outputTokenCA);
     const txid = await new EVMSwapService().swapToken(
     {
         rpcUrl,
@@ -172,6 +173,7 @@ async executeEvmLimitOrder(
         tip: BigNumber(tip).toString(),
         gasMode,
         maxFeePerGas: BigNumber(maxFeePerGas).toFixed(0),
+        exactFees: fees,
     });
     await this.mongo.limitOrders.deleteOne({id});
     this.logger.log(`AUTO_TASK Finished successfully ${id}, txId: ${txid}`);

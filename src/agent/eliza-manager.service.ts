@@ -1,6 +1,7 @@
 import { DirectClient } from '@elizaos/client-direct';
 import {
   Character,
+  IDatabaseAdapter,
   ModelProviderName,
   stringToUuid,
 } from '@elizaos/core';
@@ -19,6 +20,7 @@ import { SettingsService } from '../nft/core-settings.service.js';
 import { NftConfigService } from '../nft/nft-config.service.js';
 import { ClientName } from '../eliza/starter/clients/index.js';
 import { normalizeBlockchainAddress } from '../nft/nft.types.js';
+import { initializeDatabase } from '../eliza/starter/database/index.js';
 
 export type ElizaAgentConfig = {
   chain: string;
@@ -181,6 +183,11 @@ export class ElizaManagerService {
       .db('agent')
       .collection('tasks')
       .deleteMany(filter);
+  }
+
+  async initAgentDB(): Promise<IDatabaseAdapter>{
+    const db = await initializeDatabase(this.mongoService.client, 'agent');
+    return db;
   }
 
   getElizaEnvs(): Record<string, string> {

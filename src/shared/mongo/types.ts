@@ -1,6 +1,5 @@
 import { Character } from '@elizaos/core';
 import { COLLECTIONS } from './configs.js';
-import { BigNumber } from 'bignumber.js';
 export type CollectionName = (typeof COLLECTIONS)[number]['name'];
 
 export interface CollectionConfig {

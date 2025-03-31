@@ -32,6 +32,7 @@ import { getTradeSettings, SwapTokenService } from '../providers/swapTokenServic
 import { BigNumber } from 'bignumber.js';
 import { userConfirmTemplate } from '../providers/type.js';
 import { EVMClient, nativeTokenAddress } from '../providers/evmClient.js';
+import { getSwapTokenFees } from '../providers/swapUtils.js';
 
 interface SwapTokenRequest {
   inputTokenSymbol: string;
@@ -133,7 +134,7 @@ async function handleExecuteSwap(
   const { address, privateKey } = await getWalletKey(runtime, true);
   const tradeSettings = await getTradeSettings(runtime.agentId, chain);
   const decimals = await evmClient.getTokenDecimals(parameters.inputTokenCA);
-
+  const fees = await getSwapTokenFees(runtime.databaseAdapter, chain, parameters.inputTokenCA, parameters.outputTokenCA);
   const txid = await new SwapTokenService().swapToken(
     {
       ...tradeSettings,
@@ -144,6 +145,7 @@ async function handleExecuteSwap(
       inputTokenCA : parameters.inputTokenCA,
       outputTokenCA: parameters.outputTokenCA,
       amount: BigNumber(parameters.inputTokenAmount).multipliedBy(10 ** decimals).toFixed(0),
+      exactFees: fees,
     });
   
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);

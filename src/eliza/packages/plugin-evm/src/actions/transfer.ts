@@ -18,7 +18,6 @@ import {
   NotAgentAdminResponse,
 } from '../providers/walletUtils.js';
 import { convertNullStrings, getRuntimeDefaultChain, getRuntimeKey, trimTokenSymbol } from '../providers/environment.js';
-import { transferToken } from '../providers/transferUtils.js';
 import { EVMClient, nativeTokenAddress } from '../providers/evmClient.js';
 import { userConfirmTemplate } from '../providers/type.js';
 
@@ -171,13 +170,11 @@ export const transfer: Action = {
     
     let txHash: string;
     try {
-      txHash = await transferToken({
-        rpcUrl: rpcUrl,
+      txHash = await evmClient.transferToken({
         uiAmount: content.amount.toString(),
         privateKey: privateKey,
         recipient: content.recipient,
         tokenAddress: content.tokenAddress,
-        chainName: chain,
       });
     } catch (e) {
       if (e instanceof Error && e.message.includes('Transfer is restricted')) {

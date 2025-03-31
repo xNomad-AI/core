@@ -145,6 +145,10 @@ export class MongoService implements OnModuleInit {
     return this.client.db('agent').collection<LimitOrder>('limitOrders');
   }
 
+  get agentCreatedCoins() {
+    return this.getCollection('AgentCreatedCoin');
+  }
+
   // global key-value storage
   private get keyStore() {
     return this.getCollection<KeyStore>('keyStore');
