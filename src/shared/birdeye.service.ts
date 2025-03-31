@@ -183,7 +183,7 @@ export class BirdeyeService {
         keyword: params.query,
         chain: params.chain,
         target: 'token',
-        sort_by: 'liquidity',
+        sort_by: 'volume_24h_usd',
         sort_type: 'desc',
         offset: 0,
         limit: 20,
