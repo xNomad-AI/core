@@ -12,13 +12,10 @@ if [ -d "$TARGET_DIR" ]; then
   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
   git fetch --all
   if [ "$CURRENT_BRANCH" == "$VERSION" ]; then
-    git fetch --all
     git pull origin "$VERSION" --rebase
     echo "Latest changes pulled."
   else
     echo "Switching to branch $VERSION..."
-    git fetch --all
-    echo `pwd`
     git checkout "$VERSION"
     git pull origin "$VERSION"
   fi
