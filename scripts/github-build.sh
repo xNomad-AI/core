@@ -23,8 +23,8 @@ if [ -d "$TARGET_DIR" ]; then
     fi
 else
   git clone https://github.com/xNomad-AI/eliza.git $TARGET_DIR
-  git checkout "$VERSION"
   cd $TARGET_DIR
+  git checkout "$VERSION"
 fi
 
 # Install dependencies and build
