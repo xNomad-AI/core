@@ -232,9 +232,9 @@ export interface LimitOrder {
   outputTokenSymbol: string | null;
   inputTokenCA: string | null;
   outputTokenCA: string | null;
-  inputTokenAmount: number | string | null;
+  inputTokenAmount:  string | null;
   inputTokenPercentage: number | null;
-  outputTokenAmount: number | string | null;
+  outputTokenAmount: string | null;
   delay: string | null;
   startAt: Date | null;
   expireAt: Date;

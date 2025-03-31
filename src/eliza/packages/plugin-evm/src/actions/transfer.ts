@@ -1,7 +1,6 @@
 import { ActionStatus, elizaLogger } from '@elizaos/core';
 import {
   type ActionExample,
-  type Content,
   type HandlerCallback,
   type IAgentRuntime,
   type Memory,
@@ -20,12 +19,13 @@ import {
 import { convertNullStrings, getRuntimeDefaultChain, getRuntimeKey, trimTokenSymbol } from '../providers/environment.js';
 import { EVMClient, nativeTokenAddress } from '../providers/evmClient.js';
 import { userConfirmTemplate } from '../providers/type.js';
+import BigNumber from 'bignumber.js';
 
 export interface TransferContent {
   tokenAddress: string | null;
   tokenSymbol: string | null;
   recipient: string;
-  amount: number | null;
+  amount: string | null;
   percentage?: number | string;
 }
 
@@ -84,7 +84,7 @@ export const transfer: Action = {
       state.actionParameters,
     ) as TransferContent;
 
-    if (!content.amount || isNaN(content.amount as number)) {
+    if (!content.amount || isNaN(Number(content.amount))) {
       callback({
         text: `Please provide the amount of tokens to transfer`,
       });
@@ -126,13 +126,13 @@ export const transfer: Action = {
     }
 
     const uiBalance = await evmClient.getTokenUIBalance(content.tokenAddress, address);
-    if (Number(uiBalance) < content.amount) {
+    if (BigNumber(uiBalance).lt(content.amount)) {
       callback({
         text: `Insufficient balance for transfer`,
       });
       return 'pending';
     }
-    content.percentage = ((content.amount / Number(uiBalance)) * 100).toFixed(3);
+    content.percentage = BigNumber(content.amount).div(uiBalance).times(100).toFixed(3);
 
     const confirmContext = composeContext({
       state,
@@ -171,7 +171,7 @@ export const transfer: Action = {
     let txHash: string;
     try {
       txHash = await evmClient.transferToken({
-        uiAmount: content.amount.toString(),
+        uiAmount: content.amount,
         privateKey: privateKey,
         recipient: content.recipient,
         tokenAddress: content.tokenAddress,
