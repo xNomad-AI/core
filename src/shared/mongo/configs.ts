@@ -158,4 +158,24 @@ export const COLLECTIONS = [
     indexes: [],
     uniqueIndexes: [],
   },
+  {
+    db: DB_NAME,
+    name: 'orders',
+    indexes: [
+      { txHash: 1 },
+      { nftId: 1 },
+      { 'from': 1 },
+      { 'to': 1 },
+      { timestamp: -1 }
+    ],
+    uniqueIndexes: [
+      { txHash: 1 }
+    ],
+  },
+  {
+    db: DB_NAME,
+    name: 'swarms',
+    indexes: [],
+    uniqueIndexes: [],
+  },
 ] as const;

@@ -10,7 +10,7 @@ import {
   type Action,
   elizaLogger,
   ActionStatus,
-  stringToUuid,
+  stringToUuid, ActionStatus,
 } from '@elizaos/core';
 import {
   isAgentAdmin,
@@ -225,7 +225,7 @@ async function checkResponse(
     runtime,
     swapReq.outputTokenSymbol,
   );
-  swapReq.targetTokenCA = 
+  swapReq.targetTokenCA =
   (swapReq.targetToken === NATIVE_MINT.toBase58() ? NATIVE_MINT.toBase58() : null) ||
   swapReq.targetTokenCA ||
   (swapReq.targetToken === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : null) ||
@@ -289,6 +289,7 @@ async function checkResponse(
     callback?.({
       text: 'Your input balance is 0.',
     });
+    return {status: 'failed'};
     return {status: 'failed'};
   }
 

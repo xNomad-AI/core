@@ -11,12 +11,14 @@ import {
   AINftActivity,
   AINftOwner,
   CollectionName,
+  CopyTrade,
+  CoreSettings,
   KeyStore,
   NftConfig,
   NftPrimaryCoin,
   NftPrologues,
-  CoreSettings,
-  CopyTrade, CollectionConfig,
+  Swarm,
+  Order, CollectionConfig,
   LimitOrder,
 } from './types.js';
 
@@ -133,6 +135,10 @@ export class MongoService implements OnModuleInit {
     return this.getCollection<NftPrimaryCoin>('nftPrimaryCoins');
   }
 
+  get swarms() {
+    return this.getCollection<Swarm>('swarms');
+  }
+
   get addressNonces() {
     return this.getCollection<AddressNonce>('addressNonces');
   }
@@ -165,5 +171,9 @@ export class MongoService implements OnModuleInit {
   async getKeyStore(key: string, session?) {
     const result = await this.keyStore.findOne({ key }, { session });
     return result?.value;
+  }
+
+  get orders() {
+    return this.getCollection<Order>('orders');
   }
 }

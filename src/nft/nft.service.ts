@@ -459,16 +459,15 @@ export class NftService implements OnApplicationBootstrap {
       throw new Error('Agent has already bound primary coin');
     }
 
-    const { solana: agentWallet } = await this.elizaManager.getAgentAccount(
-      chain,
-      nftId,
-    );
+    const agentWallet = await this.elizaManager
+      .getAgentAccount(chain, nftId)
+      .then((res) => (chain === 'solana' ? res.solana : res.evm));
 
     const token = await this.tradeMonitorService.getAgentCreateToken(address);
     if (!token) {
       throw new Error('token not indexed');
     }
-    if (token.creatorAddress !== agentWallet) {
+    if (token.creatorAddress.toLowerCase() !== agentWallet.toLowerCase()) {
       throw new Error('agent is not the creator of the token');
     }
     await this.tradeMonitorService.bindAgentCreatedTokenToNft({

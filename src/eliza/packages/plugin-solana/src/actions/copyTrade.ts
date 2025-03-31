@@ -211,7 +211,7 @@ export const copyTrade: Action = {
       return 'pending';
     }
 
-    const { id } = await SharedProvider.get<any>(
+    const {id} = await SharedProvider.get<any>(
       'tradeMonitorService',
     ).createCopyTrade({
       chain: response.chain,

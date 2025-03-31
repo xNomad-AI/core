@@ -17,6 +17,7 @@ import { CacheTTL } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import AsyncRetry from 'async-retry';
+import { ethers } from 'ethers';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { CharacterConfig } from '../shared/mongo/types.js';
 import { TradeMonitorService } from '../shared/trade-monitor.service.js';
@@ -268,6 +269,7 @@ export class NftController {
 
   @Get('agent-created-tokens')
   async getAgentCreatedTokens(
+    @Query('chain') chain: string,
     @Query('sortBy') sortBy: string,
     @Query('sortOrder') sortOrder: string,
     @Query('offset') offset: number,
@@ -276,6 +278,7 @@ export class NftController {
     @Query('onlyBound') onlyBound?: string,
   ) {
     const response = await this.tradeMonitorService.getAgentCreatedTokens({
+      chain: chain ?? 'solana', // compatible with old API calls that don't specify chain
       sortBy: sortBy as any,
       sortOrder: sortOrder as any,
       offset,
@@ -341,8 +344,8 @@ export class NftController {
   }
 
   @Get('/:chain/:nftId/payment-update-primary-coin')
-  async getPaymentUpdatePrimaryCoin() {
-    return this.getBindPrimaryCoinPaymentInfo();
+  async getPaymentUpdatePrimaryCoin(@Param('chain') chain: string) {
+    return this.getBindPrimaryCoinPaymentInfo(chain);
   }
 
   @UseGuards(AuthGuard)
@@ -374,75 +377,132 @@ export class NftController {
       throw new Error('Primary coin not found');
     }
 
-    const { recipient, solAmount } = this.getBindPrimaryCoinPaymentInfo();
+    const { recipient, solAmount } = this.getBindPrimaryCoinPaymentInfo(chain);
 
-    const validateTx = async (
-      txid: string,
-      payer: string,
-      expectedRecipient: string,
-      expectedSol: number,
-    ) => {
-      this.logger.log(`Validating payment tx ${txid}`);
-      const connection = new Connection(this.config.get('SOLANA_RPC_URL'));
+    if (chain === 'solana') {
+      const validateTx = async (
+        txid: string,
+        payer: string,
+        expectedRecipient: string,
+        expectedSol: number,
+      ) => {
+        this.logger.log(`Validating payment tx ${txid}`);
+        const connection = new Connection(this.config.get('SOLANA_RPC_URL'));
 
-      const tx = await AsyncRetry(
-        async (bail) => {
-          const tx = await connection.getParsedTransaction(txid, {
-            maxSupportedTransactionVersion: 0,
-            commitment: 'confirmed',
-          });
-          if (!tx) {
-            throw new Error(`not found`);
-          }
-          return tx;
-        },
-        {
-          retries: 30,
-          maxTimeout: 3000,
-          onRetry: (error, attempt) => {
-            this.logger.warn(
-              `Attempt ${attempt}: failed to get payment tx ${txid}: ${error}`,
-            );
+        const tx = await AsyncRetry(
+          async (bail) => {
+            const tx = await connection.getParsedTransaction(txid, {
+              maxSupportedTransactionVersion: 0,
+              commitment: 'confirmed',
+            });
+            if (!tx) {
+              throw new Error(`not found`);
+            }
+            return tx;
           },
-        },
-      );
+          {
+            retries: 30,
+            maxTimeout: 3000,
+            onRetry: (error, attempt) => {
+              this.logger.warn(
+                `Attempt ${attempt}: failed to get payment tx ${txid}: ${error}`,
+              );
+            },
+          },
+        );
 
-      const blockTime = await connection.getBlockTime(tx.slot);
-      if (Date.now() / 1000 - blockTime! > 15 * 60) {
-        throw new Error(`Payment tx is expired: ${txid}`);
-      }
+        const blockTime = await connection.getBlockTime(tx.slot);
+        if (Date.now() / 1000 - blockTime! > 15 * 60) {
+          throw new Error(`Payment tx is expired: ${txid}`);
+        }
 
-      // find system transfer of some amount of SOL
-      const instruction = tx.transaction.message.instructions.find(
-        (instruction) => {
-          if ('program' in instruction && 'parsed' in instruction) {
-            const { type, info } = instruction.parsed;
-            const { program, programId } = instruction;
+        // find system transfer of some amount of SOL
+        const instruction = tx.transaction.message.instructions.find(
+          (instruction) => {
+            if ('program' in instruction && 'parsed' in instruction) {
+              const { type, info } = instruction.parsed;
+              const { program, programId } = instruction;
 
-            if (program === 'system' && type === 'transfer') {
-              if (
-                info.source === payer &&
-                info.destination === expectedRecipient &&
-                Number(info.lamports.toString()) ===
-                  expectedSol * LAMPORTS_PER_SOL
-              ) {
-                return true;
+              if (program === 'system' && type === 'transfer') {
+                if (
+                  info.source === payer &&
+                  info.destination === expectedRecipient &&
+                  Number(info.lamports.toString()) ===
+                    expectedSol * LAMPORTS_PER_SOL
+                ) {
+                  return true;
+                }
               }
             }
-          }
-          return false;
-        },
-      );
-      if (!instruction) {
-        const msg = `Invalid payment tx: ${txid}, expected recipient: ${expectedRecipient}, expected amount: ${expectedSol} SOL`;
-        this.logger.log(msg);
-        throw new Error(msg);
-      }
+            return false;
+          },
+        );
+        if (!instruction) {
+          const msg = `Invalid payment tx: ${txid}, expected recipient: ${expectedRecipient}, expected amount: ${expectedSol} SOL`;
+          this.logger.log(msg);
+          throw new Error(msg);
+        }
 
-      this.logger.log(`Payment tx ${txid} is valid`);
-    };
+        this.logger.log(`Payment tx ${txid} is valid`);
+      };
+      await validateTx(body.paymentTxId, address, recipient, solAmount);
+    } else {
+      const validateTx = async (
+        txid: string,
+        payer: string,
+        expectedRecipient: string,
+        expectedBnb: number,
+      ) => {
+        this.logger.log(`Validating BSC payment tx ${txid}`);
 
-    await validateTx(body.paymentTxId, address, recipient, solAmount);
+        const provider = new ethers.JsonRpcProvider(
+          this.config.get('BSC_RPC_URL'),
+        );
+
+        const tx = await AsyncRetry(
+          async (bail) => {
+            const tx = await provider.getTransaction(txid);
+            if (!tx) {
+              throw new Error(`Transaction not found: ${txid}`);
+            }
+            return tx;
+          },
+          {
+            retries: 30,
+            maxTimeout: 3000,
+            onRetry: (error, attempt) => {
+              this.logger.warn(
+                `Attempt ${attempt}: failed to get BSC payment tx ${txid}: ${error}`,
+              );
+            },
+          },
+        );
+
+        if (tx.from.toLowerCase() !== payer.toLowerCase()) {
+          throw new Error(
+            `Invalid payer address: ${tx.from}, expected: ${payer}`,
+          );
+        }
+        if (tx.to?.toLowerCase() !== expectedRecipient.toLowerCase()) {
+          throw new Error(
+            `Invalid recipient: ${tx.to}, expected: ${expectedRecipient}`,
+          );
+        }
+        if (tx.value < ethers.parseEther(expectedBnb.toString())) {
+          throw new Error(
+            `Invalid amount: ${ethers.formatEther(tx.value)} BNB, expected: ${expectedBnb} BNB`,
+          );
+        }
+
+        const block = await provider.getBlock(tx.blockNumber!);
+        if (Date.now() / 1000 - block.timestamp > 15 * 60) {
+          throw new Error(`Payment tx is expired: ${txid}`);
+        }
+
+        this.logger.log(`Payment tx ${txid} is valid`);
+      };
+      await validateTx(body.paymentTxId, address, recipient, solAmount);
+    }
 
     await this.tradeMonitorService.setOverrideMetadataForAgentCreatedToken({
       address: primaryCoin.mintAddress,
@@ -467,10 +527,17 @@ export class NftController {
     return coin;
   }
 
-  private getBindPrimaryCoinPaymentInfo() {
-    return {
-      recipient: this.config.get('SOLANA_LAUNCHPAD_FEE_RECIPIENT_ADDRESS'),
-      solAmount: process.env.RUN_ENV === 'dev' ? 0.0001 : 1,
-    };
+  private getBindPrimaryCoinPaymentInfo(chain: string) {
+    if (chain === 'solana') {
+      return {
+        recipient: this.config.get('SOLANA_LAUNCHPAD_FEE_RECIPIENT_ADDRESS'),
+        solAmount: process.env.RUN_ENV === 'dev' ? 0.0001 : 1,
+      };
+    } else {
+      return {
+        recipient: this.config.get('BSC_LAUNCHPAD_FEE_RECIPIENT_ADDRESS'),
+        solAmount: process.env.RUN_ENV === 'dev' ? 0.0001 : 0.2,
+      };
+    }
   }
 }

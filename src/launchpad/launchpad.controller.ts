@@ -1,18 +1,40 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ethers } from 'ethers';
+import { FourMemeApi } from '../shared/fourmeme.js';
+import { EvmLaunchpadService } from './evm/evm-launchpad.service.js';
 import { LaunchpadService } from './launchpad.service.js';
 
 @Controller('/launchpad')
 export class LaunchpadController {
-  constructor(private readonly launchpadService: LaunchpadService) {}
+  constructor(
+    private readonly launchpadService: LaunchpadService,
+    private readonly evmLaunchpadService: EvmLaunchpadService,
+  ) {}
 
   @Get('/:chain/common-collection-nft-fee')
   async getCreateCommonCollectionNftFee(
     @Param('chain') chain: string,
     @Query('userAddress') userAddress: string,
   ) {
-    const { fee, feeAfterDiscount, discountPercentage } =
-      await this.launchpadService.calculateMintFee(userAddress);
-    return { fee, feeAfterDiscount, discountPercentage };
+    if (chain === 'solana') {
+      const { fee, feeAfterDiscount, discountPercentage } =
+        await this.launchpadService.calculateMintFee(userAddress);
+      return { fee, feeAfterDiscount, discountPercentage };
+    } else {
+      const { fee, feeAfterDiscount, discountPercentage } =
+        await this.evmLaunchpadService.calculateMintFee();
+      return { fee, feeAfterDiscount, discountPercentage };
+    }
   }
 
   @Post('/:chain/create-common-collection-nft')
@@ -42,16 +64,40 @@ export class LaunchpadController {
           telegram?: string;
           website?: string;
         };
-        buyAmountSol: number;
+        buyAmount: number;
       };
     },
   ) {
-    return this.launchpadService.createCommonCollectionNft({
-      chain,
-      userAddress: body.userAddress,
-      nft: body.nft,
-      createToken: body.createToken,
-    });
+    if (body.createToken) {
+      body.createToken.buyAmount =
+        body.createToken.buyAmount ?? body.createToken['buyAmountSol'];
+    }
+
+    if (chain === 'solana') {
+      return this.launchpadService.createCommonCollectionNft({
+        chain,
+        userAddress: body.userAddress,
+        nft: body.nft,
+        createToken: body.createToken,
+      });
+    } else {
+      return this.evmLaunchpadService.createCommonCollectionNft({
+        chain,
+        userAddress: body.userAddress,
+        nft: body.nft,
+        createToken: body.createToken,
+      });
+    }
+  }
+
+  @Post('upload-fourmeme-image')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFourMemeImage(@UploadedFile() file: Express.Multer.File) {
+    const fourMemeApi = new FourMemeApi();
+    const wallet = new ethers.Wallet(ethers.Wallet.createRandom().privateKey);
+    const userToken = await fourMemeApi.login(wallet);
+    const url = await fourMemeApi.uploadImage(userToken, file.buffer);
+    return { url };
   }
 
   @Post('create-w3s-delegate')

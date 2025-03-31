@@ -1,3 +1,4 @@
+import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { WalletModule } from '../wallet/wallet.module.js';
 import { AgentAccountController } from './agent-account.controller.js';
@@ -7,7 +8,7 @@ import { SettingsService } from '../nft/core-settings.service.js';
 import { NftConfigService } from '../nft/nft-config.service.js';
 import { AgentTradeService } from './agent-trade.service.js';
 @Module({
-  imports: [WalletModule],
+  imports: [WalletModule, HttpModule],
   providers: [ElizaManagerService, SettingsService, NftConfigService, AgentTradeService],
   controllers: [AgentController, AgentAccountController],
   exports: [ElizaManagerService, AgentTradeService],
