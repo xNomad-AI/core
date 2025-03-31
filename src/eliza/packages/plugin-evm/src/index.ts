@@ -12,6 +12,7 @@ import { getAccountFromWalletService } from './providers/keypairUtils.js';
 import { getWalletPortfolio, WalletPortfolio, Item } from './providers/walletUtils.js';
 import createToken from './actions/createToken.js';
 import { GetSwapCallDataDto, SwapTokenDto } from './providers/type.js';
+import { getSwapTokenFees } from './providers/swapUtils.js';
 
 export {
   EVMClient,
@@ -19,6 +20,7 @@ export {
   SwapTokenDto,
   GetSwapCallDataDto,
   getAccountFromWalletService,
+  getSwapTokenFees,
   nativeTokenAddress,
   getWalletPortfolio,
   WalletPortfolio,

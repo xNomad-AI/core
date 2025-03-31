@@ -61,7 +61,7 @@ export class SwapTokenService {
 
     async swapToken(req: SwapTokenDto): Promise<string> {
         const { chainName, rpcUrl, privateKey, userWalletAddress, mode = 'FAST', inputTokenCA, amount, gasMode, maxFeePerGas, maxPriorityFeePerGas, tip } = req;
-        const { chain, chainId } = this.getChain(chainName);
+        const { chain } = this.getChain(chainName);
         const account = privateKeyToAccount(req.privateKey as Hex);
         const walletClient = createWalletClient({
             chain,
@@ -95,7 +95,7 @@ export class SwapTokenService {
             request.maxPriorityFeePerGas = BigInt(request.maxPriorityFeePerGas) * 2n;
         }
         if (request.maxFeePerGas < request.maxPriorityFeePerGas) {
-            throw new Error('Invalid max fee or max priority fee');
+            request.maxFeePerGas = request.maxPriorityFeePerGas;
         }
 
         const serializedTransaction = await account.signTransaction(request);

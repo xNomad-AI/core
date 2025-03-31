@@ -172,4 +172,10 @@ export const COLLECTIONS = [
     indexes: [],
     uniqueIndexes: [],
   },
+  {
+    db: DB_NAME,
+    name: 'AgentCreatedCoin',
+    indexes: [],
+    uniqueIndexes: [],
+  },
 ] as const;
