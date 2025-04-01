@@ -295,7 +295,7 @@ export class SwapTokenService {
             outTokenAddress: params.tokenOut.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenOut,
             amount: formatUnits(BigInt(params.amountIn), params.deciaml).toString(),
             gasPrice: params.gasPrice,
-            enabledDexIds: '1,45' //PancakeV2, UniswapV3, PancakeV3
+            enabledDexIds: '1,45,46' //PancakeV2, UniswapV3, PancakeV3
         });
 
         if (routes.data.path.routes.length === 0) {
