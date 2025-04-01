@@ -1,4 +1,4 @@
-import { FourMemeSwapParams, FourMemeSwapResponse, GetSwapCallDataDto, KyberSwapParams, KyberSwapResponse, OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanQuoteParams, OpenoceanQuoteResponse, OpenoceanSwapResponse, SwapTokenDto, SwapxParams, TradeSettingsDto } from './type';
+import { FourMemeSwapParams, FourMemeSwapResponse, GetSwapCallDataDto, KyberSwapParams, KyberSwapResponse, OkxParams, OkxSwapResponse, OpenoceanGasPriceResponse, OpenoceanParams, OpenoceanQuoteParams, OpenoceanQuoteResponse, OpenoceanSwapResponse, SwapMixedMultiHopExactIn, SwapTokenDto, SwapxParams, TradeSettingsDto } from './type';
 import { createWalletClient, encodeFunctionData, ethAddress, formatUnits, Hex, http, zeroAddress } from 'viem';
 import { bloxValidatorNodeService, jsonRpcNodeService } from './validatorNodeService.js';
 import okxService from './okxService.js';
@@ -36,7 +36,7 @@ export class SwapTokenService {
     constructor() {
         this.logger = console;
     }
-    
+
     getChain(chainName: string) {
         let chain;
         let chainId;
@@ -70,7 +70,7 @@ export class SwapTokenService {
         });
         const calldata = await this.getSwapTxCallData(req);
         // set approval for token transfer
-        await new EVMClient({rpcUrl, chainName}).checkAndApproveTokenTransfer({
+        await new EVMClient({ rpcUrl, chainName }).checkAndApproveTokenTransfer({
             walletAddress: userWalletAddress,
             walletPrivateKey: privateKey,
             tokenAddress: inputTokenCA,
@@ -100,7 +100,7 @@ export class SwapTokenService {
 
         const serializedTransaction = await account.signTransaction(request);
         const validatorNode =
-          mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
+            mode === 'FAST' ? jsonRpcNodeService : bloxValidatorNodeService;
         return await validatorNode.postTransaction({
             walletClient,
             serializedTransaction,
@@ -295,7 +295,7 @@ export class SwapTokenService {
             outTokenAddress: params.tokenOut.toLowerCase() === ethAddress ? swapxService.getWETH(params.chainName) : params.tokenOut,
             amount: formatUnits(BigInt(params.amountIn), params.deciaml).toString(),
             gasPrice: params.gasPrice,
-            enabledDexIds: '1,45,46' //PancakeV2, UniswapV3, PancakeV3
+            enabledDexIds: '1,45' //PancakeV2, UniswapV3, PancakeV3
         });
 
         if (routes.data.path.routes.length === 0) {
@@ -337,8 +337,11 @@ export class SwapTokenService {
                 });
             }
         } else {
-            const pancakeV2Routes = route.subRoutes.filter((subRoute) => subRoute.dexes[0].dex === "PancakeV2");
-            if (pancakeV2Routes.length === route.subRoutes.length) {
+            const pancakeV2Routes = route.subRoutes
+                .map((subRoute, index) => ({ subRoute, index })) 
+                .filter(({ subRoute }) => subRoute.dexes[0].dex === "PancakeV2"); 
+
+            if (pancakeV2Routes.length === route.subRoutes.length) { // v2
                 const path: string[] = [];
                 route.subRoutes.forEach((subRoute) => {
                     path.push(subRoute.from)
@@ -360,7 +363,7 @@ export class SwapTokenService {
                     tx.value = params.amountIn;
                 }
                 return tx;
-            } else if (pancakeV2Routes.length === 0) {
+            } else if (pancakeV2Routes.length === 0) { // v3
                 const feeResults = await Promise.all(
                     route.subRoutes.map(async (subRoute) => {
                         const fee = await swapxService.getFee(
@@ -378,15 +381,43 @@ export class SwapTokenService {
                 const path: string[] = [];
                 const fees: number[] = [];
                 feeResults.forEach((item, index) => {
-                  if (index === 0) path.push(item.from);
-                  path.push(item.to); 
-                  fees.push(item.fee);
+                    if (index === 0) path.push(item.from);
+                    path.push(item.to);
+                    fees.push(item.fee);
                 });
                 const tx = swapxService.buildSwapV3MultiHopExactInTx({
                     chainName: params.chainName,
                     factoryAddresses: route.subRoutes.map((subRoute) => swapxService.getFactoryAddress(params.chainName, subRoute.dexes[0].dex)),
                     poolAddresses: route.subRoutes.map((subRoute) => subRoute.dexes[0].id),
                     path: swapxService.encodePath(path, fees),
+                    recipient: params.to,
+                    deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
+                    amountIn: params.amountIn,
+                    amountOutMinimum: amountOutMin,
+                    exactFees: params.exactFees
+                });
+                if (params.tokenIn.toLowerCase() === ethAddress) {
+                    tx.value = params.amountIn;
+                }
+                return tx;
+            } else if (route.subRoutes.length === 2 && pancakeV2Routes.length === 1) { //v2 and v3
+                const v2Index = pancakeV2Routes[0].index;
+                const v3Index = v2Index === 0 ? 1 : 0;
+                const v2SubRoute = route.subRoutes[v2Index];
+                const v3SubRoute = route.subRoutes[v3Index];
+                const swapRoutes = v3Index === 0 ? ['v3','v2'] : ['v2','v3'];
+                const v3Fee = await swapxService.getFee(params.rpcUrl, params.chainName, v3SubRoute.dexes[0].id as `0x${string}`);
+                const path1 = v3Index === 0 ? swapxService.encodePath([v3SubRoute.from, v3SubRoute.to], [v3Fee]) : swapxService.encodePath([v2SubRoute.from, v2SubRoute.to], [0]);
+                const path2 = v3Index === 1 ? swapxService.encodePath([v3SubRoute.from, v3SubRoute.to], [v3Fee]) : swapxService.encodePath([v2SubRoute.from, v2SubRoute.to], [0]);
+                const tx = swapxService.buildSwapMixedMultiHopExactIn({
+                    chainName: params.chainName,
+                    routes: swapRoutes,
+                    path1: path1,
+                    factory1: swapxService.getFactoryAddress(params.chainName, route.subRoutes[0].dexes[0].dex),
+                    poolAddress1: route.subRoutes[0].dexes[0].id,
+                    path2: path2,
+                    factory2: swapxService.getFactoryAddress(params.chainName, route.subRoutes[1].dexes[0].dex),
+                    poolAddress2: route.subRoutes[1].dexes[0].id,
                     recipient: params.to,
                     deadline: (Math.floor(Date.now() / 1000) + 60).toString(),
                     amountIn: params.amountIn,
