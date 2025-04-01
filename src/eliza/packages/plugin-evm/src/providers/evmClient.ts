@@ -151,56 +151,6 @@ export class EVMClient {
   }
 
   /**
-   * Transfer tokens to another address
-   * @param tokenAddress ERC20 token address
-   * @param recipient Recipient address
-   * @param amount Amount to transfer (as string)
-   * @param privateKey Private key for transaction signing
-   * @returns Transaction hash
-   */
-  async transferToken(
-    tokenAddress: `0x${string}`,
-    recipient: `0x${string}`,
-    amount: string,
-    privateKey: string
-  ): Promise<`0x${string}`> {
-    if (!privateKey) {
-      throw new Error('Private key is required for transfers');
-    }
-
-    // Create account and wallet client from privateKey
-    const account = privateKeyToAccount(privateKey as Hex);
-    const walletClient = createWalletClient({
-      chain: this.chain,
-      transport: http((this.publicClient.transport as any).url),
-      account,
-    });
-
-    // Get token decimals for proper amount conversion
-    const decimals = await this.getTokenDecimals(tokenAddress);
-    
-    // Check balance
-    const balance = await this.getTokenBalance(tokenAddress, account.address);
-    const amountInWei = parseUnits(amount, decimals);
-    
-    if (balance < amountInWei) {
-      throw new Error('Insufficient balance');
-    }
-
-    // Send transaction
-    const txHash = await walletClient.writeContract({
-      chain: this.chain,
-      address: tokenAddress,
-      abi: erc20Abi,
-      functionName: 'transfer',
-      args: [recipient, amountInWei],
-      account,
-    });
-
-    return txHash;
-  }
-
-  /**
    * Read contract
    * @param address contract address
    * @param abi contract abi
@@ -215,5 +165,80 @@ export class EVMClient {
       functionName,
       args,
     });
+  }
+
+
+
+  /**
+   * Transfer tokens to another address
+   * @param tokenAddress ERC20 token address
+   * @param recipient Recipient address
+   * @param amount Amount to transfer (as string)
+   * @param privateKey Private key for transaction signing
+   * @returns Transaction hash
+   */
+  async transferToken({
+      privateKey,
+      tokenAddress,
+      recipient,
+      uiAmount,
+    }: {
+      privateKey: string;
+      tokenAddress: string;
+      recipient: string;
+      uiAmount: string;
+  }) {
+    const account = privateKeyToAccount(privateKey as Hex);
+    const walletClient = createWalletClient({
+      chain: this.chain,
+      transport: http(this.rpcUrl),
+      account,
+    });
+    
+    if (tokenAddress === nativeTokenAddress) {
+      // Send native token transaction
+      const amountInWei = parseUnits(uiAmount, 18);
+      const txHash = await walletClient.sendTransaction({
+        to: recipient as `0x${string}`,
+        value: amountInWei,
+        account,
+        kzg: {
+          blobToKzgCommitment: (blob: Uint8Array) => new Uint8Array(),
+          computeBlobKzgProof: (blob: Uint8Array, commitment: Uint8Array) => new Uint8Array(),
+        },
+        chain: this.chain,
+      });
+      return txHash;
+    } else {
+      // Read wallet balance
+      const balance = await this.publicClient.readContract({
+        address: tokenAddress as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [account.address],
+      });
+
+      const decimals = await this.publicClient.readContract({
+        address: tokenAddress as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'decimals',
+      });
+      const amountInWei = parseUnits(uiAmount, decimals);
+
+      if (BigInt(balance) < amountInWei) {
+        throw new Error('Insufficient balance');
+      }
+
+      // Send ERC20 token transaction
+      const txHash = await walletClient.writeContract({
+        chain: this.chain,
+        address: tokenAddress as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'transfer',
+        args: [recipient as `0x${string}`, amountInWei],
+        account,
+      });
+      return txHash;
+    }
   }
 }

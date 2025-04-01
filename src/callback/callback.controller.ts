@@ -5,15 +5,15 @@ import { Body, Headers, HttpCode, UnauthorizedException } from '@nestjs/common';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import {
-  getWalletKeyFromWalletService as getSolanaWallet,
   SwapTokenService as SolanaSwapTokenService,
   SolanaClient,
 } from '@elizaos/plugin-solana';
 import { 
-  getAccountFromWalletService as getEvmWallet, 
   SwapTokenService as EvmSwapTokenService,
   nativeTokenAddress,
   EVMClient,
+  SwapTokenDto,
+  getSwapTokenFees,
 } from '@elizaos/plugin-evm';
 import { BigNumber } from 'bignumber.js';
 import { CopyTrade, DEFAULT_TRADE_SETTINGS_SOLANA } from '../shared/mongo/types.js';
@@ -175,8 +175,8 @@ export class CallbackController {
     const {evmAddress: address, evmPrivateKey: privateKey} = wallet;
     const evmClient = new EVMClient({rpcUrl, chainName: chain});
     const tokenDecimals = await evmClient.getTokenDecimals(inputTokenCA);
-
-    const swapTokenDto: any = {
+    const fees = await getSwapTokenFees(await this.elizaManager.initAgentDB(), chain, inputTokenCA, outputTokenCA);
+    const swapTokenDto: SwapTokenDto = {
       amount: '0',
       chainName: chain,
       rpcUrl,
@@ -186,6 +186,7 @@ export class CallbackController {
       slippage,
       privateKey,
       userWalletAddress: address,
+      exactFees: fees,
     }
     // copy buy
     if (inputTokenCA === nativeTokenAddress) {
@@ -304,7 +305,7 @@ export class CallbackController {
       txId,
       message: `copy trade processed successfully, id: ${copyTradeTask.id}, tx: ${txId}`,
     };
-}
+  }
 }
 
 

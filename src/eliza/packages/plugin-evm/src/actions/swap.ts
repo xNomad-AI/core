@@ -21,7 +21,6 @@ import {
   getChainRPC,
   getEvmClient,
   getRuntimeDefaultChain,
-  getRuntimeKey,
 } from '../providers/environment.js';
 import {
   getTokenCABySymbol,
@@ -32,15 +31,16 @@ import { getTradeSettings, SwapTokenService } from '../providers/swapTokenServic
 import { BigNumber } from 'bignumber.js';
 import { userConfirmTemplate } from '../providers/type.js';
 import { EVMClient, nativeTokenAddress } from '../providers/evmClient.js';
+import { getSwapTokenFees } from '../providers/swapUtils.js';
 
 interface SwapTokenRequest {
   inputTokenSymbol: string;
   inputTokenCA: string;
   outputTokenSymbol: string;
   outputTokenCA: string;
-  inputTokenAmount: number | null;
+  inputTokenAmount: string | null;
   inputTokenPercentage: number | null;
-  outputTokenAmount: number | null;
+  outputTokenAmount: string | null;
 }
 
 export const executeSwap: Action = {
@@ -74,7 +74,7 @@ export const executeSwap: Action = {
             'Contract address of the token to buy. Either outputTokenSymbol or outputTokenCA must be provided.',
         },
         inputTokenAmount: {
-          type: ['number', 'null'],
+          type: ['string', 'null'],
           description:
             'Exact amount of the input token to swap. Required if inputTokenPercentage is not provided.',
         },
@@ -84,7 +84,7 @@ export const executeSwap: Action = {
             'Percentage of the input token balance to swap. Required if inputTokenAmount is not provided. When extracting percentages, convert values like "50%" into decimal form (e.g., 0.5 instead of 50).',
         },
         outputTokenAmount: {
-          type: ['number', 'null'],
+          type: ['string', 'null'],
           description: 'Expected amount of the output token to receive.',
         },
       },
@@ -133,7 +133,7 @@ async function handleExecuteSwap(
   const { address, privateKey } = await getWalletKey(runtime, true);
   const tradeSettings = await getTradeSettings(runtime.agentId, chain);
   const decimals = await evmClient.getTokenDecimals(parameters.inputTokenCA);
-
+  const fees = await getSwapTokenFees(runtime.databaseAdapter, chain, parameters.inputTokenCA, parameters.outputTokenCA);
   const txid = await new SwapTokenService().swapToken(
     {
       ...tradeSettings,
@@ -144,6 +144,7 @@ async function handleExecuteSwap(
       inputTokenCA : parameters.inputTokenCA,
       outputTokenCA: parameters.outputTokenCA,
       amount: BigNumber(parameters.inputTokenAmount).multipliedBy(10 ** decimals).toFixed(0),
+      exactFees: fees,
     });
   
   elizaLogger.log(`Swap completed successfully! Transaction ID: ${txid}`);
@@ -162,12 +163,12 @@ async function checkResponse(
 ): Promise<{
   status: ActionStatus;
   parameters?: {
-    inputTokenAmount: number | null;
+    inputTokenAmount: string | null;
     inputTokenSymbol: string;
     inputTokenPercentage: number | null;
     outputTokenSymbol: string;
     inputTokenCA: string;
-    outputTokenAmount: number | null;
+    outputTokenAmount: string | null;
     outputTokenCA: string;
 }
 }> {
@@ -183,9 +184,6 @@ async function checkResponse(
   const client = getEvmClient(runtime, chain);
   const {address} = await getWalletKey(runtime, true);
   elizaLogger.info('Swap request:', swapReq);
-  swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
-  swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
-  swapReq.outputTokenAmount = Number(swapReq.outputTokenAmount);
   if (client.isNativeToken(swapReq.inputTokenSymbol)) {
     swapReq.inputTokenCA = nativeTokenAddress;
   }
@@ -234,8 +232,8 @@ async function checkResponse(
   }
 
   if (
-    Number.isFinite(swapReq.outputTokenAmount) &&
-    swapReq.outputTokenAmount != 0
+    swapReq.outputTokenAmount &&
+    +swapReq.outputTokenAmount > 0
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
@@ -244,9 +242,9 @@ async function checkResponse(
     return { status: 'pending'};
   }
 
-  const balance = await client.getTokenUIBalance(swapReq.inputTokenCA, address);
+  const uiBalance = await client.getTokenUIBalance(swapReq.inputTokenCA, address);
 
-  if (!balance) {
+  if (!uiBalance) {
     const responseMsg = {
       text: 'Your input balance is 0.',
       result: 'Insufficient inputToken Balance',
@@ -256,19 +254,16 @@ async function checkResponse(
   }
 
   if (
-    !Number.isFinite(swapReq.inputTokenAmount) &&
+    !swapReq.inputTokenAmount &&
     Number.isFinite(swapReq.inputTokenPercentage) &&
     swapReq.inputTokenPercentage != 0
   ) {
-    swapReq.inputTokenAmount = Number(balance) * swapReq.inputTokenPercentage;
+    swapReq.inputTokenAmount = BigNumber(uiBalance).multipliedBy(swapReq.inputTokenPercentage).toString();
   }
 
-  if (
-    !Number.isFinite(swapReq.inputTokenAmount) ||
-    swapReq.inputTokenAmount <= 0
-  ) {
+  if (!swapReq.inputTokenAmount || +swapReq.inputTokenAmount <= 0) {
     const responseMsg = {
-      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
+      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount to perform the swap`,
       action: 'EXECUTE_SWAP',
       result: 'Pending inputToken Amount',
     };
@@ -276,9 +271,9 @@ async function checkResponse(
     return { status: 'pending'};
   }
 
-  if (Number(balance) < swapReq.inputTokenAmount) {
+  if (BigNumber(uiBalance).lt(swapReq.inputTokenAmount)) {
     const responseMsg = {
-      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
+      text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${uiBalance} available.`,
       result: 'Insufficient balance for swap',
     };
     callback?.(responseMsg);
@@ -315,7 +310,7 @@ async function checkResponse(
       outputTokenSymbol: swapReq.outputTokenSymbol,
       outputTokenCA: swapReq.outputTokenCA,
       inputTokenAmount: swapReq.inputTokenAmount,
-      inputPercentage: ((swapReq.inputTokenAmount / Number(balance)) * 100).toFixed(1),
+      inputPercentage: (BigNumber(swapReq.inputTokenAmount).div(uiBalance).times(100).toFixed(1)),
     });
     const responseMsg = {
       text: `${swapInfo}`,
@@ -337,7 +332,7 @@ function formatConfirmSwapInfo(params: {
   inputTokenCA: string;
   outputTokenSymbol: string;
   outputTokenCA: string;
-  inputTokenAmount: number;
+  inputTokenAmount: string;
   inputPercentage: string;
 }): string {
   const displayedInputSymbol = trimTokenSymbol(`$${params.inputTokenSymbol || params.inputTokenCA}`);

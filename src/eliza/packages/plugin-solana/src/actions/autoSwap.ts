@@ -31,6 +31,7 @@ import {
 } from '../providers/solanaClient.js';
 import { NATIVE_MINT } from '@solana/spl-token';
 import { userConfirmTemplate } from '../providers/type.js';
+import { BigNumber } from 'bignumber.js';
 
 export const LimitOrderTable = 'limitOrders';
 export interface LimitOrderTask {
@@ -42,9 +43,9 @@ export interface LimitOrderTask {
   inputTokenCA: string | null;
   outputTokenCA: string | null;
   targetTokenCA: string | null;
-  inputTokenAmount: number | string | null;
+  inputTokenAmount: string | null;
   inputTokenPercentage: number | null;
-  outputTokenAmount: number | string | null;
+  outputTokenAmount: string | null;
   delay: string | null;
   startAt: Date | null;
   expireAt: Date;
@@ -85,7 +86,7 @@ export const autoTask: Action = {
             'Contract address of the token to buy. If omitted in a sell order, SOL will be used by default. Either outputTokenSymbol or outputTokenCA must be provided.',
         },
         inputTokenAmount: {
-          type: ['number', 'null'],
+          type: ['string', 'null'],
           description:
             'Exact amount of inputToken to swap. Either inputTokenAmount or inputTokenPercentage must be provided.',
         },
@@ -123,6 +124,7 @@ export const autoTask: Action = {
         'inputTokenPercentage',
         'priceCondition',
         'targetPrice',
+        'targetToken',
         'delay',
       ],
     },
@@ -197,7 +199,6 @@ async function checkResponse(
   // generate formatted response from chat
   let swapReq = convertNullStrings(state.actionParameters) as LimitOrderTask;
   swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
-  swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
 
   elizaLogger.log(`Response:`, swapReq);
 
@@ -224,10 +225,12 @@ async function checkResponse(
     runtime,
     swapReq.outputTokenSymbol,
   );
-  swapReq.targetTokenCA = swapReq.targetTokenCA || await getTokenCABySymbol(
-    runtime,
-    swapReq.targetToken,
-  ) || swapReq.targetToken === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : swapReq.outputTokenCA;
+  swapReq.targetTokenCA = 
+  (swapReq.targetToken === NATIVE_MINT.toBase58() ? NATIVE_MINT.toBase58() : null) ||
+  swapReq.targetTokenCA ||
+  (swapReq.targetToken === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : null) ||
+  (swapReq.targetToken === swapReq.outputTokenSymbol ? swapReq.outputTokenCA : null) ||
+  await getTokenCABySymbol(runtime, swapReq.targetToken);
 
   if (!swapReq.inputTokenCA || !isValidSPLTokenAddress(swapReq.inputTokenCA)) {
     callback?.({
@@ -251,8 +254,8 @@ async function checkResponse(
   }
 
   if (
-    Number.isFinite(swapReq.outputTokenAmount) &&
-    swapReq.outputTokenAmount != 0
+    swapReq.outputTokenAmount &&
+    +swapReq.outputTokenAmount > 0
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
@@ -263,16 +266,16 @@ async function checkResponse(
   const client = await getSolanaClient(runtime);
 
   if (
-    Number.isFinite(swapReq.inputTokenPercentage) &&
-    swapReq.inputTokenPercentage != 0
+    swapReq.inputTokenPercentage &&
+    swapReq.inputTokenPercentage > 0
   ) {
     const balance = await client.getUIBalance(swapReq.inputTokenCA);
-    swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
+    swapReq.inputTokenAmount = BigNumber(balance).multipliedBy(swapReq.inputTokenPercentage).toString();
   }
 
   if (
-    !Number.isFinite(swapReq.inputTokenAmount) ||
-    swapReq.inputTokenAmount <= 0
+    !swapReq.inputTokenAmount ||
+    +swapReq.inputTokenAmount <= 0
   ) {
     callback?.({
       text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount to perform the swap`,
@@ -289,7 +292,7 @@ async function checkResponse(
     return {status: 'failed'};
   }
 
-  if (balance < swapReq.inputTokenAmount) {
+  if (BigNumber(balance).lt(swapReq.inputTokenAmount)) {
     callback?.({
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
     });
@@ -311,7 +314,7 @@ async function checkResponse(
       });
       return {status: 'failed'};
     }
-  } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BALANCE) {
+  } else if (WSOL_AMOUNT - Number(swapReq.inputTokenAmount) < GAS_BALANCE) {
     // buy with SOL
     const requiredAmount = GAS_BALANCE + Number(swapReq.inputTokenAmount);
     elizaLogger.error('Insufficient balance for swap gas fee');
@@ -366,7 +369,7 @@ async function checkResponse(
   }
 
   if (confirmResponse.userAcked == 'pending') {
-    swapReq.inputTokenPercentage = (swapReq.inputTokenAmount/balance);
+    swapReq.inputTokenPercentage = BigNumber(swapReq.inputTokenAmount).div(balance).toNumber();
     const swapInfo = formatTaskInfo(swapReq);
     callback?.({
       text: `${swapInfo}`,
