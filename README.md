@@ -59,6 +59,8 @@ cp .env.example .env
 # NFTGO_API_KEY=..
 
 # insert xnomad into mongodb
+# docker exec -it mongodb /bin/bash
+# mongo
 # use core
 # db.collectionConfigs.insertOne({ "id": "d767895962f658681f490b3b7f9ff9de", "chain": "solana" });
 

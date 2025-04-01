@@ -74,6 +74,7 @@ web_modules/
 
 # dotenv environment variable files
 .env
+.env.dev
 .env.agent-eliza
 .env.wallet-service
 .env.development.local
