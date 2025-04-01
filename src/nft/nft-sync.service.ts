@@ -14,7 +14,7 @@ import { stringToUuid } from '@elizaos/core';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { AICollection } from '../shared/mongo/types';
 
-const SYNC_NFTS_INTERVAL = 1000 * 60 * 2;
+const SYNC_NFTS_INTERVAL = 1000 * 15;
 const SYNC_TXS_INTERVAL = 1000 * 10;
 
 @Injectable()
