@@ -24,7 +24,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "preinstall": "/bin/bash ./scripts/github-build.sh f0bdc12a366265aa291a9c96ec58a79b1125d8ea && /bin/bash ./scripts/client-twitter.sh c3e1a6196759d9e10a6cbedfeaf7080cf124e66b"
+    "preinstall": "/bin/bash ./scripts/github-build.sh f0bdc12a366265aa291a9c96ec58a79b1125d8ea && /bin/bash ./scripts/client-twitter.sh 0f2737ba9fd35204c7f3eed23add0bff34872adf"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
