@@ -9,3 +9,15 @@ export const DISABLE_API_SERVER_AUTH = (process.env.DISABLE_API_SERVER_AUTH || '
 //   process.env.CORE_ADMIN_API_KEY;
 
 export const CORE_SERVER_PORT = process.env.CORE_SERVER_PORT || 8080;
+
+// [dev, prod, local, debug]
+export const RUN_ENV = process.env.RUN_ENV || 'local';
+// logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+export function getLoggerLevel() {
+  if (RUN_ENV === 'prod') {
+    return ['log', 'error', 'warn'];
+  } else if (RUN_ENV === 'local' || RUN_ENV === 'debug' || RUN_ENV === 'dev') {
+    return ['log', 'error', 'warn', 'debug'];
+  }
+  return ['error', 'warn'];
+}
