@@ -179,6 +179,7 @@ export async function getWalletPortfolio(
           if (priceMap.has(item.address) && Number(item.priceUsd) === 0) {
             item.priceUsd = priceMap.get(item.address) as string;
             item.valueUsd = (Number(item.uiAmount) * Number(item.priceUsd)).toString();
+            walletPortfolio.totalUsd += Number(item.valueUsd);
           }
         });
       } catch (e) { 
