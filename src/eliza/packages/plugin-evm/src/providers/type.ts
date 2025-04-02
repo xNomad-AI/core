@@ -421,6 +421,22 @@ export interface SwapV3MultiHopExactInParams {
   exactFees: ExactFee[];
 }
 
+export interface SwapMixedMultiHopExactIn {
+  chainName: string;
+  routes: string[];
+  path1: string;
+  factory1: string;
+  poolAddress1: string;
+  path2: string;
+  factory2: string;
+  poolAddress2: string;
+  recipient: string;
+  deadline: string;
+  amountIn: string;
+  amountOutMinimum: string;
+  exactFees: ExactFee[];
+}
+
 export interface SwapxParams {
   rpcUrl: string;
   chainName: string;

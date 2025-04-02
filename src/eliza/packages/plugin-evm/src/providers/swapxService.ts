@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js';
-import { SwapV2MultiHopExactInParams, SwapV3MultiHopExactInParams, SwapxSwapV2ExactInParams, SwapxSwapV3ExactInParams } from './type.js';
+import { SwapMixedMultiHopExactIn, SwapV2MultiHopExactInParams, SwapV3MultiHopExactInParams, SwapxSwapV2ExactInParams, SwapxSwapV3ExactInParams } from './type.js';
 import { encodeFunctionData, zeroAddress } from 'viem';
 import swapxABI from './swapxABI.js';
 import { EVMClient } from './evmClient.js';
@@ -149,6 +149,35 @@ class SwapxService {
                     factoryAddresses: params.factoryAddresses,
                     poolAddresses: params.poolAddresses,
                     path: params.path,
+                    recipient: params.recipient,
+                    deadline: params.deadline,
+                    amountIn: params.amountIn,
+                    amountOutMinimum: params.amountOutMinimum,
+                },
+                params.exactFees
+            ]
+        });
+        return {
+            to: contract,
+            data: data,
+            value: '0',
+        }
+    }
+
+    buildSwapMixedMultiHopExactIn(params: SwapMixedMultiHopExactIn) {
+        const contract = this.getContract(params.chainName);
+        const data = encodeFunctionData({
+            abi: swapxABI,
+            functionName: 'swapMixedMultiHopExactIn',
+            args: [
+                {
+                    routes: params.routes,
+                    path1: params.path1,
+                    factory1: params.factory1,
+                    poolAddress1: params.poolAddress1,
+                    path2: params.path2,
+                    factory2: params.factory2,
+                    poolAddress2: params.poolAddress2,
                     recipient: params.recipient,
                     deadline: params.deadline,
                     amountIn: params.amountIn,
