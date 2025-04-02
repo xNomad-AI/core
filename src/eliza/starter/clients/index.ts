@@ -10,6 +10,7 @@ export type ClientName = 'client-telegram' | 'client-twitter';
 export async function initializeClients(
   character: Character,
   runtime: IAgentRuntime,
+  nftId: string,
 ) {
   const clients: Record<string, any> = [];
   const errors: Record<ClientName, any> = {
@@ -59,7 +60,7 @@ export async function initializeClients(
         console.log(`Suspended Twitter client for ${character.name}`);
       } else {
         console.log(`Starting Twitter client for ${character.name}`);
-        const client = new TwitterClientStarter();
+        const client = new TwitterClientStarter(nftId);
         await client.start(runtime);
         clients['client-twitter'] = client;
       }
