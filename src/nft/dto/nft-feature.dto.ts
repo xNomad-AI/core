@@ -24,6 +24,7 @@ export class GetAgentBindingSocietyInfoResponseDto {
   @ApiProperty({
     description: 'twitter username without @',
     example: 'xxx',
+    required: false,
   })
   @IsString()
   @IsNotEmpty()
@@ -32,6 +33,7 @@ export class GetAgentBindingSocietyInfoResponseDto {
   @ApiProperty({
     description: 'telegram bot username without @',
     example: 'xxx_bot',
+    required: false,
   })
   @IsString()
   @IsNotEmpty()
