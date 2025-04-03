@@ -21,6 +21,7 @@ EventEmitter.defaultMaxListeners = 10;
 
 @Module({
   imports: [
+    TaskManagerModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -40,7 +41,6 @@ EventEmitter.defaultMaxListeners = 10;
     MetricsModule,
     CallbackModule,
     OrderModule,
-    TaskManagerModule,
   ],
   controllers: [],
   providers: [],

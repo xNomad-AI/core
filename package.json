@@ -24,7 +24,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "preinstall": "/bin/bash ./scripts/github-build.sh f0bdc12a366265aa291a9c96ec58a79b1125d8ea && /bin/bash ./scripts/client-twitter.sh 5285d0bdff9851278f0e8058726b62328eb7caf5"
+    "preinstall": "/bin/bash ./scripts/github-build.sh f0bdc12a366265aa291a9c96ec58a79b1125d8ea && /bin/bash ./scripts/client-twitter.sh cf75975d61f1ad13ffd025a775caf080dd508eb4"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
@@ -89,6 +89,7 @@
     "rxjs": "^7.8.1",
     "sharp": "^0.33.5",
     "tweetnacl": "^1.0.3",
+		"telegraf": "4.16.3",
     "viem": "^2.23.13"
   },
   "devDependencies": {
@@ -119,6 +120,7 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "undici": "^7.5.0",
+    "@telegraf/types": "7.1.0",
     "ws": ">=7.5.10"
   },
   "pnpm": {
