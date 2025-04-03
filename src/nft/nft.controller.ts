@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import { instanceToPlain } from 'class-transformer';
 import { Request as ExpressRequest } from 'express';
+import { ApiCreatedResponse } from '@nestjs/swagger';
+import { autoFixTwitterUsername } from '@xnomad/task-manager';
 
 import { CacheTTL } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
@@ -27,11 +29,14 @@ import { DISABLE_NFT_ADMIN_CHECK } from '../static-settings.js';
 import { UpdateTwitterConfigDto } from './nft.dto.js';
 import { NftService } from './nft.service.js';
 import { NftSearchQueryDto, normalizeBlockchainAddress } from './nft.types.js';
+import { GetAgentBindingSocietyInfoResponseDto } from './dto/nft-feature.dto.js';
+import { NftConfigService } from './nft-config.service.js';
 
 @Controller('/nft')
 export class NftController {
   constructor(
     private readonly nftService: NftService,
+    private readonly nftConfigService: NftConfigService,
     private tradeMonitorService: TradeMonitorService,
     private config: ConfigService,
     private logger: TransientLoggerService,
@@ -199,6 +204,30 @@ export class NftController {
       nftId,
       characterConfig,
     });
+  }
+
+  @ApiCreatedResponse({
+    type: GetAgentBindingSocietyInfoResponseDto,
+    description: 'Get agent binding society info',
+  })
+  @UseGuards(AuthGuard)
+  @Get('/:chain/:nftId/public/config')
+  async getAgentBindingSocietyInfo(
+    @Param('chain') chain: string,
+    @Param('nftId') nftId: string,
+  ) {
+    const resp = await this.nftConfigService.getNftBindingSocietyInfo(
+      nftId,
+      chain,
+    );
+
+    if (resp.twitterUsername) {
+      resp.twitterUsername = autoFixTwitterUsername(
+        resp.twitterUsername
+      );
+    }
+
+    return { ...resp, telegramBotId: resp.telegramBotUsername };
   }
 
   @UseGuards(AuthGuard)
