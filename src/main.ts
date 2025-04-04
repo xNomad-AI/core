@@ -1,4 +1,4 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import bodyParser from 'body-parser';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -22,8 +22,9 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   
-    // const document = SwaggerModule.createDocument(app, config);
-    // SwaggerModule.setup('api/docs', app, document);
+    // as INestApplication to fix typing
+    const document = SwaggerModule.createDocument(app as INestApplication, config);
+    SwaggerModule.setup('api/docs', app as INestApplication, document);
   }
 
   app.enableCors({
