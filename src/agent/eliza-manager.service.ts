@@ -359,4 +359,22 @@ export class ElizaManagerService {
       throw new ForbiddenException('You are not the owner of this Agent');
     }
   }
+
+  async getPrologue(chain: string, nftId: string) {
+    const result = await this.mongoService.nftPrologues.findOne({
+      chain,
+      nftId,
+    });
+    if (result) {
+      return result.prologue;
+    }
+    const nft = await this.mongoService.nfts.findOne({chain, nftId});
+    const prologue = [
+      `Hey! I'm ${nft.aiAgent.character.name}, your all-in-one crypto assistant. I can help you trade, transfer tokens, claim airdrops, copy top traders, check token info, and more. Just tell me what you need — I'll handle it all on-chain`,
+      `Hi, I'm ${nft.aiAgent.character.name}, your crypto AI assistant. Need to trade tokens, send tokens, claim airdrops, follow pro traders, or get token insights? I've got it covered. Just say the word, and I'll take care of it.`,
+      `Hey there! I'm ${nft.aiAgent.character.name}, your reliable crypto assistant. I make your crypto journey simplest — from trading and transfers to airdrops, copy trades, and token info. Just tell me what to do, and I'll do the rest.`,
+      `Hey there! I'm ${nft.aiAgent.character.name}, your personal crypto assistant. Want me to trade, send tokens, claim airdrops, or check token data for you? Just ask — I'll get it done on-chain.`,
+    ];
+    return prologue[Math.floor(Math.random() * prologue.length)];
+  }
 }
