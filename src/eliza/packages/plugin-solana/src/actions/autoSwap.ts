@@ -51,6 +51,7 @@ export interface LimitOrderTask {
   priceCondition: 'below' | 'above' | null;
   targetPrice: number | null;
   targetToken: string | null;
+  pendingConfirmation: boolean | null;
 }
 
 
@@ -174,6 +175,86 @@ export const autoTask: Action = {
       return 'failed';
     }
   },
+  formatParameters: async (runtime: IAgentRuntime, parameters: any, callback?: HandlerCallback) => {
+    elizaLogger.log('parameters (formatParameters): ', parameters);
+    const formattedParameters = parameters as LimitOrderTask;
+    if (formattedParameters.inputTokenSymbol?.toUpperCase() === 'SOL') {
+      formattedParameters.inputTokenCA = NATIVE_MINT.toBase58();
+    }
+    if (formattedParameters.outputTokenSymbol?.toUpperCase() === 'SOL') {
+      formattedParameters.outputTokenCA = NATIVE_MINT.toBase58();
+    }
+    formattedParameters.inputTokenCA = validateAndAssignCA(
+      formattedParameters.inputTokenSymbol,
+      formattedParameters.inputTokenCA,
+    );
+    formattedParameters.outputTokenCA = validateAndAssignCA(
+      formattedParameters.outputTokenSymbol,
+      formattedParameters.outputTokenCA,
+    );
+
+    formattedParameters.inputTokenCA = formattedParameters.inputTokenCA ||
+      formattedParameters.inputTokenSymbol? await getTokenCABySymbol(
+      runtime,
+      formattedParameters.inputTokenSymbol,
+    ) : null;
+    formattedParameters.outputTokenCA = formattedParameters.outputTokenCA ||
+      formattedParameters.outputTokenSymbol? await getTokenCABySymbol(
+      runtime,
+      formattedParameters.outputTokenSymbol,
+    ) : null;
+    formattedParameters.targetTokenCA =
+    (formattedParameters.targetToken === NATIVE_MINT.toBase58() ? NATIVE_MINT.toBase58() : null) ||
+    formattedParameters.targetTokenCA ||
+    (formattedParameters.targetToken === formattedParameters.inputTokenSymbol ? formattedParameters.inputTokenCA : null) ||
+    (formattedParameters.targetToken === formattedParameters.outputTokenSymbol ? formattedParameters.outputTokenCA : null) ||
+    formattedParameters.targetToken ? await getTokenCABySymbol(runtime, formattedParameters.targetToken) : null;
+
+    if (!formattedParameters.inputTokenCA || !isValidSPLTokenAddress(formattedParameters.inputTokenCA)) {
+      callback?.({
+        text: 'Please provide a valid inputToken CA you want to sell',
+      });
+      return {status: 'incomplete info', parameters: parameters};
+    }
+
+    if (!formattedParameters.outputTokenCA || !isValidSPLTokenAddress(formattedParameters.outputTokenCA)) {
+      callback?.({
+        text: 'Please provide a valid outputToken CA you want to buy',
+      });
+      return {status: 'incomplete info', parameters: parameters};
+    }
+
+    if (!formattedParameters.targetTokenCA || !isValidSPLTokenAddress(formattedParameters.targetTokenCA)) {
+      callback?.({
+        text: `Please specify which token's price you want to monitor: ${formattedParameters.inputTokenCA} or ${formattedParameters.outputTokenCA}?`,
+      });
+      return {status: 'incomplete info', parameters: parameters};
+    }
+
+    if (
+      Number.isFinite(formattedParameters.outputTokenAmount) &&
+      formattedParameters.outputTokenAmount != 0
+    ) {
+      callback?.({
+        text: `Specify the buy amount of a token is not supported now, ${formattedParameters.outputTokenAmount} will be ignored.`,
+      });
+      return {status: 'incomplete info', parameters: parameters};
+    }
+
+    const client = await getSolanaClient(runtime);
+
+    if (
+      Number.isFinite(formattedParameters.inputTokenPercentage) &&
+      formattedParameters.inputTokenPercentage != 0
+    ) {
+      const balance = await client.getUIBalance(formattedParameters.inputTokenCA);
+      formattedParameters.inputTokenAmount = balance * formattedParameters.inputTokenPercentage;
+    }
+
+    return {status: 'success', parameters: formattedParameters};
+
+    
+  },
   examples: [] as ActionExample[][],
 } as Action;
 
@@ -193,94 +274,10 @@ async function checkResponse(
     callback?.(NotAgentAdminResponse);
     return {status: 'rejected'};
   }
-
-  // generate formatted response from chat
-  let swapReq = convertNullStrings(state.actionParameters) as LimitOrderTask;
-  swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
-  swapReq.inputTokenAmount = Number(swapReq.inputTokenAmount);
-
-  elizaLogger.log(`Response:`, swapReq);
-
-  if (swapReq.inputTokenSymbol?.toUpperCase() === 'SOL') {
-    swapReq.inputTokenCA = NATIVE_MINT.toBase58();
-  }
-  if (swapReq.outputTokenSymbol?.toUpperCase() === 'SOL') {
-    swapReq.outputTokenCA = NATIVE_MINT.toBase58();
-  }
-  swapReq.inputTokenCA = validateAndAssignCA(
-    swapReq.inputTokenSymbol,
-    swapReq.inputTokenCA,
-  );
-  swapReq.outputTokenCA = validateAndAssignCA(
-    swapReq.outputTokenSymbol,
-    swapReq.outputTokenCA,
-  );
-
-  swapReq.inputTokenCA = swapReq.inputTokenCA || await getTokenCABySymbol(
-    runtime,
-    swapReq.inputTokenSymbol,
-  );
-  swapReq.outputTokenCA = swapReq.outputTokenCA || await getTokenCABySymbol(
-    runtime,
-    swapReq.outputTokenSymbol,
-  );
-  swapReq.targetTokenCA = swapReq.targetTokenCA || await getTokenCABySymbol(
-    runtime,
-    swapReq.targetToken,
-  ) || swapReq.targetToken === swapReq.inputTokenSymbol ? swapReq.inputTokenCA : swapReq.outputTokenCA;
-
-  if (!swapReq.inputTokenCA || !isValidSPLTokenAddress(swapReq.inputTokenCA)) {
-    callback?.({
-      text: 'Please provide a valid inputToken CA you want to sell',
-    });
-    return {status: 'pending'};
-  }
-
-  if (!swapReq.outputTokenCA || !isValidSPLTokenAddress(swapReq.outputTokenCA)) {
-    callback?.({
-      text: 'Please provide a valid outputToken CA you want to buy',
-    });
-    return {status: 'pending'};
-  }
-
-  if (!swapReq.targetTokenCA || !isValidSPLTokenAddress(swapReq.targetTokenCA)) {
-    callback?.({
-      text: `Please specify which token's price you want to monitor: ${swapReq.inputTokenCA} or ${swapReq.outputTokenCA}?`,
-    });
-    return {status: 'pending'};
-  }
-
-  if (
-    Number.isFinite(swapReq.outputTokenAmount) &&
-    swapReq.outputTokenAmount != 0
-  ) {
-    callback?.({
-      text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
-    });
-    return {status: 'pending'};
-  }
-
+  const swapReq = state.actionParameters as LimitOrderTask;
+  elizaLogger.info(`swapReq: ${JSON.stringify(swapReq)}`);
+  
   const client = await getSolanaClient(runtime);
-
-  if (
-    Number.isFinite(swapReq.inputTokenPercentage) &&
-    swapReq.inputTokenPercentage != 0
-  ) {
-    const balance = await client.getUIBalance(swapReq.inputTokenCA);
-    swapReq.inputTokenAmount = balance * swapReq.inputTokenPercentage;
-  }
-
-  if (
-    !Number.isFinite(swapReq.inputTokenAmount) ||
-    swapReq.inputTokenAmount <= 0
-  ) {
-    callback?.({
-      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount to perform the swap`,
-      action: 'AUTO_TASK',
-    });
-    return {status: 'pending'};
-  }
-
   const balance = await client.getUIBalance(swapReq.inputTokenCA);
   if (!balance) {
     callback?.({
@@ -289,7 +286,7 @@ async function checkResponse(
     return {status: 'failed'};
   }
 
-  if (balance < swapReq.inputTokenAmount) {
+  if (balance < Number(swapReq.inputTokenAmount)) {
     callback?.({
       text: `Insufficient balance for swap, required: ${swapReq.inputTokenAmount} but only ${balance} available.`,
     });
@@ -311,7 +308,7 @@ async function checkResponse(
       });
       return {status: 'failed'};
     }
-  } else if (WSOL_AMOUNT - swapReq.inputTokenAmount < GAS_BALANCE) {
+  } else if (WSOL_AMOUNT - Number(swapReq.inputTokenAmount) < GAS_BALANCE) {
     // buy with SOL
     const requiredAmount = GAS_BALANCE + Number(swapReq.inputTokenAmount);
     elizaLogger.error('Insufficient balance for swap gas fee');
@@ -345,28 +342,36 @@ async function checkResponse(
 
   elizaLogger.info(`checking if user confirm to create task`);
 
-  const confirmContext = composeContext({
-    state,
-    template: userConfirmTemplate,
-  });
-
-  const confirmResponse = await generateObjectDeprecated({
-    runtime,
-    context: confirmContext,
-    modelClass: ModelClass.LARGE,
-  });
-  elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
-
-  if (confirmResponse.userAcked == 'rejected') {
-    callback?.({
-      text: 'ok. I will not set the autotask.',
-      action: 'AUTO_TASK',
+  if (swapReq.pendingConfirmation === true) {
+    const confirmContext = composeContext({
+      state,
+      template: userConfirmTemplate,
     });
-    return {status: 'cancelled'};
-  }
 
-  if (confirmResponse.userAcked == 'pending') {
-    swapReq.inputTokenPercentage = (swapReq.inputTokenAmount/balance);
+    const confirmResponse = await generateObjectDeprecated({
+      runtime,
+      context: confirmContext,
+      modelClass: ModelClass.LARGE,
+    });
+    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+
+    if (confirmResponse.userAcked == 'rejected') {
+      callback?.({
+        text: 'ok. I will not set the autotask.',
+        action: 'AUTO_TASK',
+      });
+      return {status: 'cancelled'};
+    } else if (confirmResponse.userAcked == 'confirmed') {
+      return {status: 'success', task: swapReq};
+    } else if (confirmResponse.userAcked == "pending") {
+      callback?.({
+        text: "I repeatedly asked you to confirm the task although you have already confirmed it. It was my mistake. Please try again.",
+        action: "AUTO_TASK"
+      });
+      return { status: "pending" };
+    }
+  } else {
+    swapReq.inputTokenPercentage = Number(swapReq.inputTokenAmount)/balance;
     const swapInfo = formatTaskInfo(swapReq);
     callback?.({
       text: `${swapInfo}`,
@@ -375,8 +380,6 @@ async function checkResponse(
     });
     return {status: 'pending'};
   }
-
-  return {status: 'success', task: swapReq};
 }
 
 
