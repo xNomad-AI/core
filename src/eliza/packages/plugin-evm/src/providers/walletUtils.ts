@@ -149,7 +149,7 @@ export async function getWalletPortfolio(
         const queryResults = await bitqueryService.query(
           `
           query MyQuery($currencies: [String!]) {
-            EVM(network: ${chain}) {
+            EVM(dataset: combined, network: ${chain}) {
               DEXTradeByTokens(
                 where: {Trade: {Currency: {SmartContract: {in: $currencies}}}}
                 orderBy: {descending: Block_Time}
