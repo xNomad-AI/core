@@ -1,7 +1,10 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import * as bodyParser from 'body-parser';
+import bodyParser from 'body-parser';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+
 import { AppModule } from './app.module.js';
+import { CORE_SERVER_PORT } from './static-settings.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,17 +13,30 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  if (process.env.SWAGGER_ENABLE === 'true') {
+    const config = new DocumentBuilder()
+    .setTitle('My API')
+    .setDescription('My API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  
+    // as INestApplication to fix typing
+    const document = SwaggerModule.createDocument(app as INestApplication, config);
+    SwaggerModule.setup('api/docs', app as INestApplication, document);
+  }
+
   app.enableCors({
     origin: '*',
     methods: '*',
     allowedHeaders: '*',
     credentials: true,
   });
-  app.use(bodyParser.default.json({ limit: '5mb' }));
+  app.use(bodyParser.json({ limit: '5mb' }));
 
-  const port = process.env.CORE_SERVER_PORT || 8080;
-  await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  await app.listen(CORE_SERVER_PORT);
+  console.log(`Application is running on: http://localhost:${CORE_SERVER_PORT}`);
 }
 
 bootstrap().catch((err) => {

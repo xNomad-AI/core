@@ -2,6 +2,8 @@ import { stringToUuid } from '@elizaos/core';
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import PQueue from 'p-queue';
+import { TasksService } from '@xnomad/task-manager';
+
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import {
@@ -35,6 +37,7 @@ export class NftService implements OnApplicationBootstrap {
     private readonly agentTradeService: AgentTradeService,
     private readonly eventEmitter: EventEmitter2,
     private readonly tradeMonitorService: TradeMonitorService,
+    private tasksService: TasksService,
   ) {
     this.logger.setContext(NftService.name);
     this.backgroundQueue = new PQueue({ concurrency: 2 });
@@ -42,7 +45,9 @@ export class NftService implements OnApplicationBootstrap {
   }
 
   onApplicationBootstrap() {
-    this.startAIAgents().catch((e) => {
+    this.startAIAgents().then(()=>{
+      this.logger.log('AI agents started');
+    }).catch((e) => {
       this.logger.error(e);
     });
   }
@@ -121,7 +126,7 @@ export class NftService implements OnApplicationBootstrap {
       { upsert: true },
     );
     const nft = await this.mongo.nfts.findOne({ nftId });
-    void this.handleNewAINfts([nft], true).catch((e) => {
+    this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
     });
 
@@ -156,14 +161,18 @@ export class NftService implements OnApplicationBootstrap {
     ) {
       nftConfig.characterConfig.settings.secrets.TWITTER_HTTP_PROXY = '';
     }
-    return nftConfig;
-  }
 
-  async getTwitterHttpProxy(nftId: string, chain: string) {
-    const nftConfig = await this.getNftConfig(nftId, chain, {
-      ignoreTwitterHttpProxy: false,
-    });
-    return nftConfig?.characterConfig?.settings?.secrets?.TWITTER_HTTP_PROXY;
+    // 10m
+    const errorTimeout = 1000 * 60 * 10;
+    const task = await this.tasksService.getTaskByNftId(nftId);
+    if (task?.lastError && (task.lastError.updatedAt.getTime() + errorTimeout) > Date.now()) {
+      // if the error message is not out of date, tag the error message to the response
+      nftConfig['errors'] = {
+        twitter: task.lastError.message,
+      }
+    }
+
+    return nftConfig;
   }
 
   async deleteNftConfig(nftId: string) {

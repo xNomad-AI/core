@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitter } from 'events';
+import { TaskManagerModule } from '@xnomad/task-manager';
+
 import { AddressModule } from './address/address.module.js';
 import { AgentModule } from './agent/agent.module.js';
 import { CallbackModule } from './callback/callback.module.js';
@@ -14,10 +16,12 @@ import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { TokenModule } from './token/token.module.js';
 import { OrderModule } from './order/order.module.js';
+
 EventEmitter.defaultMaxListeners = 10;
 
 @Module({
   imports: [
+    TaskManagerModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -41,4 +45,4 @@ EventEmitter.defaultMaxListeners = 10;
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

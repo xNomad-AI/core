@@ -89,7 +89,7 @@ export async function startAgent(
 
   await runtime.initialize();
 
-  const { clients, errors } = await initializeClients(character, runtime);
+  const { clients, errors } = await initializeClients(character, runtime, nftId);
   runtime.clients = clients;
 
   directClient.registerAgent(runtime);
