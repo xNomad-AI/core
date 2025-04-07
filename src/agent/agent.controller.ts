@@ -236,15 +236,8 @@ export class AgentController {
     @Query('chain') chain: string,
     @Query('nftId') nftId: string,
   ) {
-    const prologue = await this.mongo.nftPrologues.findOne({
-      chain,
-      nftId,
-    });
-    if (!prologue) {
-      throw new NotFoundException('Prologue not found');
-    }
     return {
-      prologue: prologue.prologue,
+      prologue: await this.elizaManager.getPrologue(chain, nftId),
     };
   }
 }
