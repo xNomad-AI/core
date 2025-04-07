@@ -104,6 +104,9 @@ class BloxValidatorNodeService extends ValidatorNodeService {
                 body: JSON.stringify(body),
             },
         );
+        if (!response.ok) {
+            throw new Error(`RPC Error, ${response.statusText}, ${await response.text()}`);
+        }
         const responseData = await response.json();
         if (responseData.error) {
             throw new Error(responseData.error.message);
