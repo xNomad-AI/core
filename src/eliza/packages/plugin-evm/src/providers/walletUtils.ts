@@ -1,6 +1,7 @@
 import { type IAgentRuntime, type Memory, elizaLogger } from '@elizaos/core';
 import { getRuntimeKey } from '../providers/environment.js';
 import Moralis from 'moralis';
+import bitqueryService from './bitqueryService.js';
 
 let isMoralisInitialized = false;
 
@@ -65,7 +66,7 @@ export async function getWalletTokenBySymbol(
   symbol: string,
   chain?: string,
 ): Promise<Item> {
-  if (!symbol){
+  if (!symbol) {
     return undefined;
   }
   chain = chain || getRuntimeKey(runtime, 'NFT_CHAIN');
@@ -99,7 +100,7 @@ export async function getWalletPortfolio(
       isMoralisInitialized = true;
     }
     let evmChain;
-    switch(chain) {
+    switch (chain) {
       case 'bsc':
         evmChain = Moralis.EvmUtils.EvmChain.BSC;
         break;
@@ -111,7 +112,7 @@ export async function getWalletPortfolio(
         break;
       default:
         throw new Error(`Unsupport chain: ${chain}`);
-      }
+    }
     const response = await Moralis.EvmApi.wallets.getWalletTokenBalancesPrice({
       chain: evmChain,
       address,
@@ -142,6 +143,50 @@ export async function getWalletPortfolio(
       }
     });
     walletPortfolio.nextCursor = response.response.cursor;
+    const zeroPriceTokens = walletPortfolio.items.filter((item) => Number(item.priceUsd) === 0).map((item) => item.address);
+    if (zeroPriceTokens.length > 0) {
+      try {
+        const queryResults = await bitqueryService.query(
+          `
+          query MyQuery($currencies: [String!]) {
+            EVM(dataset: combined, network: ${chain}) {
+              DEXTradeByTokens(
+                where: {Trade: {Currency: {SmartContract: {in: $currencies}}}}
+                orderBy: {descending: Block_Time}
+                limitBy: { by: Trade_Currency_SmartContract, count: 1 }
+              ){
+                Trade{
+                  PriceInUSD
+                  Currency{
+                    SmartContract
+                  }
+                }
+              }
+            }
+          }
+          `,
+          JSON.stringify({
+            currencies: zeroPriceTokens
+          })
+        );
+        const priceMap = new Map(
+          queryResults.data.EVM.DEXTradeByTokens.map((entry) => [
+            entry.Trade.Currency.SmartContract.toLowerCase(),
+            entry.Trade.PriceInUSD,
+          ])
+        );
+        walletPortfolio.items.forEach((item) => {
+          if (priceMap.has(item.address) && Number(item.priceUsd) === 0) {
+            item.priceUsd = priceMap.get(item.address) as string;
+            item.valueUsd = (Number(item.uiAmount) * Number(item.priceUsd)).toString();
+            walletPortfolio.totalUsd += Number(item.valueUsd);
+          }
+        });
+      } catch (e) { 
+        elizaLogger.error(`Failed to refresh zero price token ${e}`);
+      }
+    }
+
     return walletPortfolio;
   } catch (e) {
     elizaLogger.error(`Failed to fetch wallet portfolio ${address} ${e}`);
