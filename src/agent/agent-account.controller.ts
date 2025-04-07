@@ -75,6 +75,28 @@ export class AgentAccountController {
     }
   }
 
+  @Get('/defi/agents/portfolio')
+  async getAgentsPortfolio(
+    @Query('chain') chain: string,
+    @Query('address') address: string,
+  ) { 
+    const agents = await this.elizaManager.getOwnedAgents(chain, address);
+    const portfolios = await Promise.all(
+      agents.map((agent) => {
+        switch (chain) {
+          case 'solana':
+            return this.birdEye.getWalletPortfolio({ chain, address: agent.agentAccount.solana });
+          default:
+            const moralisApikey = this.config.get('MORALIS_API_KEY');
+            return getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
+        }
+      })
+    );
+    return {
+      portfolios
+    };
+  }
+
   @Get('/defi/search')
   async searchToken(
     @Query('chain') chain: string,
