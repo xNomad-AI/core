@@ -159,6 +159,9 @@ class DefaultRPCNodeService extends ValidatorNodeService {
         body: JSON.stringify(body),
       },
     );
+    if (!response.ok) {
+      throw new Error(`RPC Error, ${response.statusText}, ${await response.text()}`);
+    }
     const responseData = (await response.json()) as JitoResponse<string>;
     return responseData.result;
   }
