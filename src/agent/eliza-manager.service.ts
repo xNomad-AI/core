@@ -331,4 +331,19 @@ export class ElizaManagerService {
     ];
     return prologue[Math.floor(Math.random() * prologue.length)];
   }
+
+  async getOwnedAgents(chain: string, ownerAddress: string) {
+    const ownedNfts = await this.mongoService.nftOwners.find({
+      chain,
+      ownerAddress
+    }).toArray();
+  
+    const nftIds = ownedNfts.map((nft) => `${nft.chain}:${nft.contractAddress}:${nft.tokenId}`);
+    const agents = await this.mongoService.nfts.find({
+      nftId: {
+        $in: nftIds,
+      }
+    }).toArray();
+    return agents;
+  }
 }
