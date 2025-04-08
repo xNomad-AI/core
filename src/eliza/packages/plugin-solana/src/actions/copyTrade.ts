@@ -135,6 +135,8 @@ export const copyTrade: Action = {
     let response = convertNullStrings(
       state.actionParameters,
     ) as CopyTradeParameters;
+    response.fixedAmount = Number(response.fixedAmount);
+    response.percentage = Number(response.percentage);
 
     if (!response.name) {
       response.name = `COPY_TRADE-${response.walletAddress}`;
