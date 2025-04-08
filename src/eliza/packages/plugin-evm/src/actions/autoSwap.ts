@@ -38,9 +38,8 @@ export interface LimitOrder {
   inputTokenAmount: string | null;
   inputTokenPercentage: number | null;
   outputTokenAmount: string | null;
-  delay: string | null;
   startAt: Date | null;
-  expireAt: Date;
+  expireAt: Date | null;
   priceCondition: 'below' | 'above' | null;
   targetPrice: number | null;
   targetToken: string | null;
@@ -103,10 +102,10 @@ export const autoTask: Action = {
           description:
             'Token symbol or CA used for price trigger evaluation',
         },
-        delay: {
-          type: ['string', 'null'],
+        expireAt: {
+          type: ['string', 'number', 'null'],
           description:
-            'Time Delay for the swap, e.g., "after 5 minutes" or "below 0.00169", Either delay or targetPrice must be provided.',
+          'Expire time for the limit order, default is null. If user says a delay like "after 5 days" or "expire in 10 minutes", return the number duration in seconds',
         },
       },
       required: [
@@ -119,7 +118,7 @@ export const autoTask: Action = {
         'priceCondition',
         'targetPrice',
         'targetToken',
-        'delay',
+        'expireAt',
       ],
     },
   },
@@ -247,6 +246,15 @@ async function checkResponse(
     return {status: 'pending'};
   }
 
+  swapReq.startAt = new Date();
+  if (!isNaN(Number(swapReq.expireAt))) {
+    swapReq.expireAt = new Date(swapReq.startAt.getTime() + Number(swapReq.expireAt) * 1000);
+  } else if (swapReq.expireAt) {
+    swapReq.expireAt = new Date(swapReq.expireAt);
+  } else {
+    swapReq.expireAt = null;
+  }
+
   const uiBalance = await client.getTokenUIBalance(swapReq.inputTokenCA, address);
 
   if (
@@ -279,22 +287,11 @@ async function checkResponse(
     return {status: 'failed'};
   }
 
-  if (!swapReq.targetPrice && !swapReq.delay) {
+  if (!swapReq.targetPrice) {
     callback?.({
-      text: "If you'd like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
+      text: "If you'd like to create an autotask, please specify the target price for the swap, e.g., 'below 0.00169' ",
     });
     return {status: 'pending'};
-  }
-
-  if (swapReq.delay) {
-    const getSecondsValue = (value: string): number | null => {
-      const match = value.match(/^(\d+)s$/);
-      return match ? parseInt(match[1], 10) : null;
-    };
-    const seconds = getSecondsValue(swapReq.delay);
-    swapReq.startAt = new Date(Date.now() + seconds);
-  } else {
-    swapReq.startAt = new Date();
   }
 
   if (!isValidAddress(swapReq.targetTokenCA)) {
