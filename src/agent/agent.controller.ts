@@ -14,16 +14,19 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ApiCreatedResponse } from '@nestjs/swagger';
 
 import { NEW_AI_NFT_EVENT } from '../nft/nft.types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { ElevenlabsService } from '../shared/elevenlabs.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { CreateAgentDto, SolanaTradeSettingsDTO, EvmTradeSettingsDTO, validateTradeSettingsSolana, validateTradeSettingsEvm, TestTweetDto } from './agent.types.js';
+import { CreateAgentDto, SolanaTradeSettingsDTO, EvmTradeSettingsDTO, validateTradeSettingsSolana, validateTradeSettingsEvm } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
 import { CopyTrade } from '../shared/mongo/types.js';
 import { AgentTradeService } from './agent-trade.service.js';
+import { TestTweetDto, TestTweetResponseDto } from './dto/twitter.dto.js';
+import { NftBaseService } from '../nft/nft-base.service.js';
 
 @Controller('/agent')
 export class AgentController {
@@ -35,7 +38,8 @@ export class AgentController {
     private mongo: MongoService,
     private readonly tradeService: AgentTradeService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+    private readonly nftBaseService: NftBaseService,
+  ) { }
 
   @Post('/')
   async startNFTAgent(@Body() { nftId, restart }: CreateAgentDto) {
@@ -244,41 +248,29 @@ export class AgentController {
     };
   }
 
-
+  @ApiCreatedResponse({
+    type: TestTweetResponseDto,
+    description: 'get example tweet using the prompt template',
+  })
   @Post('/twitter/test-tweet/:nftId')
   async getGeneratedTweet(
     @Param('nftId') nftId: string,
     @Body() testTweetDto: TestTweetDto
   ) {
-
-    // Validate the request parameters
-    if (!nftId) {
-      throw new BadRequestException('NFT ID is required');
+    const nft = await this.nftBaseService.getNftByNftId(nftId);
+    if (!nft) {
+      throw new BadRequestException('nftId not found');
     }
 
-    if(testTweetDto.twitterUsername === undefined || testTweetDto.twitterUsername === null || testTweetDto.twitterUsername === '') {
-      throw new BadRequestException('Twitter Username is required');
+    const resp = await this.elizaManager.generateTweetWithRuntime(
+      nftId,
+      testTweetDto.twitterUsername,
+      testTweetDto.twitterPostTemplate,
+      testTweetDto.maxTweetLength
+    );
+
+    return {
+      tweet: resp,
     }
-
-    if(testTweetDto.maxTweetLength === undefined || testTweetDto.maxTweetLength === null || testTweetDto.maxTweetLength === 0) {
-      throw new BadRequestException('Max Tweet Length is required');
-    }
-
-
-    if(testTweetDto.twitterPostTemplate === undefined || testTweetDto.twitterPostTemplate === null || testTweetDto.twitterPostTemplate === '') {
-      throw new BadRequestException('Twitter Post Template is required');
-    }
-
-    const agent = await this.mongo.nfts.findOne({ nftId });
-
-    if(!agent) {
-      throw new BadRequestException('Agent not found');
-    }
-
-    const agentId = agent.agentId;
-
-    return await this.elizaManager.generateTweetWithRuntime(agentId, testTweetDto.twitterUsername, testTweetDto.twitterPostTemplate, testTweetDto.maxTweetLength);
   }
-
-
 }

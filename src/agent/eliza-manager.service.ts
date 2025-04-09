@@ -1,24 +1,25 @@
 import { DirectClient } from '@elizaos/client-direct';
 import {
   Character,
+  type IAgentRuntime,
   IDatabaseAdapter,
   ModelProviderName,
   stringToUuid,
 } from '@elizaos/core';
-
 import { TEEMode } from '@elizaos/plugin-tee';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Keypair } from '@solana/web3.js';
-import { startAgent } from '../eliza/starter/index.js';
+import { generatePostTweet } from '@elizaos/client-twitter';
+
+import { createRuntime, startAgent } from '../eliza/starter/index.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
-import { CharacterConfig} from '../shared/mongo/types.js';
+import { CharacterConfig } from '../shared/mongo/types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { sleep } from '../shared/utils.service.js';
 import { WalletProxyService } from '../wallet/wallet-proxy.service.js';
 import { normalizeBlockchainAddress } from '../nft/nft.types.js';
 import { initializeDatabase } from '../eliza/starter/database/index.js';
-import {generatePostTweet} from '@elizaos/client-twitter';
 
 export type ElizaAgentConfig = {
   chain: string;
@@ -30,6 +31,8 @@ export type ElizaAgentConfig = {
 @Injectable()
 export class ElizaManagerService {
   private elizaClient: DirectClient;
+  private runtimeCache: Map<string, { runtime: IAgentRuntime; timeoutId: NodeJS.Timeout }> = new Map();
+  private readonly RUNTIME_CACHE_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds
 
   constructor(
     private readonly logger: TransientLoggerService,
@@ -90,6 +93,65 @@ export class ElizaManagerService {
     }
   }
 
+  private async createAiNftRuntime(nftId: string) {
+    const nftConfig = await this.mongoService.nftConfigs.findOne({
+      nftId,
+    });
+    const nft = await this.mongoService.nfts.findOne({ nftId });
+
+    const character = await this.initAgentCharacter({
+      chain: nft.chain,
+      nftId: nft.nftId,
+      character: nft.aiAgent.character,
+      characterConfig: nftConfig?.characterConfig,
+    });
+
+    const runtime = await createRuntime(
+      character,
+      nftId,
+      {
+        mongoClient: this.mongoService.client,
+      },
+    );
+
+    return runtime;
+  }
+
+  private async getCachedRuntime(nftId: string) {
+    // Check if runtime exists in cache
+    if (this.runtimeCache.has(nftId)) {
+      const cachedItem = this.runtimeCache.get(nftId);
+      
+      // Clear the existing timeout and set a new one
+      clearTimeout(cachedItem.timeoutId);
+      
+      const timeoutId = setTimeout(() => {
+        // Remove from cache when timed out
+        this.logger.log(`Runtime cache for NFT ${nftId} timed out, removing from cache`);
+        this.runtimeCache.delete(nftId);
+      }, this.RUNTIME_CACHE_TIMEOUT);
+      
+      // Update the cache entry with the new timeout
+      this.runtimeCache.set(nftId, { runtime: cachedItem.runtime, timeoutId });
+      
+      return cachedItem.runtime;
+    }
+    
+    // Create a new runtime if not in cache
+    this.logger.log(`Creating new runtime for NFT ${nftId}`);
+    const runtime = await this.createAiNftRuntime(nftId);
+    
+    // Add to cache with timeout
+    const timeoutId = setTimeout(() => {
+      this.logger.log(`Runtime cache for NFT ${nftId} timed out, removing from cache`);
+      this.runtimeCache.delete(nftId);
+    }, this.RUNTIME_CACHE_TIMEOUT);
+    
+    this.runtimeCache.set(nftId, { runtime, timeoutId });
+    
+    return runtime;
+  }
+
   async stopAgent(agentId: string) {
     // stop all running clients of agent
     try {
@@ -140,7 +202,7 @@ export class ElizaManagerService {
       .deleteMany(filter);
   }
 
-  async initAgentDB(): Promise<IDatabaseAdapter>{
+  async initAgentDB(): Promise<IDatabaseAdapter> {
     const db = await initializeDatabase(this.mongoService.client, 'agent');
     return db;
   }
@@ -323,7 +385,7 @@ export class ElizaManagerService {
     if (result) {
       return result.prologue;
     }
-    const nft = await this.mongoService.nfts.findOne({chain, nftId});
+    const nft = await this.mongoService.nfts.findOne({ chain, nftId });
     const prologue = [
       `Hey! I'm ${nft.aiAgent.character.name}, your all-in-one crypto assistant. I can help you trade, transfer tokens, claim airdrops, copy top traders, check token info, and more. Just tell me what you need — I'll handle it all on-chain`,
       `Hi, I'm ${nft.aiAgent.character.name}, your crypto AI assistant. Need to trade tokens, send tokens, claim airdrops, follow pro traders, or get token insights? I've got it covered. Just say the word, and I'll take care of it.`,
@@ -338,7 +400,7 @@ export class ElizaManagerService {
       chain,
       ownerAddress
     }).toArray();
-  
+
     const nftIds = ownedNfts.map((nft) => `${nft.chain}:${nft.contractAddress}:${nft.tokenId}`);
     const agents = await this.mongoService.nfts.find({
       nftId: {
@@ -348,25 +410,26 @@ export class ElizaManagerService {
     return agents;
   }
 
-    async generateTweetWithRuntime(
-      agentId: string,
-      twitterUsername: string,
-      twitterPostTemplate: string,
-      maxTweetLength: number,
-    ) {
-      try {
-
-          const runtime = this.elizaClient.agents.get(agentId);
-
-          if(runtime === undefined) {
-            throw new Error('Runtime undefined.');
-          }
-
-          const result = await generatePostTweet(twitterUsername, maxTweetLength, twitterPostTemplate, runtime);    
-          return result.tweet;
-        } catch (error) {
-        this.logger.error(`Error generating tweet: ${error.message}`);
-        throw error;
+  async generateTweetWithRuntime(
+    nftId: string,
+    twitterUsername: string,
+    twitterPostTemplate: string,
+    maxTweetLength: number,
+  ) {
+    try {
+      const runtime = await this.getCachedRuntime(nftId);
+      if (!runtime) {
+        throw new Error(`nftId: ${nftId} runtime not found.`);
       }
+
+      // prevent process actions
+      // TODO better way to prevent process actions
+      runtime.character.system = "";
+      const result = await generatePostTweet(twitterUsername, maxTweetLength, twitterPostTemplate, runtime);
+      return result.tweet;
+    } catch (error) {
+      this.logger.error(`Error generating tweet: ${error.message}`);
+      throw error;
+    }
   }
 }
