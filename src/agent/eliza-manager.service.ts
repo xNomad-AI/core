@@ -1,7 +1,9 @@
 import { DirectClient } from '@elizaos/client-direct';
 import {
   Character,
+  Memory,
   IDatabaseAdapter,
+  IAgentRuntime,
   ModelProviderName,
   stringToUuid,
 } from '@elizaos/core';
@@ -16,8 +18,13 @@ import { CharacterConfig} from '../shared/mongo/types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { sleep } from '../shared/utils.service.js';
 import { WalletProxyService } from '../wallet/wallet-proxy.service.js';
+import { SettingsService } from '../nft/core-settings.service.js';
+import { NftConfigService } from '../nft/nft-config.service.js';
+import { ClientName } from '../eliza/starter/clients/index.js';
+import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { normalizeBlockchainAddress } from '../nft/nft.types.js';
 import { initializeDatabase } from '../eliza/starter/database/index.js';
+import {generatePostTweet} from '@elizaos/client-twitter';
 
 export type ElizaAgentConfig = {
   chain: string;
@@ -345,5 +352,27 @@ export class ElizaManagerService {
       }
     }).toArray();
     return agents;
+  }
+
+    async generateTweetWithRuntime(
+      agentId: string,
+      twitterUsername: string,
+      twitterPostTemplate: string,
+      maxTweetLength: number,
+    ) {
+      try {
+
+          const runtime = this.elizaClient.agents.get(agentId);
+
+          if(runtime === undefined) {
+            throw new Error('Runtime undefined.');
+          }
+
+          const result = await generatePostTweet(twitterUsername, maxTweetLength, twitterPostTemplate, runtime);    
+          return result.tweet;
+        } catch (error) {
+        this.logger.error(`Error generating tweet: ${error.message}`);
+        throw error;
+      }
   }
 }
