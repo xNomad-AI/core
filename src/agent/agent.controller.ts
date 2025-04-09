@@ -14,12 +14,13 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+
 import { NEW_AI_NFT_EVENT } from '../nft/nft.types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { ElevenlabsService } from '../shared/elevenlabs.service.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { CreateAgentDto, SolanaTradeSettingsDTO, EvmTradeSettingsDTO, validateTradeSettingsSolana, validateTradeSettingsEvm } from './agent.types.js';
+import { CreateAgentDto, SolanaTradeSettingsDTO, EvmTradeSettingsDTO, validateTradeSettingsSolana, validateTradeSettingsEvm, TestTweetDto } from './agent.types.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
 import { CopyTrade } from '../shared/mongo/types.js';
 import { AgentTradeService } from './agent-trade.service.js';
