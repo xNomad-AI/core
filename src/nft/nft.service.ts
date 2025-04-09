@@ -178,6 +178,9 @@ export class NftService implements OnApplicationBootstrap {
   async deleteNftConfig(nftId: string) {
     await this.mongo.nftConfigs.deleteOne({ nftId });
     const nft = await this.mongo.nfts.findOne({ nftId });
+    // stop twitter client
+    await this.tasksService.stopTaskByNftId(nftId);
+
     void this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
     });

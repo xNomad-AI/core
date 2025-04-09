@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { TasksService } from '@xnomad/task-manager';
 
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
@@ -11,7 +13,20 @@ export class NftConfigService {
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly mongo: MongoService,
+    private tasksService: TasksService,
   ) {
+  }
+
+  private async getNftConfigs(): Promise<(NftConfig & {
+    characterConfig: {
+      settings: {
+        secrets: CharacterConfigSecrets;
+      };
+    };
+  })[]> {
+    // TODO read all or read by currsor
+    const nftConfigs = await this.mongo.nftConfigs.find({}).toArray();
+    return nftConfigs as any;
   }
 
   private async getNftConfig(nftId: string): Promise<(NftConfig & {
@@ -63,5 +78,28 @@ export class NftConfigService {
       twitterUsername: characterConfig?.TWITTER_USERNAME,
       telegramBotUsername: characterConfig?.TELEGRAM_BOT_USERNAME,
     }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async syncClientTwitterTaskAction() {
+    // using this cron to sync the task action
+    // so that even if the twitter nft config is removed from db.nftConfigs
+    // the task action in ClientTwitterTask is still valid
+    const prefix = 'syncClientTwitterTaskAction';
+    this.logger.log(`${prefix} start`);
+
+    const nftConfigs = await this.getNftConfigs();
+    for (const nftConfig of nftConfigs) {
+      const { nftId } = nftConfig;
+      if (
+        !nftConfig.characterConfig?.settings?.secrets?.TWITTER_USERNAME ||
+        (nftConfig.characterConfig?.settings?.secrets?.TWITTER_LOGIN_SUSPEND && nftConfig.characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND === 'true')
+      ) {
+        this.logger.debug(`${prefix} stopTaskByNftId nftId: ${nftId}`);
+        await this.tasksService.stopTaskByNftId(nftId);
+      }
+    }
+
+    this.logger.log(`${prefix} end, nftConfigs: ${nftConfigs.length}`);
   }
 }
