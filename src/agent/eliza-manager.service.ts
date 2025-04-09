@@ -1,9 +1,7 @@
 import { DirectClient } from '@elizaos/client-direct';
 import {
   Character,
-  Memory,
   IDatabaseAdapter,
-  IAgentRuntime,
   ModelProviderName,
   stringToUuid,
 } from '@elizaos/core';
@@ -18,10 +16,6 @@ import { CharacterConfig} from '../shared/mongo/types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { sleep } from '../shared/utils.service.js';
 import { WalletProxyService } from '../wallet/wallet-proxy.service.js';
-import { SettingsService } from '../nft/core-settings.service.js';
-import { NftConfigService } from '../nft/nft-config.service.js';
-import { ClientName } from '../eliza/starter/clients/index.js';
-import { TradeMonitorService } from '../shared/trade-monitor.service.js';
 import { normalizeBlockchainAddress } from '../nft/nft.types.js';
 import { initializeDatabase } from '../eliza/starter/database/index.js';
 import {generatePostTweet} from '@elizaos/client-twitter';
