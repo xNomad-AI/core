@@ -23,6 +23,7 @@ import {
   normalizeBlockchainAddress,
 } from './nft.types.js';
 import { AgentTradeService } from '../agent/agent-trade.service.js';
+import { NftConfigService } from './nft-config.service.js';
 
 @Injectable()
 export class NftService implements OnApplicationBootstrap {
@@ -38,6 +39,7 @@ export class NftService implements OnApplicationBootstrap {
     private readonly eventEmitter: EventEmitter2,
     private readonly tradeMonitorService: TradeMonitorService,
     private tasksService: TasksService,
+    private nftConfigService: NftConfigService,
   ) {
     this.logger.setContext(NftService.name);
     this.backgroundQueue = new PQueue({ concurrency: 2 });
@@ -94,6 +96,8 @@ export class NftService implements OnApplicationBootstrap {
           nftId: nft.nftId,
         });
 
+        await this.nftConfigService.startOrStopClientTwitter(nftConfig);
+
         await this.elizaManager.startAgentLocal({
           chain: nft.chain,
           nftId: nft.nftId,
@@ -126,6 +130,7 @@ export class NftService implements OnApplicationBootstrap {
       { upsert: true },
     );
     const nft = await this.mongo.nfts.findOne({ nftId });
+
     this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
     });
@@ -178,6 +183,7 @@ export class NftService implements OnApplicationBootstrap {
   async deleteNftConfig(nftId: string) {
     await this.mongo.nftConfigs.deleteOne({ nftId });
     const nft = await this.mongo.nfts.findOne({ nftId });
+
     void this.handleNewAINfts([nft], true).catch((e) => {
       this.logger.error('Failed to restart agent', e);
     });

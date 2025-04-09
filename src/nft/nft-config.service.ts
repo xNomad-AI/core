@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { TasksService } from '@xnomad/task-manager';
 
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
@@ -6,21 +8,56 @@ import { CharacterConfigSecrets } from './interface/nft-config.interface.js';
 import { getBotUsername } from '../utils/telegram.js';
 import { NftConfig } from '../shared/mongo/types.js';
 
+type NftConfigBetter = NftConfig & {
+  characterConfig: {
+    settings: {
+      secrets: CharacterConfigSecrets;
+    },
+  },
+}
+
+function checkStartOrStopClientTwitter(nftConfig: NftConfigBetter): 'stop' | 'start' | undefined {
+  if (
+    !nftConfig.characterConfig?.settings?.secrets?.TWITTER_USERNAME ||
+    (
+      nftConfig.characterConfig?.settings?.secrets?.TWITTER_LOGIN_SUSPEND && 
+      nftConfig.characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND === 'true'
+    )
+  ) {
+    return 'stop';
+  }
+
+  if (
+    (
+      nftConfig.characterConfig?.settings?.secrets?.TWITTER_USERNAME &&
+      nftConfig.characterConfig?.settings?.secrets?.TWITTER_LOGIN_SUSPEND && 
+      nftConfig.characterConfig.settings.secrets.TWITTER_LOGIN_SUSPEND === 'false'
+    ) || 
+    (
+      nftConfig.characterConfig?.settings?.secrets?.TWITTER_USERNAME &&
+      nftConfig.characterConfig?.settings?.secrets?.TWITTER_LOGIN_SUSPEND === undefined
+    )
+  ) {
+    return 'start';
+  }
+}
+
 @Injectable()
 export class NftConfigService {
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly mongo: MongoService,
+    private tasksService: TasksService,
   ) {
   }
 
-  private async getNftConfig(nftId: string): Promise<(NftConfig & {
-    characterConfig: {
-      settings: {
-        secrets: CharacterConfigSecrets;
-      };
-    };
-  }) | null> {
+  private async getNftConfigs(): Promise<NftConfigBetter[]> {
+    // TODO read all or read by currsor
+    const nftConfigs = await this.mongo.nftConfigs.find({}).toArray();
+    return nftConfigs as any;
+  }
+
+  private async getNftConfig(nftId: string): Promise<NftConfigBetter | null> {
     const nftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
@@ -63,5 +100,36 @@ export class NftConfigService {
       twitterUsername: characterConfig?.TWITTER_USERNAME,
       telegramBotUsername: characterConfig?.TELEGRAM_BOT_USERNAME,
     }
+  }
+
+  async startOrStopClientTwitter(nftConfig: NftConfig) {
+    const { nftId } = nftConfig;
+
+    const action = checkStartOrStopClientTwitter(nftConfig as NftConfigBetter);
+    if (action === 'stop') {
+      this.logger.debug(`stopTaskByNftId nftId: ${nftId}`);
+      await this.tasksService.stopTaskByNftId(nftId);
+    } else if (action === 'start') {
+      this.logger.debug(`startTaskByNftId nftId: ${nftId}`);
+      await this.tasksService.startTaskByNftId(nftId);
+    } else {
+      this.logger.warn(`startOrStopClientTwitter no action for nftId: ${nftId}`);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_11AM)
+  async syncClientTwitterTaskAction() {
+    // using this cron to sync the task action
+    // so that even if the twitter nft config is removed from db.nftConfigs
+    // the task action in ClientTwitterTask is still valid
+    const prefix = 'syncClientTwitterTaskAction';
+    this.logger.log(`${prefix} start`);
+
+    const nftConfigs = await this.getNftConfigs();
+    for (const nftConfig of nftConfigs) {
+      await this.startOrStopClientTwitter(nftConfig);
+    }
+
+    this.logger.log(`${prefix} end, nftConfigs: ${nftConfigs.length}`);
   }
 }
