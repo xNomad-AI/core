@@ -210,7 +210,6 @@ export class NftController {
     type: GetAgentBindingSocietyInfoResponseDto,
     description: 'Get agent binding society info',
   })
-  @UseGuards(AuthGuard)
   @Get('/:chain/:nftId/public/config')
   async getAgentBindingSocietyInfo(
     @Param('chain') chain: string,
