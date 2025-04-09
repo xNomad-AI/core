@@ -135,46 +135,6 @@ export const autoTask: Action = {
   },
   description:
     'Perform auto token swap. Enables the agent to automatically execute trades when specified conditions are met, such as limit orders, scheduled transactions, or other custom triggers, optimizing trading strategies without manual intervention.',
-  handler: async (
-    runtime: IAgentRuntime,
-    message: Memory,
-    state: State,
-    _options: { [key: string]: unknown },
-    callback?: HandlerCallback,
-  ): Promise<ActionStatus> => {
-    const {task, status} = await checkResponse(
-      runtime,
-      message,
-      state,
-      _options,
-      callback,
-    );
-    if (!status || status != 'success') {
-      return status || 'failed';
-    }
-    try {
-      task.id = stringToUuid(new Date().toISOString());
-      task.chain = 'solana';
-      task.agentId = runtime.agentId;
-      await runtime.databaseAdapter.insert(
-        LimitOrderTable,
-        task,
-      );
-      elizaLogger.info(`AUTO_Task Created, ${JSON.stringify(task)}`);
-      const responseMsg = {
-        text: `AutoTask Created Successfully`,
-      };
-      callback?.(responseMsg);
-      return 'success';
-    } catch (error) {
-      elizaLogger.error(`Error during autotask create:, ${error}`);
-      const responseMsg = {
-        text: `Emm... something went wrong, please try again later`,
-      };
-      callback?.(responseMsg);
-      return 'failed';
-    }
-  },
   formatParameters: async (runtime: IAgentRuntime, parameters: any, callback?: HandlerCallback) => {
     elizaLogger.log('parameters (formatParameters): ', parameters);
     const formattedParameters = parameters as LimitOrderTask;
@@ -241,6 +201,13 @@ export const autoTask: Action = {
       return {status: 'incomplete info', parameters: parameters};
     }
 
+    if (!formattedParameters.targetPrice && !formattedParameters.delay) {
+      callback?.({
+        text: "If you'd like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
+      });
+      return {status: 'incomplete info', parameters: parameters};
+    }
+    
     const client = await getSolanaClient(runtime);
 
     if (
@@ -251,9 +218,48 @@ export const autoTask: Action = {
       formattedParameters.inputTokenAmount = balance * formattedParameters.inputTokenPercentage;
     }
 
-    return {status: 'success', parameters: formattedParameters};
-
     
+    return {status: 'success', parameters: formattedParameters};
+  },
+  handler: async (
+    runtime: IAgentRuntime,
+    message: Memory,
+    state: State,
+    _options: { [key: string]: unknown },
+    callback?: HandlerCallback,
+  ): Promise<ActionStatus> => {
+    const {task, status} = await checkResponse(
+      runtime,
+      message,
+      state,
+      _options,
+      callback,
+    );
+    if (!status || status != 'success') {
+      return status || 'failed';
+    }
+    try {
+      task.id = stringToUuid(new Date().toISOString());
+      task.chain = 'solana';
+      task.agentId = runtime.agentId;
+      await runtime.databaseAdapter.insert(
+        LimitOrderTable,
+        task,
+      );
+      elizaLogger.info(`AUTO_Task Created, ${JSON.stringify(task)}`);
+      const responseMsg = {
+        text: `AutoTask Created Successfully`,
+      };
+      callback?.(responseMsg);
+      return 'success';
+    } catch (error) {
+      elizaLogger.error(`Error during autotask create:, ${error}`);
+      const responseMsg = {
+        text: `Emm... something went wrong, please try again later`,
+      };
+      callback?.(responseMsg);
+      return 'failed';
+    }
   },
   examples: [] as ActionExample[][],
 } as Action;
@@ -320,13 +326,6 @@ async function checkResponse(
     return {status: 'failed'};
   }
 
-  if (!swapReq.targetPrice && !swapReq.delay) {
-    callback?.({
-      text: "If you'd like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
-    });
-    return {status: 'pending'};
-  }
-
   if (swapReq.delay) {
     const getSecondsValue = (value: string): number | null => {
       const match = value.match(/^(\d+)s$/);
@@ -369,6 +368,12 @@ async function checkResponse(
         action: "AUTO_TASK"
       });
       return { status: "pending" };
+    } else {
+      callback?.({
+        text: "I failed to recognize your confirmation. Please try again.",
+        action: "AUTO_TASK"
+      });
+      return { status: "failed" };
     }
   } else {
     swapReq.inputTokenPercentage = Number(swapReq.inputTokenAmount)/balance;

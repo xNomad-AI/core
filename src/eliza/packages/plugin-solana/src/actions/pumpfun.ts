@@ -218,6 +218,45 @@ export default {
   },
   description:
     'Create a new token on pumpfun and buy a specified amount using SOL. Requires the token name, symbol and image url, buy amount after create in SOL.',
+  formatParameters: async (runtime: IAgentRuntime, parameters: any, callback?: HandlerCallback) => {
+    elizaLogger.log('parameters (formatParameters): ', parameters);
+    const formattedParameters = parameters as any;
+    if (formattedParameters.symbol?.startsWith('$')) {
+      formattedParameters.symbol = formattedParameters.symbol.slice(1);
+    }
+    if (formattedParameters.name?.startsWith('$')) {
+      formattedParameters.name = formattedParameters.name.slice(1);
+    }
+    const {
+      name,
+      symbol,
+      imageUrl,
+      description,
+      twitter,
+      website,
+      telegram,
+      buyAmountSol,
+    } = formattedParameters;
+    if (!imageUrl || !fs.existsSync(imageUrl)) {
+      callback({
+        text: `Please provide an image for the token.`,
+      });
+      return {status: 'incomplete info', parameters: formattedParameters};
+    }
+    if (!name) {
+      callback({
+        text: `Please provide a name for the token.`,
+      });
+      return {status: 'incomplete info', parameters: formattedParameters};
+    }
+    if (!symbol) {
+      callback({
+        text: `Please provide a symbol for the token.`,
+      });
+      return {status: 'incomplete info', parameters: formattedParameters};
+    }
+    return {status: 'success', parameters: formattedParameters};
+  },
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -232,12 +271,6 @@ export default {
       return 'rejected';
     }
     const content = convertNullStrings(state.actionParameters) as any;
-    if (content.symbol?.startsWith('$')) {
-      content.symbol = content.symbol.slice(1);
-    }
-    if (content.name?.startsWith('$')) {
-      content.name = content.name.slice(1);
-    }
     elizaLogger.info('Generated content:', content);
 
     const {
@@ -261,48 +294,143 @@ export default {
     elizaLogger.info(
       `Content for CREATE_AND_BUY_TOKEN action: ${JSON.stringify(content)}`,
     );
-    if (!imageUrl || !fs.existsSync(imageUrl)) {
-      callback({
-        text: `Please provide an image for the token.`,
-      });
-      return 'pending';
-    }
-    if (!name) {
-      callback({
-        text: `Please provide a name for the token.`,
-      });
-      return 'pending';
-    }
-    if (!symbol) {
-      callback({
-        text: `Please provide a symbol for the token.`,
-      });
-      return 'pending';
-    }
 
     elizaLogger.info(`checking if user confirm to execute`);
 
-    const confirmContext = composeContext({
-      state,
-      template: userConfirmTemplate,
-    });
+    if (content.pendingConfirmation === true) {
+      const confirmContext = composeContext({
+        state,
+        template: userConfirmTemplate,
+      });
 
-    const confirmResponse = await generateObjectDeprecated({
-      runtime,
-      context: confirmContext,
-      modelClass: ModelClass.LARGE,
-    });
-    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+      const confirmResponse = await generateObjectDeprecated({
+        runtime,
+        context: confirmContext,
+        modelClass: ModelClass.LARGE,
+      });
+      elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
 
-    if (confirmResponse.userAcked == 'rejected') {
-      const responseMsg = {
-        text: 'ok. I will cancel the task.',
-      };
-      callback?.(responseMsg);
-      return 'cancelled';
-    }
+      if (confirmResponse.userAcked == 'rejected') {
+        const responseMsg = {
+          text: 'ok. I will cancel the task.',
+        };
+        callback?.(responseMsg);
+        return 'cancelled';
+      } else if (confirmResponse.userAcked == "pending") {
+        callback?.({
+          text: "I repeatedly asked you to confirm the task although you have already confirmed it. It was my mistake. Please try again.",
+          action: "CREATE_TOKEN"
+        });
+        return "pending";
+      } else if (confirmResponse.userAcked == "confirmed") {
+        const file = imageUrl ? await fs.openAsBlob(imageUrl) : null;
+        const fullTokenMetadata: CreateTokenMetadata = {
+          name: tokenMetadata.name,
+          symbol: tokenMetadata.symbol,
+          description: tokenMetadata.description,
+          twitter: tokenMetadata.twitter,
+          telegram: tokenMetadata.telegram,
+          website: tokenMetadata.website,
+          file: file,
+        };
 
-    if (confirmResponse.userAcked == 'pending') {
+        // Default priority fee for high network load
+        const priorityFee = {
+          unitLimit: 500_000,
+          unitPrice: 200_000,
+        };
+        const slippage = '400';
+
+        // Get private key from settings and create deployer keypair
+        const { keypair: deployerKeypair } = await getWalletKey(runtime, true);
+        elizaLogger.log(`deployer: ${deployerKeypair.publicKey.toBase58()}`);
+        // Generate new mint keypair
+        const mintKeypair = Keypair.generate();
+        elizaLogger.log(
+          `Generated mint address: ${mintKeypair.publicKey.toBase58()}`,
+        );
+
+        // Setup connection and SDK
+        const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
+        const connection = new Connection(rpcUrl, {
+          commitment: 'confirmed',
+          confirmTransactionInitialTimeout: 120000, // 120 seconds
+          wsEndpoint: settings.SOLANA_RPC_URL!.replace('https', 'wss'),
+        });
+
+        elizaLogger.log(
+          `rpc connection: ${rpcUrl}, ${deployerKeypair.publicKey.toBase58()}`,
+        );
+
+        const wallet = new Wallet(deployerKeypair);
+
+        const provider: AnchorProvider = new AnchorProvider(connection, wallet, {
+          commitment: 'confirmed',
+        });
+        const sdk = new PumpFunSDK(provider);
+        const lamports = Math.floor(Number(buyAmountSol) * LAMPORTS_PER_SOL);
+
+        elizaLogger.log(
+          'Executing create and buy transaction...',
+          deployerKeypair.publicKey,
+          mintKeypair.publicKey,
+        );
+        if (!fullTokenMetadata.name) {
+          throw new Error('fullTokenMetadata Token name is required');
+        }
+
+        SharedProvider.get<any>('tradeMonitorService').registerAgentCreatedToken({
+          chain: 'solana',
+          address: mintKeypair.publicKey.toBase58(),
+          creatorAddress: deployerKeypair.publicKey.toBase58(),
+          nftId: getRuntimeKey(runtime, 'NFT_ID'),
+        });
+
+        const result = await createAndBuyToken({
+          deployer: deployerKeypair,
+          mint: mintKeypair,
+          tokenMetadata: fullTokenMetadata,
+          buyAmountSol: BigInt(lamports),
+          priorityFee,
+          allowOffCurve: false,
+          sdk,
+          slippage,
+        });
+
+        if (result.success) {
+          callback({
+            text: `Transaction submitted, please wait for confirmation.\nCheck token on: https://pump.fun/${mintKeypair.publicKey.toBase58()}\nTransaction hash: ${result.signature}`,
+            content: {
+              tokenInfo: {
+                symbol: tokenMetadata.symbol,
+                address: result.ca,
+                creator: result.creator,
+                name: tokenMetadata.name,
+                description: tokenMetadata.description,
+                timestamp: Date.now(),
+              },
+            },
+          });
+          return 'success';
+        } else {
+          callback({
+            text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
+            isError: true,
+            content: {
+              error: result.error,
+              mintAddress: result.ca,
+            },
+          });
+          return 'failed';
+        }
+      } else {
+        callback?.({
+          text: "I failed to recognize your confirmation. Please try again.",
+          action: "CREATE_TOKEN"
+        });
+        return "failed";
+      }
+    } else {
       const confirmMessage = formatCreateTokenInfo(content);
       const responseMsg = {
         text: `${confirmMessage}`,
@@ -316,106 +444,6 @@ export default {
       };
       callback?.(responseMsg);
       return 'pending';
-    }
-    const file = imageUrl ? await fs.openAsBlob(imageUrl) : null;
-    const fullTokenMetadata: CreateTokenMetadata = {
-      name: tokenMetadata.name,
-      symbol: tokenMetadata.symbol,
-      description: tokenMetadata.description,
-      twitter: tokenMetadata.twitter,
-      telegram: tokenMetadata.telegram,
-      website: tokenMetadata.website,
-      file: file,
-    };
-
-    // Default priority fee for high network load
-    const priorityFee = {
-      unitLimit: 500_000,
-      unitPrice: 200_000,
-    };
-    const slippage = '400';
-
-    // Get private key from settings and create deployer keypair
-    const { keypair: deployerKeypair } = await getWalletKey(runtime, true);
-    elizaLogger.log(`deployer: ${deployerKeypair.publicKey.toBase58()}`);
-    // Generate new mint keypair
-    const mintKeypair = Keypair.generate();
-    elizaLogger.log(
-      `Generated mint address: ${mintKeypair.publicKey.toBase58()}`,
-    );
-
-    // Setup connection and SDK
-    const rpcUrl = getRuntimeKey(runtime, 'SOLANA_RPC_URL');
-    const connection = new Connection(rpcUrl, {
-      commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 120000, // 120 seconds
-      wsEndpoint: settings.SOLANA_RPC_URL!.replace('https', 'wss'),
-    });
-
-    elizaLogger.log(
-      `rpc connection: ${rpcUrl}, ${deployerKeypair.publicKey.toBase58()}`,
-    );
-
-    const wallet = new Wallet(deployerKeypair);
-
-    const provider: AnchorProvider = new AnchorProvider(connection, wallet, {
-      commitment: 'confirmed',
-    });
-    const sdk = new PumpFunSDK(provider);
-    const lamports = Math.floor(Number(buyAmountSol) * LAMPORTS_PER_SOL);
-
-    elizaLogger.log(
-      'Executing create and buy transaction...',
-      deployerKeypair.publicKey,
-      mintKeypair.publicKey,
-    );
-    if (!fullTokenMetadata.name) {
-      throw new Error('fullTokenMetadata Token name is required');
-    }
-
-    SharedProvider.get<any>('tradeMonitorService').registerAgentCreatedToken({
-      chain: 'solana',
-      address: mintKeypair.publicKey.toBase58(),
-      creatorAddress: deployerKeypair.publicKey.toBase58(),
-      nftId: getRuntimeKey(runtime, 'NFT_ID'),
-    });
-
-    const result = await createAndBuyToken({
-      deployer: deployerKeypair,
-      mint: mintKeypair,
-      tokenMetadata: fullTokenMetadata,
-      buyAmountSol: BigInt(lamports),
-      priorityFee,
-      allowOffCurve: false,
-      sdk,
-      slippage,
-    });
-
-    if (result.success) {
-      callback({
-        text: `Transaction submitted, please wait for confirmation.\nCheck token on: https://pump.fun/${mintKeypair.publicKey.toBase58()}\nTransaction hash: ${result.signature}`,
-        content: {
-          tokenInfo: {
-            symbol: tokenMetadata.symbol,
-            address: result.ca,
-            creator: result.creator,
-            name: tokenMetadata.name,
-            description: tokenMetadata.description,
-            timestamp: Date.now(),
-          },
-        },
-      });
-      return 'success';
-    } else {
-      callback({
-        text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
-        isError: true,
-        content: {
-          error: result.error,
-          mintAddress: result.ca,
-        },
-      });
-      return 'failed';
     }
   },
 
