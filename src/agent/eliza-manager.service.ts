@@ -18,6 +18,7 @@ import { sleep } from '../shared/utils.service.js';
 import { WalletProxyService } from '../wallet/wallet-proxy.service.js';
 import { normalizeBlockchainAddress } from '../nft/nft.types.js';
 import { initializeDatabase } from '../eliza/starter/database/index.js';
+import {generatePostTweet} from '@elizaos/client-twitter';
 
 export type ElizaAgentConfig = {
   chain: string;
@@ -345,5 +346,27 @@ export class ElizaManagerService {
       }
     }).toArray();
     return agents;
+  }
+
+    async generateTweetWithRuntime(
+      agentId: string,
+      twitterUsername: string,
+      twitterPostTemplate: string,
+      maxTweetLength: number,
+    ) {
+      try {
+
+          const runtime = this.elizaClient.agents.get(agentId);
+
+          if(runtime === undefined) {
+            throw new Error('Runtime undefined.');
+          }
+
+          const result = await generatePostTweet(twitterUsername, maxTweetLength, twitterPostTemplate, runtime);    
+          return result.tweet;
+        } catch (error) {
+        this.logger.error(`Error generating tweet: ${error.message}`);
+        throw error;
+      }
   }
 }

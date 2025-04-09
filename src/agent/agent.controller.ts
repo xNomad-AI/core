@@ -1,10 +1,12 @@
 import { CacheTTL } from '@nestjs/cache-manager';
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   NotFoundException,
+  Param,
   Post,
   Query,
   Request,
@@ -240,4 +242,42 @@ export class AgentController {
       prologue: await this.elizaManager.getPrologue(chain, nftId),
     };
   }
+
+
+  @Post('/twitter/test-tweet/:nftId')
+  async getGeneratedTweet(
+    @Param('nftId') nftId: string,
+    @Body() testTweetDto: TestTweetDto
+  ) {
+
+    // Validate the request parameters
+    if (!nftId) {
+      throw new BadRequestException('NFT ID is required');
+    }
+
+    if(testTweetDto.twitterUsername === undefined || testTweetDto.twitterUsername === null || testTweetDto.twitterUsername === '') {
+      throw new BadRequestException('Twitter Username is required');
+    }
+
+    if(testTweetDto.maxTweetLength === undefined || testTweetDto.maxTweetLength === null || testTweetDto.maxTweetLength === 0) {
+      throw new BadRequestException('Max Tweet Length is required');
+    }
+
+
+    if(testTweetDto.twitterPostTemplate === undefined || testTweetDto.twitterPostTemplate === null || testTweetDto.twitterPostTemplate === '') {
+      throw new BadRequestException('Twitter Post Template is required');
+    }
+
+    const agent = await this.mongo.nfts.findOne({ nftId });
+
+    if(!agent) {
+      throw new BadRequestException('Agent not found');
+    }
+
+    const agentId = agent.agentId;
+
+    return await this.elizaManager.generateTweetWithRuntime(agentId, testTweetDto.twitterUsername, testTweetDto.twitterPostTemplate, testTweetDto.maxTweetLength);
+  }
+
+
 }
