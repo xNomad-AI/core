@@ -66,6 +66,9 @@ export class AgentAccountController {
     @Query('chain') chain: string,
     @Query('address') address: string,
   ) {
+    if (chain !== 'solana') {
+      address = address.toLowerCase();
+    }
     switch (chain) {
       case 'solana':
         return await this.birdEye.getWalletPortfolio({ chain, address });
@@ -83,6 +86,9 @@ export class AgentAccountController {
   ) { 
     if (typeof collectionIds === 'string') {
       collectionIds = collectionIds.split(',');
+    }
+    if (chain !== 'solana') {
+      address = address.toLowerCase();
     }
     const agents = await this.elizaManager.getOwnedAgents(chain, address, collectionIds);
     const portfolios = await Promise.all(
