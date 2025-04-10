@@ -123,7 +123,6 @@ export class AgentAccountController {
           evm: address,
         },
         isPrimary: true,
-        nft: null,
       },
       ...agents.map(agent => ({
         ...agent,
@@ -144,7 +143,7 @@ export class AgentAccountController {
         }
         return {
           ...portfolio,
-          nft: agent,
+          nft: agent.isPrimary ? undefined : agent,
         };
       })
     );
