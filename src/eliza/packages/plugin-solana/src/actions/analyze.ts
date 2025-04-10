@@ -49,6 +49,20 @@ export const analyze: Action = {
   },
   description:
     'Analyze the token trade info, twitter binding and news about the token by given symbol or contract address',
+  formatParameters: async (runtime: IAgentRuntime, parameters: any, callback?: HandlerCallback) => {
+    const formattedParameters = convertNullStrings(parameters) as any;
+    if (formattedParameters.tokenSymbol && !formattedParameters.tokenAddress) {
+      const tokens = await getTokensBySymbol(runtime, formattedParameters.tokenSymbol);
+      formattedParameters.tokenAddress = tokens?.[0]?.address;
+    }
+    if (!formattedParameters.tokenAddress) {
+      callback?.({
+        text: `Please provide either token symbol or contract address to analyze.`,
+      });
+      return {status: 'incomplete info', parameters: formattedParameters};
+    }
+    return {status: 'success', parameters: formattedParameters};
+  },
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -58,18 +72,6 @@ export const analyze: Action = {
   ): Promise<ActionStatus> => {
     let response = convertNullStrings(state.actionParameters) as any;
     elizaLogger.log('ANALYZE_TOKEN Response:', response);
-
-    if (response.tokenSymbol && !response.tokenAddress) {
-      const tokens = await getTokensBySymbol(runtime, response.tokenSymbol);
-      response.tokenAddress = tokens?.[0]?.address;
-    }
-
-    if (!response.tokenAddress) {
-      callback?.({
-        text: `Please provide either token symbol or contract address to analyze.`,
-      });
-      return 'pending';
-    }
 
     const analyzeResult = await getTokenInfo(
       response.tokenSymbol,

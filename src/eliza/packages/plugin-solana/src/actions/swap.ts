@@ -39,6 +39,7 @@ interface SwapTokenRequest {
   inputTokenAmount: string | null;
   inputTokenPercentage: number | null;
   outputTokenAmount: string | null;
+  pendingConfirmation: boolean | null;
 }
 
 const userConfirmTemplate = `
@@ -148,6 +149,93 @@ export const executeSwap: Action = {
   },
   description:
     'Perform a token swap. buy or sell tokens, supports SOL and SPL tokens swaps.',
+  formatParameters: async (runtime: IAgentRuntime, parameters: any, callback?: HandlerCallback) => {
+    elizaLogger.log('parameters (formatParameters): ', parameters);
+    const defaultValues: SwapTokenRequest = {
+        inputTokenSymbol: null,
+        inputTokenCA: null,
+        outputTokenSymbol: null,
+        outputTokenCA: null,
+        inputTokenAmount: null,
+        inputTokenPercentage: null,
+        outputTokenAmount: null,
+        pendingConfirmation: null
+    };
+    const formattedParameters = {
+        ...defaultValues,
+        ...convertNullStrings(parameters)
+    } as SwapTokenRequest;
+    
+    formattedParameters.inputTokenPercentage = Number(formattedParameters.inputTokenPercentage);
+
+    if (formattedParameters.inputTokenSymbol?.toUpperCase() === 'SOL') {
+      formattedParameters.inputTokenCA = NATIVE_MINT.toBase58();
+    }
+    if (formattedParameters.outputTokenSymbol?.toUpperCase() === 'SOL') {
+      formattedParameters.outputTokenCA = NATIVE_MINT.toBase58();
+    }
+    formattedParameters.inputTokenCA = validateAndAssignCA(
+      formattedParameters.inputTokenSymbol,
+      formattedParameters.inputTokenCA,
+    );
+    formattedParameters.outputTokenCA = validateAndAssignCA(
+      formattedParameters.outputTokenSymbol,
+      formattedParameters.outputTokenCA,
+    );
+
+    if (!formattedParameters.inputTokenCA) {
+      formattedParameters.inputTokenCA = await getTokenCABySymbol(
+        runtime,
+        formattedParameters.inputTokenSymbol,
+      );
+      if (!formattedParameters.inputTokenCA) {
+        const responseMsg = {
+          text: 'Please provide a valid inputToken CA you want to sell',
+        };
+        callback?.(responseMsg);
+        return { status: 'incomplete info', parameters: formattedParameters};
+      }
+    }
+
+    if (!formattedParameters.outputTokenCA) {
+      formattedParameters.outputTokenCA = await getTokenCABySymbol(
+        runtime,
+        formattedParameters.outputTokenSymbol,
+      );
+      if (!formattedParameters.outputTokenCA) {
+        const responseMsg = {
+          text: 'Please provide a valid outputToken CA you want to buy',
+        };
+        callback?.(responseMsg);
+        return { status: 'incomplete info', parameters: formattedParameters};
+      }
+    }
+
+    const client = await getSolanaClient(runtime);
+    const programId = await client.getTokenProgramId(formattedParameters.inputTokenCA);
+
+    if (
+      !formattedParameters.inputTokenAmount &&
+      formattedParameters.inputTokenPercentage > 0
+    ) {
+      const balance = await client.getUIBalance(formattedParameters.inputTokenCA);
+      formattedParameters.inputTokenAmount = BigNumber(balance).multipliedBy(formattedParameters.inputTokenPercentage).toString();
+    }
+
+  if (
+    !formattedParameters.inputTokenAmount ||
+    +formattedParameters.inputTokenAmount <= 0
+  ) {
+    const responseMsg = {
+      text: `Please provide a valid ${formattedParameters.inputTokenSymbol} input amount or output amount to perform the swap`,
+      action: 'EXECUTE_SWAP',
+      result: 'Pending inputToken Amount',
+    };
+    callback?.(responseMsg);
+    return { status: 'incomplete info', parameters: formattedParameters};
+  }
+    return {status: 'success', parameters: formattedParameters};
+  },
   handler: handleExecuteSwap,
   examples: [] as ActionExample[][],
 } as Action;
@@ -233,53 +321,7 @@ async function checkResponse(
 
   // generate formatted response from chat
   let swapReq = convertNullStrings(state.actionParameters) as SwapTokenRequest;
-  elizaLogger.info('Swap request:', swapReq);
-  swapReq.inputTokenPercentage = Number(swapReq.inputTokenPercentage);
-
-  if (swapReq.inputTokenSymbol?.toUpperCase() === 'SOL') {
-    swapReq.inputTokenCA = NATIVE_MINT.toBase58();
-  }
-  if (swapReq.outputTokenSymbol?.toUpperCase() === 'SOL') {
-    swapReq.outputTokenCA = NATIVE_MINT.toBase58();
-  }
-  swapReq.inputTokenCA = validateAndAssignCA(
-    swapReq.inputTokenSymbol,
-    swapReq.inputTokenCA,
-  );
-  swapReq.outputTokenCA = validateAndAssignCA(
-    swapReq.outputTokenSymbol,
-    swapReq.outputTokenCA,
-  );
-
-  if (!swapReq.inputTokenCA) {
-    swapReq.inputTokenCA = await getTokenCABySymbol(
-      runtime,
-      swapReq.inputTokenSymbol,
-    );
-    if (!swapReq.inputTokenCA) {
-      const responseMsg = {
-        text: 'Please provide a valid inputToken CA you want to sell',
-        result: 'Pending inputToken CA',
-      };
-      callback?.(responseMsg);
-      return { status: 'pending'};
-    }
-  }
-
-  if (!swapReq.outputTokenCA) {
-    swapReq.outputTokenCA = await getTokenCABySymbol(
-      runtime,
-      swapReq.outputTokenSymbol,
-    );
-    if (!swapReq.outputTokenCA) {
-      const responseMsg = {
-        text: 'Please provide a valid outputToken CA you want to buy',
-        result: 'Pending outputToken CA',
-      };
-      callback?.(responseMsg);
-      return { status: 'pending'};
-    }
-  }
+  elizaLogger.log('Swap request:', swapReq);
 
   const client = await getSolanaClient(runtime);
   const programId = await client.getTokenProgramId(swapReq.inputTokenCA);
@@ -290,29 +332,7 @@ async function checkResponse(
   ) {
     callback?.({
       text: `Specify the buy amount of a token is not supported now, ${swapReq.outputTokenAmount} will be ignored.`,
-      result: 'Pending outputToken Amount',
     });
-    return { status: 'pending'};
-  }
-
-  if (
-    !swapReq.inputTokenAmount &&
-    swapReq.inputTokenPercentage > 0
-  ) {
-    const balance = await client.getUIBalance(swapReq.inputTokenCA);
-    swapReq.inputTokenAmount = BigNumber(balance).multipliedBy(swapReq.inputTokenPercentage).toString();
-  }
-
-  if (
-    !swapReq.inputTokenAmount ||
-    +swapReq.inputTokenAmount <= 0
-  ) {
-    const responseMsg = {
-      text: `Please provide a valid ${swapReq.inputTokenSymbol} input amount or output amount to perform the swap`,
-      action: 'EXECUTE_SWAP',
-      result: 'Pending inputToken Amount',
-    };
-    callback?.(responseMsg);
     return { status: 'pending'};
   }
 
@@ -368,30 +388,47 @@ async function checkResponse(
 
   elizaLogger.info(`checking if user confirm to execute swap`);
 
-  const confirmContext = composeContext({
-    state,
-    template: userConfirmTemplate,
-  });
+  if (swapReq.pendingConfirmation === true) {
+    const confirmContext = composeContext({
+      state,
+      template: userConfirmTemplate,
+    });
 
-  const confirmResponse = await generateObjectDeprecated({
-    runtime,
-    context: confirmContext,
-    modelClass: ModelClass.LARGE,
-  });
-  elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+    const confirmResponse = await generateObjectDeprecated({
+      runtime,
+      context: confirmContext,
+      modelClass: ModelClass.LARGE,
+    });
+    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
 
-  if (confirmResponse.userAcked == 'rejected') {
-    const responseMsg = {
-      text: 'ok. I will not execute this transaction.',
-      result: 'User rejected the swap',
-      action: 'EXECUTE_SWAP',
-    };
-    callback?.(responseMsg);
-    return { status: 'cancelled'};
-  }
-
-  if (confirmResponse.userAcked == 'pending') {
-    const swapInfo = formatConfirmSwapInfo({
+    if (confirmResponse.userAcked == 'rejected') {
+      const responseMsg = {
+        text: 'ok. I will not execute this transaction.',
+        result: 'User rejected the swap',
+        action: 'EXECUTE_SWAP',
+      };
+      callback?.(responseMsg);
+      return { status: 'cancelled'};
+    } else if (confirmResponse.userAcked == "pending") {
+      callback?.({
+        text: "I repeatedly asked you to confirm the task although you have already confirmed it. It was my mistake. Please try again.",
+        action: "EXECUTE_SWAP"
+      });
+      return { status: "pending" };
+    } else if (confirmResponse.userAcked == "confirmed") {
+      return {
+        status: 'success',
+        parameters: { ...swapReq, programId },
+      };
+    } else {
+      callback?.({
+        text: "I failed to recognize your confirmation. Please try again.",
+        action: "EXECUTE_SWAP"
+      });
+      return { status: "failed" };
+    }
+  } else {
+     const swapInfo = formatConfirmSwapInfo({
       inputTokenSymbol: swapReq.inputTokenSymbol,
       inputTokenCA: swapReq.inputTokenCA,
       outputTokenSymbol: swapReq.outputTokenSymbol,
@@ -407,11 +444,6 @@ async function checkResponse(
     callback?.(responseMsg);
     return { status: 'pending'};
   }
-
-  return {
-    status: 'success',
-    parameters: { ...swapReq, programId },
-  };
 }
 
 function formatConfirmSwapInfo(params: {
