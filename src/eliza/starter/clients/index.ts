@@ -1,6 +1,3 @@
-// import { AutoClientInterface } from '@elizaos/client-auto';
-// import { DiscordClientInterface } from '@elizaos/client-discord';
-// import { TelegramClientInterface } from '@elizaos/client-telegram';
 import { Character, IAgentRuntime } from '@elizaos/core';
 import TelegramClientInterface from '@elizaos/client-telegram';
 import { TwitterClientStarter } from '@xnomad/task-manager';
@@ -20,15 +17,6 @@ export async function initializeClients(
 
   const clientTypes = character.clients?.map((str) => str.toLowerCase()) || [];
 
-  // if (clientTypes.includes('auto')) {
-  //   const autoClient = await AutoClientInterface.start(runtime);
-  //   if (autoClient) clients.push(autoClient);
-  // }
-
-  // if (clientTypes.includes('discord')) {
-  //   clients.push(await DiscordClientInterface.start(runtime));
-  // }
-
   const isStartTg = process.env?.ENABLE_TELEGRAM_CLIENT === 'true';
   if (
     isStartTg &&
@@ -36,9 +24,15 @@ export async function initializeClients(
       character.settings?.secrets?.TELEGRAM_BOT_TOKEN)
   ) {
     try {
-      console.log(`Starting Telegram client for ${character.name}`);
-      const telegramClient = await TelegramClientInterface.start(runtime);
-      if (telegramClient) clients['client-telegram'] = telegramClient;
+      const isSuspended =
+        character.settings?.secrets?.TELEGRAM_LOGIN_SUSPEND == 'true';
+      if (isSuspended) {
+        console.log(`Suspended Telegram client for ${character.name}`);
+      } else {
+        console.log(`Starting Telegram client for ${character.name}`);
+        const telegramClient = await TelegramClientInterface.start(runtime);
+        if (telegramClient) clients['client-telegram'] = telegramClient;
+      }
     } catch (e) {
       errors['client-telegram'] = e;
       console.error(
