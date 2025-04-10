@@ -73,13 +73,33 @@ export class AgentAccountController {
     if (chain !== 'solana') {
       address = address.toLowerCase();
     }
+    let portfolio;
     switch (chain) {
       case 'solana':
-        return await this.birdEye.getWalletPortfolio({ chain, address });
+        portfolio = await this.birdEye.getWalletPortfolio({ chain, address });
+        break;
       default:
         const moralisApikey = this.config.get('MORALIS_API_KEY');
-        return await getWalletPortfolio(address, chain, { moralisApikey });
+        portfolio = await getWalletPortfolio(address, chain, { moralisApikey });
+        break;
     }
+    const tokens: string[] = Array.from(
+      new Set(
+        portfolio.items.map((item) => chain === 'solana' ? item.address : item.address.toLowerCase())
+      )
+    );
+    const agentCoins = await this.elizaManager.getAgentCoins(chain, tokens);
+    const coinMap = new Map<string, any>();
+    agentCoins.forEach((coin) => {
+      coinMap.set(coin.address, coin);
+    });
+    portfolio.items.forEach((item) => {
+      const coin = coinMap.get(item.address);
+      if (coin) {
+        item.agentCoin = coin;
+      }
+    });
+    return portfolio;
   }
 
   @Get('/defi/agents/portfolio')
@@ -128,11 +148,11 @@ export class AgentAccountController {
     const agentCoins = await this.elizaManager.getAgentCoins(chain, tokens);
     const coinMap = new Map<string, any>();
     agentCoins.forEach((coin) => {
-      coinMap.set(coin.address.toLowerCase(), coin);
+      coinMap.set(coin.address, coin);
     });
     portfolios.forEach((portfolio) => {
       portfolio.items.forEach((item) => {
-        const coin = coinMap.get(item.address.toLowerCase());
+        const coin = coinMap.get(item.address);
         if (coin) {
           item.agentCoin = coin;
         }

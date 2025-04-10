@@ -438,6 +438,9 @@ export class ElizaManagerService {
   }
 
   async getAgentCoins(chain: string, tokens: string[]) {
+    if (tokens.length === 0) {
+      return [];
+    }
     const agentCoins = await this.mongoService.agentCreatedCoins.find({
       chain,
       address: { $in: tokens },

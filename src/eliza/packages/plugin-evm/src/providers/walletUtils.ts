@@ -128,7 +128,7 @@ export async function getWalletPortfolio(
       totalUsd: 0
     };
     response.response.result.forEach((item) => {
-      if (item.tokenAddress) {
+      if (item.tokenAddress && item.balance.value.toString() !== '0') {
         walletPortfolio.items.push({
           name: item.name,
           address: item.tokenAddress.lowercase,
