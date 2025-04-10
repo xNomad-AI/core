@@ -83,8 +83,9 @@ export class AgentAccountController {
   async getAgentsPortfolio(
     @Query('chain') chain: string,
     @Query('address') address: string,
+    @Query('collectionId') collectionId?: string,
   ) { 
-    const agents = await this.elizaManager.getOwnedAgents(chain, address);
+    const agents = await this.elizaManager.getOwnedAgents(chain, address, collectionId);
     const portfolios = await Promise.all(
       agents.map(async (agent) => {
         let portfolio;
