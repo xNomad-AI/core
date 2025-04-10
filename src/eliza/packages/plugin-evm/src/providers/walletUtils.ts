@@ -22,6 +22,7 @@ export interface Item {
   uiAmount: string;
   priceUsd: string;
   valueUsd: string;
+  usdPrice24hrPercenChange: string;
 }
 
 export async function isAgentAdmin(runtime: IAgentRuntime, message: Memory) {
@@ -127,7 +128,7 @@ export async function getWalletPortfolio(
       totalUsd: 0
     };
     response.response.result.forEach((item) => {
-      if (item.tokenAddress) {
+      if (item.tokenAddress && item.balance.value.toString() !== '0') {
         walletPortfolio.items.push({
           name: item.name,
           address: item.tokenAddress.lowercase,
@@ -137,7 +138,8 @@ export async function getWalletPortfolio(
           balance: item.balance.value.toString(),
           uiAmount: item.balanceFormatted,
           priceUsd: item.usdPrice,
-          valueUsd: item.usdValue.toString()
+          valueUsd: item.usdValue.toString(),
+          usdPrice24hrPercenChange: item.usdPrice24hrPercentChange,
         });
         walletPortfolio.totalUsd += item.usdValue;
       }

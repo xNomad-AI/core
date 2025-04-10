@@ -144,3 +144,5 @@ data
 debug
 docs/development
 temp
+tmp
+.idea

@@ -207,7 +207,7 @@ export class BirdeyeService {
   }
 
   transformNativeToken(chain: string, tokenCA: string) {
-    if (chain === 'solana' && (tokenCA === '11111111111111111111111111111111' || tokenCA === 'So11111111111111111111111111111111')) {
+    if (chain === 'solana' && (tokenCA === '11111111111111111111111111111111' || tokenCA === 'So11111111111111111111111111111111' || tokenCA === 'So11111111111111111111111111111111111111111')) {
       return NATIVE_MINT.toBase58();
     }
     if (chain === 'bsc' && tokenCA.toLocaleLowerCase() === ethAddress) {
@@ -235,6 +235,29 @@ export class BirdeyeService {
       return result?.data?.value;
     } catch (error) {
       this.logger.error(`Error fetching token price: ${error}`);
+      return undefined;
+    }
+  }
+
+  async getTokensPrice(
+    chain: string,
+    tokens: string[],
+  ) {
+    try {
+      tokens = tokens.map((token) => this.transformNativeToken(chain, token));
+      const birdeyeApiKey = this.apikey;
+      const url = `https://public-api.birdeye.so/defi/multi_price?list_address=${tokens.join(',')}`;
+      const response = await fetch(url, {
+        headers: {
+          'X-API-KEY': birdeyeApiKey,
+          accept: 'application/json',
+          'x-chain': chain,
+        },
+      });
+      const result = await response.json();
+      return result?.data;
+    } catch (error) {
+      this.logger.error(`Error fetching tokens price: ${error}`);
       return undefined;
     }
   }

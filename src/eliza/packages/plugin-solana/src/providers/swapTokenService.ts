@@ -56,22 +56,28 @@ export class SwapTokenService {
       // https://station.jup.ag/docs/swap-api/add-fees-to-swap#important-notes
       let tokenFeeAccount: PublicKey = undefined;
       let url = `https://api.jup.ag/swap/v1/quote?inputMint=${inputTokenCA}&outputMint=${outputTokenCA}&amount=${amount.toString()}&dynamicSlippage=true&autoSlippage=true&maxAccounts=64&onlyDirectRoutes=false&asLegacyTransaction=false&restrictIntermediateTokens=true`;
+      // decide use which token to re collect fees
+      const feeTokenCA = outputTokenCA === NATIVE_MINT.toBase58() ? outputTokenCA : inputTokenCA;
+      const feeProgramId = feeTokenCA === outputTokenCA ? outProgramId : inputProgramId;
       if (
         getSWAP_FEE_BPS() !== undefined &&
         getSWAP_FEE_ACCOUNT() !== undefined &&
-        !inputProgramId.equals(TOKEN_2022_PROGRAM_ID) &&
-        !outProgramId.equals(TOKEN_2022_PROGRAM_ID)
+        !feeProgramId.equals(TOKEN_2022_PROGRAM_ID)
       ) {
          tokenFeeAccount = (
           await getOrCreateAssociatedTokenAccount(
             connection,
             keyPair,
-            new PublicKey(inputTokenCA),
+            new PublicKey(feeTokenCA),
             new PublicKey(getSWAP_FEE_ACCOUNT()),
             true,
-            undefined,
-            undefined,
-            inputProgramId,
+            'confirmed',
+            {
+              skipPreflight: true,
+              preflightCommitment: 'confirmed',
+              commitment: 'confirmed',
+            },
+            feeProgramId,
           )
         ).address;
         url += `&platformFeeBps=${getSWAP_FEE_BPS()}`;

@@ -10,6 +10,12 @@ export interface SolanaTradeSettingsDTO extends TradeSettingsSolana {}
 
 export interface EvmTradeSettingsDTO extends TradeSettingsEvm {}
 
+export interface TestTweetDto {
+  twitterUsername: string;
+  maxTweetLength: number;
+  twitterPostTemplate: string;
+}
+
 export function validateTradeSettingsSolana(dto: SolanaTradeSettingsDTO) {
   if (!dto.slippage || dto.slippage < 0 || dto.slippage > 1) {
     throw new BadRequestException('Invalid slippage, slippage should be between 0 and 1');

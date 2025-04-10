@@ -70,13 +70,131 @@ export class AgentAccountController {
     @Query('chain') chain: string,
     @Query('address') address: string,
   ) {
+    if (chain !== 'solana') {
+      address = address.toLowerCase();
+    }
+    let portfolio;
     switch (chain) {
       case 'solana':
-        return await this.birdEye.getWalletPortfolio({ chain, address });
+        portfolio = await this.birdEye.getWalletPortfolio({ chain, address });
+        break;
       default:
         const moralisApikey = this.config.get('MORALIS_API_KEY');
-        return await getWalletPortfolio(address, chain, { moralisApikey });
+        portfolio = await getWalletPortfolio(address, chain, { moralisApikey });
+        break;
     }
+    const tokens: string[] = Array.from(
+      new Set(
+        portfolio.items.map((item) => chain === 'solana' ? item.address : item.address.toLowerCase())
+      )
+    );
+    const agentCoins = await this.elizaManager.getAgentCoins(chain, tokens);
+    const coinMap = new Map<string, any>();
+    agentCoins.forEach((coin) => {
+      coinMap.set(coin.address, coin);
+    });
+    portfolio.items.forEach((item) => {
+      const coin = coinMap.get(item.address);
+      if (coin) {
+        item.agentCoin = coin;
+      }
+    });
+    return portfolio;
+  }
+
+  @Get('/defi/agents/portfolio')
+  async getAgentsPortfolio(
+    @Query('chain') chain: string,
+    @Query('address') address: string,
+    @Query('collectionIds') collectionIds?: string | string[],
+  ) { 
+    if (typeof collectionIds === 'string') {
+      collectionIds = collectionIds.split(',');
+    }
+    if (chain !== 'solana') {
+      address = address.toLowerCase();
+    }
+    const agents = await this.elizaManager.getOwnedAgents(chain, address, collectionIds);
+    const extendedAgents = [
+      {
+        agentAccount: chain === 'solana' ? {
+          solana: address,
+        }: {
+          evm: address,
+        },
+        isPrimary: true,
+      },
+      ...agents.map(agent => ({
+        ...agent,
+        isPrimary: false,
+      })),
+    ];
+    const portfolios = await Promise.all(
+      extendedAgents.map(async (agent) => {
+        let portfolio;
+        switch (chain) {
+          case 'solana':
+            portfolio = await this.birdEye.getWalletPortfolio({ chain, address: agent.agentAccount.solana });
+            break;
+          default:
+            const moralisApikey = this.config.get('MORALIS_API_KEY');
+            portfolio = await getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
+            break;
+        }
+        return {
+          ...portfolio,
+          nft: agent.isPrimary ? undefined : agent,
+        };
+      })
+    );
+    if (portfolios.length === 0) {
+      return {
+        portfolios
+      }
+    }
+    const tokens: string[] = Array.from(
+      new Set(
+        portfolios.flatMap((portfolio) =>
+          portfolio.items.map((item) => chain === 'solana' ? item.address : item.address.toLowerCase())
+        )
+      )
+    );
+    if (chain === 'solana') {
+      const tokensPrice = await this.birdEye.getTokensPrice(chain, tokens);
+      if (tokensPrice) {
+        portfolios.forEach((portfolio) => {
+          portfolio.items.forEach((item) => {
+            const tokenPrice = tokensPrice[this.birdEye.transformNativeToken(chain, item.address)];
+            if (tokenPrice && tokenPrice.priceChange24h) {
+              item.usdPrice24hrPercenChange = tokenPrice.priceChange24h;
+            }
+          });
+        });
+      }
+    }
+    
+    const agentCoins = await this.elizaManager.getAgentCoins(chain, tokens);
+    const coinMap = new Map<string, any>();
+    agentCoins.forEach((coin) => {
+      coinMap.set(coin.address, coin);
+    });
+    portfolios.forEach((portfolio) => {
+      portfolio.items.forEach((item) => {
+        const coin = coinMap.get(item.address);
+        if (coin) {
+          item.agentCoin = coin;
+          if (!item.usdPrice24hrPercenChange && coin.priceChange24h) {
+            item.usdPrice24hrPercenChange = coin.priceChange24h * 100;
+          }
+          if (!item.logoURI && coin.logo) {
+            item.logoURI = coin.logo;
+          }
+        }
+      });
+    });
+    return {
+      portfolios: portfolios.filter((portfolio) => portfolio.items.length > 0)
+    };
   }
 
   @Get('/defi/search')

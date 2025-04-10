@@ -70,9 +70,8 @@ export async function createAgent(
   return runtime;
 }
 
-export async function startAgent(
+export async function createRuntime(
   character: Character,
-  directClient: DirectClient,
   nftId: string,
   options?: {
     mongoClient?: MongoClient;
@@ -88,6 +87,19 @@ export async function startAgent(
   const runtime = await createAgent(character, db, cache, token);
 
   await runtime.initialize();
+
+  return runtime;
+}
+
+export async function startAgent(
+  character: Character,
+  directClient: DirectClient,
+  nftId: string,
+  options?: {
+    mongoClient?: MongoClient;
+  },
+) {
+  const runtime = await createRuntime(character, nftId, options);
 
   const { clients, errors } = await initializeClients(character, runtime, nftId);
   runtime.clients = clients;

@@ -1,10 +1,12 @@
 import { CacheTTL } from '@nestjs/cache-manager';
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   NotFoundException,
+  Param,
   Post,
   Query,
   Request,
@@ -12,6 +14,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ApiCreatedResponse } from '@nestjs/swagger';
+
 import { NEW_AI_NFT_EVENT } from '../nft/nft.types.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { ElevenlabsService } from '../shared/elevenlabs.service.js';
@@ -21,6 +25,8 @@ import { CreateAgentDto, SolanaTradeSettingsDTO, EvmTradeSettingsDTO, validateTr
 import { ElizaManagerService } from './eliza-manager.service.js';
 import { CopyTrade } from '../shared/mongo/types.js';
 import { AgentTradeService } from './agent-trade.service.js';
+import { TestTweetDto, TestTweetResponseDto } from './dto/twitter.dto.js';
+import { NftBaseService } from '../nft/nft-base.service.js';
 
 @Controller('/agent')
 export class AgentController {
@@ -32,7 +38,8 @@ export class AgentController {
     private mongo: MongoService,
     private readonly tradeService: AgentTradeService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+    private readonly nftBaseService: NftBaseService,
+  ) { }
 
   @Post('/')
   async startNFTAgent(@Body() { nftId, restart }: CreateAgentDto) {
@@ -239,5 +246,31 @@ export class AgentController {
     return {
       prologue: await this.elizaManager.getPrologue(chain, nftId),
     };
+  }
+
+  @ApiCreatedResponse({
+    type: TestTweetResponseDto,
+    description: 'get example tweet using the prompt template',
+  })
+  @Post('/twitter/test-tweet/:nftId')
+  async getGeneratedTweet(
+    @Param('nftId') nftId: string,
+    @Body() testTweetDto: TestTweetDto
+  ) {
+    const nft = await this.nftBaseService.getNftByNftId(nftId);
+    if (!nft) {
+      throw new BadRequestException('nftId not found');
+    }
+
+    const resp = await this.elizaManager.generateTweetWithRuntime(
+      nftId,
+      testTweetDto.twitterUsername,
+      testTweetDto.twitterPostTemplate,
+      testTweetDto.maxTweetLength
+    );
+
+    return {
+      tweet: resp,
+    }
   }
 }
