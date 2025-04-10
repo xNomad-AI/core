@@ -138,7 +138,6 @@ export class AgentAccountController {
             break;
           default:
             const moralisApikey = this.config.get('MORALIS_API_KEY');
-            this.logger.log('moralisApikey', moralisApikey);
             portfolio = await getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
             break;
         }
