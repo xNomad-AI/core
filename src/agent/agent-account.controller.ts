@@ -169,6 +169,7 @@ export class AgentAccountController {
         const coin = coinMap.get(item.address);
         if (coin) {
           item.agentCoin = coin;
+          item.usdPrice24hrPercenChange = item.usdPrice24hrPercenChange ?? coin.priceChange24h;
         }
       });
     });
