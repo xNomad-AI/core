@@ -186,6 +186,9 @@ export class AgentAccountController {
           if (!item.usdPrice24hrPercenChange && coin.priceChange24h) {
             item.usdPrice24hrPercenChange = coin.priceChange24h * 100;
           }
+          if (!item.logoURI && coin.logo) {
+            item.logoURI = coin.logo;
+          }
         }
       });
     });
