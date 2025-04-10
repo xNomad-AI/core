@@ -104,7 +104,7 @@ export class AgentAccountController {
             break;
           default:
             const moralisApikey = this.config.get('MORALIS_API_KEY');
-            portfolio = await  getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
+            portfolio = await getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
             break;
         }
         return {
@@ -113,6 +113,31 @@ export class AgentAccountController {
         };
       })
     );
+    if (portfolios.length === 0) {
+      return {
+        portfolios
+      }
+    }
+    const tokens: string[] = Array.from(
+      new Set(
+        portfolios.flatMap((portfolio) =>
+          portfolio.items.map((item) => chain === 'solana' ? item.address : item.address.toLowerCase())
+        )
+      )
+    );
+    const agentCoins = await this.elizaManager.getAgentCoins(chain, tokens);
+    const coinMap = new Map<string, any>();
+    agentCoins.forEach((coin) => {
+      coinMap.set(coin.address.toLowerCase(), coin);
+    });
+    portfolios.forEach((portfolio) => {
+      portfolio.items.forEach((item) => {
+        const coin = coinMap.get(item.address.toLowerCase());
+        if (coin) {
+          item.agentCoin = coin;
+        }
+      });
+    });
     return {
       portfolios
     };

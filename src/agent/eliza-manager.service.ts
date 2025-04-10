@@ -436,4 +436,12 @@ export class ElizaManagerService {
       throw error;
     }
   }
+
+  async getAgentCoins(chain: string, tokens: string[]) {
+    const agentCoins = await this.mongoService.agentCreatedCoins.find({
+      chain,
+      address: { $in: tokens },
+    }).toArray();
+    return agentCoins;
+  }
 }
