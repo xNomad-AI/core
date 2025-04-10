@@ -238,4 +238,27 @@ export class BirdeyeService {
       return undefined;
     }
   }
+
+  async getTokensPrice(
+    chain: string,
+    tokens: string[],
+  ) {
+    try {
+      tokens = tokens.map((token) => this.transformNativeToken(chain, token));
+      const birdeyeApiKey = this.apikey;
+      const url = `https://public-api.birdeye.so/defi/multi_price?list_address=${tokens.join(',')}`;
+      const response = await fetch(url, {
+        headers: {
+          'X-API-KEY': birdeyeApiKey,
+          accept: 'application/json',
+          'x-chain': chain,
+        },
+      });
+      const result = await response.json();
+      return result?.data;
+    } catch (error) {
+      this.logger.error(`Error fetching token price: ${error}`);
+      return undefined;
+    }
+  }
 }
