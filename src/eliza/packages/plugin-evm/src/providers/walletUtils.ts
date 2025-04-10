@@ -22,6 +22,7 @@ export interface Item {
   uiAmount: string;
   priceUsd: string;
   valueUsd: string;
+  usdPrice24hrPercenChange: string;
 }
 
 export async function isAgentAdmin(runtime: IAgentRuntime, message: Memory) {
@@ -137,7 +138,8 @@ export async function getWalletPortfolio(
           balance: item.balance.value.toString(),
           uiAmount: item.balanceFormatted,
           priceUsd: item.usdPrice,
-          valueUsd: item.usdValue.toString()
+          valueUsd: item.usdValue.toString(),
+          usdPrice24hrPercenChange: item.usdPrice24hrPercentChange,
         });
         walletPortfolio.totalUsd += item.usdValue;
       }
