@@ -206,7 +206,7 @@ export class BirdeyeService {
   }
 
   transformNativeToken(chain: string, tokenCA: string) {
-    if (chain === 'solana' && (tokenCA === '11111111111111111111111111111111' || tokenCA === 'So11111111111111111111111111111111')) {
+    if (chain === 'solana' && (tokenCA === '11111111111111111111111111111111' || tokenCA === 'So11111111111111111111111111111111' || tokenCA === 'So11111111111111111111111111111111111111111')) {
       return NATIVE_MINT.toBase58();
     }
     if (chain === 'bsc' && tokenCA.toLocaleLowerCase() === ethAddress) {
@@ -256,7 +256,7 @@ export class BirdeyeService {
       const result = await response.json();
       return result?.data;
     } catch (error) {
-      this.logger.error(`Error fetching token price: ${error}`);
+      this.logger.error(`Error fetching tokens price: ${error}`);
       return undefined;
     }
   }
