@@ -159,6 +159,20 @@ export class AgentAccountController {
         )
       )
     );
+    if (chain === 'solana') {
+      const tokensPrice = await this.birdEye.getTokensPrice(chain, tokens);
+      if (tokensPrice) {
+        portfolios.forEach((portfolio) => {
+          portfolio.items.forEach((item) => {
+            const tokenPrice = tokensPrice[this.birdEye.transformNativeToken(chain, item.address)];
+            if (tokenPrice && tokenPrice.priceChange24h) {
+              item.usdPrice24hrPercenChange = tokenPrice.priceChange24h;
+            }
+          });
+        });
+      }
+    }
+    
     const agentCoins = await this.elizaManager.getAgentCoins(chain, tokens);
     const coinMap = new Map<string, any>();
     agentCoins.forEach((coin) => {
