@@ -111,8 +111,23 @@ export class AgentAccountController {
       address = address.toLowerCase();
     }
     const agents = await this.elizaManager.getOwnedAgents(chain, address, collectionIds);
+    const extendedAgents = [
+      {
+        agentAccount: chain === 'solana' ? {
+          solana: address,
+        }: {
+          evm: address,
+        },
+        isPrimary: true,
+        nft: null,
+      },
+      ...agents.map(agent => ({
+        ...agent,
+        isPrimary: false,
+      })),
+    ];
     const portfolios = await Promise.all(
-      agents.map(async (agent) => {
+      extendedAgents.map(async (agent) => {
         let portfolio;
         switch (chain) {
           case 'solana':
