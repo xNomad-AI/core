@@ -190,7 +190,7 @@ export class AgentAccountController {
       });
     });
     return {
-      portfolios
+      portfolios: portfolios.filter((portfolio) => portfolio.items.length > 0)
     };
   }
 
