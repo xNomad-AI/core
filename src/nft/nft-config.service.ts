@@ -18,6 +18,7 @@ type NftConfigBetter = NftConfig & {
 
 function checkStartOrStopClientTwitter(nftConfig: NftConfigBetter): 'stop' | 'start' | undefined {
   if (
+    !nftConfig ||
     !nftConfig.characterConfig?.settings?.secrets?.TWITTER_USERNAME ||
     (
       nftConfig.characterConfig?.settings?.secrets?.TWITTER_LOGIN_SUSPEND && 
@@ -57,7 +58,7 @@ export class NftConfigService {
     return nftConfigs as any;
   }
 
-  private async getNftConfig(nftId: string): Promise<NftConfigBetter | null> {
+  async getNftConfig(nftId: string): Promise<NftConfigBetter | null> {
     const nftConfig = await this.mongo.nftConfigs.findOne({
       nftId,
     });
@@ -102,10 +103,10 @@ export class NftConfigService {
     }
   }
 
-  async startOrStopClientTwitter(nftConfig: NftConfig) {
+  async startOrStopClientTwitter(nftConfig: NftConfigBetter) {
     const { nftId } = nftConfig;
 
-    const action = checkStartOrStopClientTwitter(nftConfig as NftConfigBetter);
+    const action = checkStartOrStopClientTwitter(nftConfig);
     if (action === 'stop') {
       this.logger.debug(`stopTaskByNftId nftId: ${nftId}`);
       await this.tasksService.stopTaskByNftId(nftId);

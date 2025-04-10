@@ -92,11 +92,11 @@ export class NftService implements OnApplicationBootstrap {
         this.logger.log(
           `Starting agent for NFT ${nft.nftId}, characterName: ${nft.aiAgent.character.name}`,
         );
-        const nftConfig = await this.mongo.nftConfigs.findOne({
-          nftId: nft.nftId,
-        });
-
-        await this.nftConfigService.startOrStopClientTwitter(nftConfig);
+        const nftConfig = await this.nftConfigService.getNftConfig(nft.nftId);
+        if (nftConfig) {
+          // TODO if nft config is not exists, trigger a stop event?
+          await this.nftConfigService.startOrStopClientTwitter(nftConfig);
+        }
 
         await this.elizaManager.startAgentLocal({
           chain: nft.chain,
