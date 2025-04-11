@@ -105,7 +105,7 @@ export const autoTask: Action = {
         expireAt: {
           type: ['string', 'number', 'null'],
           description:
-          'Expire time for the limit order, default is null. If user says a delay like "after 5 days" or "expire in 10 minutes", return the number duration in seconds',
+          'Expire time for the limit order, default is null. If it is date string, return the date string. If user says a delay like "after 5 days" or "expire in 10 minutes", return the number duration in seconds',
         },
       },
       required: [
@@ -251,7 +251,8 @@ async function checkResponse(
     swapReq.expireAt = new Date(swapReq.startAt.getTime() + Number(swapReq.expireAt) * 1000);
   } else if (swapReq.expireAt) {
     swapReq.expireAt = new Date(swapReq.expireAt);
-  } else {
+  } else if (!isNaN(swapReq.expireAt.getTime())) {
+    // if the expireAt is a valid date, set it to null
     swapReq.expireAt = null;
   }
 
