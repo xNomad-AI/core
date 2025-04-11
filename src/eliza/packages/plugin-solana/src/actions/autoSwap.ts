@@ -154,23 +154,36 @@ export const autoTask: Action = {
       formattedParameters.outputTokenCA,
     );
 
+    formattedParameters.targetTokenCA = validateAndAssignCA(
+      formattedParameters.targetToken,
+      formattedParameters.targetTokenCA,
+    );
+
     formattedParameters.inputTokenCA = formattedParameters.inputTokenCA ||
-      formattedParameters.inputTokenSymbol? await getTokenCABySymbol(
+      (formattedParameters.inputTokenSymbol? await getTokenCABySymbol(
       runtime,
       formattedParameters.inputTokenSymbol,
-    ) : null;
+    ) : null);
+
     formattedParameters.outputTokenCA = formattedParameters.outputTokenCA ||
-      formattedParameters.outputTokenSymbol? await getTokenCABySymbol(
+      (formattedParameters.outputTokenSymbol? await getTokenCABySymbol(
       runtime,
       formattedParameters.outputTokenSymbol,
-    ) : null;
+      ) : null);
     
+    elizaLogger.info(`formattedParameters.targetTokenCA: ${formattedParameters.targetTokenCA}`);
+    elizaLogger.info(`formattedParameters.targetToken: ${formattedParameters.targetToken}`);
+    elizaLogger.info(`Condition 1: ${formattedParameters.targetToken === NATIVE_MINT.toBase58() ? NATIVE_MINT.toBase58() : null}`);
+    elizaLogger.info(`Condition 2: ${formattedParameters.targetTokenCA}`);
+    elizaLogger.info(`Condition 3: ${formattedParameters.targetToken === formattedParameters.inputTokenSymbol ? formattedParameters.inputTokenCA : null}`);
+    elizaLogger.info(`Condition 4: ${formattedParameters.targetToken === formattedParameters.outputTokenSymbol ? formattedParameters.outputTokenCA : null}`);
+    elizaLogger.info(`Condition 5: ${formattedParameters.targetToken ? await getTokenCABySymbol(runtime, formattedParameters.targetToken) : null}`);
     formattedParameters.targetTokenCA =
     (formattedParameters.targetToken === NATIVE_MINT.toBase58() ? NATIVE_MINT.toBase58() : null) ||
-    formattedParameters.targetTokenCA ||
+    (formattedParameters.targetTokenCA) ||
     (formattedParameters.targetToken === formattedParameters.inputTokenSymbol ? formattedParameters.inputTokenCA : null) ||
     (formattedParameters.targetToken === formattedParameters.outputTokenSymbol ? formattedParameters.outputTokenCA : null) ||
-    formattedParameters.targetToken ? await getTokenCABySymbol(runtime, formattedParameters.targetToken) : null;
+    (formattedParameters.targetToken ? await getTokenCABySymbol(runtime, formattedParameters.targetToken) : null);
 
     if (!formattedParameters.inputTokenCA || !isValidSPLTokenAddress(formattedParameters.inputTokenCA)) {
       callback?.({
@@ -210,6 +223,15 @@ export const autoTask: Action = {
       return {status: 'incomplete info', parameters: parameters};
     }
 
+    
+    if (!isNaN(Number(formattedParameters.expireAt))) {
+      const startAt = new Date();
+      formattedParameters.expireAt = new Date(startAt.getTime() + Number(formattedParameters.expireAt) * 1000);
+    } else if (formattedParameters.expireAt) {
+      formattedParameters.expireAt = new Date(formattedParameters.expireAt);
+    } else {
+      formattedParameters.expireAt = null;
+    }
     // if (!formattedParameters.expireAt) {
     //   callback?.({
     //     text: "If you'd like to create an autotask, please specify the target price for the swap or provide a time delay, such as 'after 5 minutes' or 'below 0.00169' ",
@@ -343,15 +365,6 @@ async function checkResponse(
     return {status: 'failed'};
   }
 
-  swapReq.startAt = new Date();
-  if (!isNaN(Number(swapReq.expireAt))) {
-    swapReq.expireAt = new Date(swapReq.startAt.getTime() + Number(swapReq.expireAt) * 1000);
-  } else if (swapReq.expireAt) {
-    swapReq.expireAt = new Date(swapReq.expireAt);
-  } else {
-    swapReq.expireAt = null;
-  }
-
   elizaLogger.info(`checking if user confirm to create task`);
 
   if (swapReq.pendingConfirmation === true) {
@@ -389,6 +402,7 @@ async function checkResponse(
       return { status: "failed" };
     }
   } else {
+    swapReq.startAt = new Date();
     swapReq.inputTokenPercentage = BigNumber(swapReq.inputTokenAmount).div(balance).toNumber();
     const swapInfo = formatTaskInfo(swapReq);
     callback?.({

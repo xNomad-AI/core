@@ -397,7 +397,7 @@ export const transfer: Action = {
         action: 'SEND_TOKEN',
       };
       callback?.(responseMsg);
-      return null;
+      return 'pending';
     }
   },
   
