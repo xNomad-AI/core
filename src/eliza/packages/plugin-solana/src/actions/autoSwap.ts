@@ -337,7 +337,7 @@ async function checkResponse(
     swapReq.expireAt = new Date(swapReq.startAt.getTime() + Number(swapReq.expireAt) * 1000);
   } else if (swapReq.expireAt) {
     swapReq.expireAt = new Date(swapReq.expireAt);
-  } else if (isNaN(swapReq.expireAt.getTime())) {
+  } else if (swapReq.expireAt && isNaN(swapReq.expireAt?.getTime())) {
     // if the expireAt is invalid date, set it to null
     swapReq.expireAt = null;
   }
