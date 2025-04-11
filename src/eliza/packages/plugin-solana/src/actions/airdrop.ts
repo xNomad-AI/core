@@ -45,6 +45,17 @@ export const airdrop: Action = {
     return true;
   },
   description: 'Perform claim airdrop for the user agent account',
+  formatParameters: async (runtime: IAgentRuntime, parameters: any, callback?: HandlerCallback) => {
+    const response = convertNullStrings(parameters);
+    if (!response.programName) {
+      const responseMsg = {
+        text: 'Please tell me the program name of the airdrop',
+      };
+      callback?.(responseMsg);
+      return {status: 'incomplete info', parameters: parameters};
+    }
+    return {status: 'success', parameters: parameters};
+  },
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -59,14 +70,6 @@ export const airdrop: Action = {
     }
     const response = convertNullStrings(state.actionParameters);
     elizaLogger.log('Response:', response);
-    if (!response.programName) {
-      const responseMsg = {
-        text: 'Please tell me the program name of the airdrop',
-        action: 'CLAIM_AIRDROP',
-      };
-      callback?.(responseMsg);
-      return 'pending';
-    }
 
     const airdrops = await getAirdrops(runtime, message);
     if (!airdrops) {

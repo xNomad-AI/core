@@ -27,6 +27,7 @@ type CopyTradeParameters = {
   walletAddress: string;
   expiredAt: number | undefined;
   agentId: string;
+  pendingConfirmation: boolean | null;
 };
 
 const userConfirmTemplate = `
@@ -118,6 +119,37 @@ export const copyTrade: Action = {
   },
   similes: [],
   description: 'Copy the trade of a given account',
+  formatParameters: async (runtime: IAgentRuntime, parameters: any, callback?: HandlerCallback) => {
+    const formattedParameters = convertNullStrings(parameters) as CopyTradeParameters;
+    if (!formattedParameters.name) {
+      formattedParameters.name = `COPY_TRADE-${formattedParameters.walletAddress}`;
+    }
+    formattedParameters.fixedAmount = Number(formattedParameters.fixedAmount);
+    formattedParameters.percentage = Number(formattedParameters.percentage);
+    if (!isValidAddress(formattedParameters.targetAddress)) {
+      callback?.({
+        text: `Please provide a valid wallet address to copy trade.`,
+        action: 'COPY_TRADE',
+      });
+      return {status: 'incomplete info', parameters: formattedParameters};
+    }
+    if (Number.isFinite(formattedParameters.fixedAmount) && formattedParameters.fixedAmount > 0) {
+      formattedParameters.mode = 'fixedAmount';
+    } else if (
+      Number.isFinite(formattedParameters.percentage) &&
+      formattedParameters.percentage > 0 &&
+      formattedParameters.percentage <= 1
+    ) {
+      formattedParameters.mode = 'percentage';
+    } else {
+      callback?.({
+        text: `Please provide a valid input amount or percentage to copy trade.`,
+        action: 'COPY_TRADE',
+      });
+      return {status: 'incomplete info', parameters: formattedParameters};
+    }
+    return {status: 'success', parameters: formattedParameters};
+  },
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -135,35 +167,6 @@ export const copyTrade: Action = {
     let response = convertNullStrings(
       state.actionParameters,
     ) as CopyTradeParameters;
-    response.fixedAmount = Number(response.fixedAmount);
-    response.percentage = Number(response.percentage);
-
-    if (!response.name) {
-      response.name = `COPY_TRADE-${response.walletAddress}`;
-    }
-    if (!isValidAddress(response.targetAddress)) {
-      callback?.({
-        text: `Please provide a valid wallet address to copy trade.`,
-        action: 'COPY_TRADE',
-      });
-      return 'pending';
-    }
-
-    if (Number.isFinite(response.fixedAmount) && response.fixedAmount > 0) {
-      response.mode = 'fixedAmount';
-    } else if (
-      Number.isFinite(response.percentage) &&
-      response.percentage > 0 &&
-      response.percentage <= 1
-    ) {
-      response.mode = 'percentage';
-    } else {
-      callback?.({
-        text: `Please provide a valid input amount or percentage to copy trade.`,
-        action: 'COPY_TRADE',
-      });
-      return 'pending';
-    }
 
     const wallet = await getWalletKey(runtime, true);
     response.walletAddress = wallet.keypair.publicKey.toBase58();
@@ -183,27 +186,60 @@ export const copyTrade: Action = {
     }
     elizaLogger.log('COPY_TRADE:', response);
 
-    const confirmContext = composeContext({
-      state,
-      template: userConfirmTemplate,
-    });
+    if (response.pendingConfirmation === true) {
+      const confirmContext = composeContext({
+        state,
+        template: userConfirmTemplate,
+      });
 
-    const confirmResponse = await generateObjectDeprecated({
-      runtime,
-      context: confirmContext,
-      modelClass: ModelClass.LARGE,
-    });
-    elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
+      const confirmResponse = await generateObjectDeprecated({
+        runtime,
+        context: confirmContext,
+        modelClass: ModelClass.LARGE,
+      });
+      elizaLogger.info(`User confirm check: ${JSON.stringify(confirmResponse)}`);
 
-    if (confirmResponse.userAcked == 'rejected') {
-      const responseMsg = {
-        text: 'ok. I will not set this.',
-      };
-      callback?.(responseMsg);
-      return 'cancelled';
-    }
+      if (confirmResponse.userAcked == 'rejected') {
+        const responseMsg = {
+          text: 'ok. I will not set this.',
+        };
+        callback?.(responseMsg);
+        return 'cancelled';
+      } else if (confirmResponse.userAcked == "pending") {
+        callback?.({
+          text: "I repeatedly asked you to confirm the task although you have already confirmed it. It was my mistake. Please try again.",
+          action: "COPY_TRADE"
+        });
+        return "pending";
+      } else if (confirmResponse.userAcked == "confirmed") {
+        const { id } = await SharedProvider.get<any>(
+          'tradeMonitorService',
+        ).createCopyTrade({
+          chain: response.chain,
+          targetAddress: response.targetAddress,
+          walletAddress: response.walletAddress,
+          expiredAt: response.expiredAt || 0,
+        });
+        await runtime.databaseAdapter.insert?.('copyTrades', {
+          ...response,
+          id,
+          status: 'running',
+          createdAt: new Date(),
+        });
 
-    if (confirmResponse.userAcked == 'pending') {
+        callback?.({
+          text: `Copy trade created successfully.`,
+          action: `COPY_TRADE`,
+        });
+        return 'success';
+      } else {
+        callback?.({
+          text: "I failed to recognize your confirmation. Please try again.",
+          action: "COPY_TRADE"
+        });
+        return "failed";
+      }
+    } else {
       const responseMsg = {
         text: `${formatConfirmMessage(response)}`,
         result: 'Pending user confirmation',
@@ -213,26 +249,6 @@ export const copyTrade: Action = {
       return 'pending';
     }
 
-    const {id} = await SharedProvider.get<any>(
-      'tradeMonitorService',
-    ).createCopyTrade({
-      chain: response.chain,
-      targetAddress: response.targetAddress,
-      walletAddress: response.walletAddress,
-      expiredAt: response.expiredAt || 0,
-    });
-    await runtime.databaseAdapter.insert?.('copyTrades', {
-      ...response,
-      id,
-      status: 'running',
-      createdAt: new Date(),
-    });
-
-    callback?.({
-      text: `Copy trade created successfully.`,
-      action: `COPY_TRADE`,
-    });
-    return 'success';
   },
 
   examples: [] as ActionExample[][],

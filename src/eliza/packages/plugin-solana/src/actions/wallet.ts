@@ -51,6 +51,10 @@ export const walletPortfolio: Action = {
   },
   description:
     'Get the wallet total balance or specific token balance in agent wallet',
+  formatParameters: async (runtime: IAgentRuntime, parameters: any, callback?: HandlerCallback) => {
+    const formattedParameters = convertNullStrings(parameters) as any;
+    return { status: 'success', parameters: formattedParameters};
+  },
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -85,7 +89,6 @@ export const walletPortfolio: Action = {
         });
         return 'failed';
     }
-    return 'success';
   },
 
   examples: [
