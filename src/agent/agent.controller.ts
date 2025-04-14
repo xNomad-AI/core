@@ -108,9 +108,13 @@ export class AgentController {
     @Request() request,
     @Query('chain') chain: string = 'solana',
     @Query('agentId') agentId: string,
-    @Body() tradeSettingsDTO: SolanaTradeSettingsDTO
+    @Body() tradeSettingsDTO: SolanaTradeSettingsDTO | EvmTradeSettingsDTO
   ) {
-    validateTradeSettingsSolana(tradeSettingsDTO);
+    if (chain === 'solana') {
+      validateTradeSettingsSolana(tradeSettingsDTO as SolanaTradeSettingsDTO);
+    } else {
+      validateTradeSettingsEvm(tradeSettingsDTO as EvmTradeSettingsDTO);
+    }
     await this.elizaManager.ensureAgentOwner(
       agentId,
       request['X-USER-ADDRESS'],
