@@ -9,7 +9,7 @@ export interface TradeSettingsDto {
   maxFeePerGas?: string | BigNumber; // Gwei
   maxPriorityFeePerGas?: string | BigNumber; // Gwei
   mode?: 'FAST' | 'ANTI_MEV';
-  tip?: string | BigNumber; // Gwei, 1 = 0.000000000000000001 eth
+  tip?: string | BigNumber; // Wei, 1 = 0.000000000000000001 eth
   slippage: number; // 0.01 = 1%
 }
 
