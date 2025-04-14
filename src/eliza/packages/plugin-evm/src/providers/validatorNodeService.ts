@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { keccak256, toBytes, WalletClient } from 'viem';
+import { createWalletClient, http, keccak256, toBytes, WalletClient } from 'viem';
 import { base, bsc, mainnet } from 'viem/chains';
 abstract class ValidatorNodeService {
     abstract postTransaction(
@@ -89,6 +89,14 @@ class BloxValidatorNodeService extends ValidatorNodeService {
 
                     body.params.transaction.push(tipTransaction.slice(2,));
                 }
+                const mevClient = createWalletClient({
+                    chain: walletClient.chain,
+                    transport: http('https://bsc.rpc.blxrbdn.com'),
+                    account: walletClient.account,
+                });
+                await mevClient.sendRawTransaction({
+                    serializedTransaction
+                });
                 break;
             default:
                 throw new Error(`Unsupport chain name ${walletClient.chain.name}`);

@@ -65,7 +65,7 @@ export class SwapTokenService {
         const account = privateKeyToAccount(req.privateKey as Hex);
         const walletClient = createWalletClient({
             chain,
-            transport: http(req.rpcUrl),
+            transport: http(rpcUrl),
             account,
         });
         const calldata = await this.getSwapTxCallData(req);
