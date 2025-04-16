@@ -67,7 +67,7 @@ export async function transformToAINft(nft: Nft): Promise<AINft> {
   return {
     nftId: `${nft.blockchain}:${contractAddress}:${tokenId}`,
     chain: nft.blockchain,
-    collectionId: nft.collection.collection_id,
+    collectionId: nft.collection?.collection_id,
     collectionName: nft.collection_name,
     contractAddress: contractAddress,
     image: nft.image,

@@ -123,6 +123,7 @@ export class NftSyncService implements OnApplicationBootstrap {
             );
             continue;
           }
+          transformedNft.collectionId = collectionId;
           transformedNft.agentId = stringToUuid(transformedNft.nftId);
           transformedNft.agentAccount = await this.elizaManager.getAgentAccount(
             chain,
