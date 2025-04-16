@@ -289,7 +289,7 @@ export class NftService implements OnApplicationBootstrap {
   }
 
   async getCollectionMetrics(chain: string, collectionId: string) {
-    return await this.nftgo.getCollectionMetrics(collectionId);
+    return {}
   }
 
   async getCollectionById(chain: string, id: string) {

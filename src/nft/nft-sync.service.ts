@@ -54,33 +54,7 @@ export class NftSyncService implements OnApplicationBootstrap {
   }
 
   async getAICollections() {
-    const configedCollections = await this.mongo.collectionConfigs.find({}).toArray();
-    const chainCollections = configedCollections.reduce((acc, cur) => {
-      if (!acc[cur.chain]) {
-        acc[cur.chain] = [];
-      }
-      acc[cur.chain].push(cur.id);
-      return acc;
-    }, {});
-
-    const aiCollections: AICollection[] = [];
-    for (const chain in chainCollections) {
-      this.logger.log(`Fetched ${chain} ${chainCollections[chain]?.length} AI collections`);
-      const collections = await this.nftgo.getAICollections(chain, chainCollections[chain]);
-      aiCollections.push(...collections.map(transformToAICollection));
-    }
-
-
-    const bulkOperations = aiCollections.map((coll) => ({
-      updateOne: {
-        filter: { id: coll.id, chain: coll.chain },
-        update: { $set: coll },
-        upsert: true,
-      },
-    }));
-    if (bulkOperations.length > 0) {
-      await this.mongo.collections.bulkWrite(bulkOperations);
-    }
+    const aiCollections: AICollection[] = await this.mongo.collections.find({}).toArray();
     return aiCollections;
   }
 
