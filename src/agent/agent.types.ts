@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { ethers } from 'ethers';
 import { TradeSettingsSolana, TradeSettingsEvm } from 'src/shared/mongo/types';
 export class CreateAgentDto {
   chain: string;
@@ -34,8 +35,8 @@ export function validateTradeSettingsEvm(dto: EvmTradeSettingsDTO) {
   }
 
   if (dto.chain === 'bsc') {
-    if (dto.mode === 'ANTI_MEV' && (dto.tip < 1 || !Number.isInteger(dto.tip))){
-      throw new BadRequestException('Tip should be an integer greater than 1 Gwei');
+    if (dto.mode === 'ANTI_MEV' && (dto.tip < ethers.parseEther('0.00001') || !Number.isInteger(dto.tip))){
+      throw new BadRequestException('Tip should be an integer greater than 0.00001 native token');
     }
     if (dto.gasMode === 'CUSTOM' && (!dto.maxFeePerGas || !Number.isFinite(dto.maxFeePerGas))){
       throw new BadRequestException('Gas must be set when gas mode is set to custom');
