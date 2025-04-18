@@ -62,7 +62,8 @@ export class SwapTokenService {
       if (
         getSWAP_FEE_BPS() !== undefined &&
         getSWAP_FEE_ACCOUNT() !== undefined &&
-        !feeProgramId.equals(TOKEN_2022_PROGRAM_ID)
+        !outProgramId.equals(TOKEN_2022_PROGRAM_ID) &&
+        !inputProgramId.equals(TOKEN_2022_PROGRAM_ID)
       ) {
          tokenFeeAccount = (
           await getOrCreateAssociatedTokenAccount(

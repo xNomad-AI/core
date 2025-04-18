@@ -87,9 +87,13 @@ export class SwapTokenService {
         });
         const maxFeePerGasWei = maxFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
         const maxPriorityFeePerGasWei = maxPriorityFeePerGas ? BigNumber(maxFeePerGas).multipliedBy(new BigNumber(10).pow(9)).toString() : undefined;
-        if (gasMode === 'CUSTOM' && (maxFeePerGasWei && maxPriorityFeePerGasWei)) {
+        if (gasMode === 'CUSTOM' && maxFeePerGasWei) {
+            if (maxPriorityFeePerGasWei) {
+                request.maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasWei.toString());
+            } else {
+                request.maxPriorityFeePerGas = BigInt(maxFeePerGasWei.toString());
+            }
             request.maxFeePerGas = BigInt(maxFeePerGasWei.toString());
-            request.maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasWei.toString());
         } else if (gasMode === 'HIGH') {
             request.maxFeePerGas = BigInt(request.maxFeePerGas) * 2n;
             request.maxPriorityFeePerGas = BigInt(request.maxPriorityFeePerGas) * 2n;

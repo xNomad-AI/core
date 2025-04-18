@@ -136,7 +136,14 @@ async function handleExecuteSwap(
   const fees = await getSwapTokenFees(runtime.databaseAdapter, chain, parameters.inputTokenCA, parameters.outputTokenCA);
   const txid = await new SwapTokenService().swapToken(
     {
-      ...tradeSettings,
+      ...{
+        gasMode: tradeSettings.gasMode,
+        maxFeePerGas: tradeSettings.maxFeePerGas,
+        maxPriorityFeePerGas: tradeSettings.maxPriorityFeePerGas,
+        mode: tradeSettings.mode,
+        tip: tradeSettings.tip.toString(),
+        slippage: tradeSettings.slippage,
+      },
       rpcUrl,
       chainName: chain,
       userWalletAddress: address,

@@ -125,7 +125,7 @@ export interface TradeSettingsEvm {
   gasMode?: 'LOW' | 'AVG' | 'HIGH' | 'CUSTOM';
   maxFeePerGas?: number; // Gwei, fill this when gasMode is CUSTOM
   maxPriorityFeePerGas?: number; // Gwei
-  tip?: number; // Gwei
+  tip?: number; // wei
 }
 
 export function getChainDefaultTradeSettings(chain: string): TradeSettingsSolana | TradeSettingsEvm {
