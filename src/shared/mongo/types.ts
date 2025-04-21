@@ -57,6 +57,7 @@ export interface AINft {
     solana: string;
     evm: string;
   };
+  minted: boolean; // true if minted on chain
   updatedAt: Date;
   createdAt: Date;
 }
