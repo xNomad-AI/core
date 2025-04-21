@@ -16,6 +16,7 @@ import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { TokenModule } from './token/token.module.js';
 import { OrderModule } from './order/order.module.js';
+import { MessageModule } from './message/message.module.js';
 
 EventEmitter.defaultMaxListeners = 10;
 
@@ -41,6 +42,7 @@ EventEmitter.defaultMaxListeners = 10;
     MetricsModule,
     CallbackModule,
     OrderModule,
+    MessageModule,
   ],
   controllers: [],
   providers: [],
