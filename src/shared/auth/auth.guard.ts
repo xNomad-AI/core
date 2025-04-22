@@ -7,7 +7,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { AuthService } from './auth.service.js';
 import { TransientLoggerService } from '../transient-logger.service.js';
 
 import { DISABLE_API_SERVER_AUTH } from '../../static-settings.js';
@@ -17,7 +16,6 @@ export class AuthGuard implements CanActivate {
   constructor(
     private configService: ConfigService,
     private jwtService: JwtService,
-    private authService: AuthService,
     private logger: TransientLoggerService,
   ) {
     this.logger.setContext('AuthGuard');
@@ -27,42 +25,17 @@ export class AuthGuard implements CanActivate {
     this.logger.debug('Processing authentication');
     const request = context.switchToHttp().getRequest();
     
-    this.logger.debug(`Headers: ${JSON.stringify(request.headers)}`);
-    this.logger.debug(`Auth disabled: ${DISABLE_API_SERVER_AUTH}`);
-    
     // if in local debug mode, return true
     if (DISABLE_API_SERVER_AUTH) {
       this.logger.warn('Authentication is disabled by DISABLE_API_SERVER_AUTH flag');
       return true;
     }
 
-    // Try API key first
-    const apiKey = request.headers['x-api-key'];
-    this.logger.debug(`Found API key in header: ${!!apiKey}`);
-    
-    if (apiKey) {
-      try {
-        this.logger.debug(`Validating API key: ${apiKey}`);
-        const { userId, roomId, agentId } = await this.authService.validateApiKey(apiKey);
-        
-        this.logger.debug(`API key validated successfully: userId=${userId}, roomId=${roomId}, agentId=${agentId}`);
-        
-        request['userId'] = userId;
-        request['roomId'] = roomId;
-        request['agentId'] = agentId;
-        
-        return true;
-      } catch (error) {
-        this.logger.error(`API key validation failed: ${error.message}`);
-        throw new UnauthorizedException(error.message || 'Invalid or expired API key');
-      }
-    }
-
-    // Fall back to JWT token
+    // Extract JWT token from Authorization header
     const token = this.extractTokenFromHeader(request);
     if (!token) {
-      this.logger.error('No API key or JWT token found');
-      throw new UnauthorizedException('Missing authentication');
+      this.logger.error('No JWT token found in Authorization header');
+      throw new UnauthorizedException('Missing authentication token');
     }
 
     try {
@@ -70,8 +43,16 @@ export class AuthGuard implements CanActivate {
       const decoded = await this.jwtService.verifyAsync(token);
       this.logger.debug(`JWT token verified: ${JSON.stringify(decoded)}`);
       
+      // Set values from JWT token on request object
       request['X-USER-ADDRESS'] = decoded.address;
       request['X-USER-CHAIN'] = decoded.chain;
+      
+      // Extract user, room, and agent IDs from the token if present
+      if (decoded.userId) request['userId'] = decoded.userId;
+      if (decoded.roomId) request['roomId'] = decoded.roomId;
+      if (decoded.agentId) request['agentId'] = decoded.agentId;
+      
+      this.logger.debug(`JWT values set on request: userId=${decoded.userId}, roomId=${decoded.roomId}, agentId=${decoded.agentId}`);
       
       return true;
     } catch(error) {
@@ -79,7 +60,7 @@ export class AuthGuard implements CanActivate {
       if (error.name === 'TokenExpiredError') {
         throw new UnauthorizedException('Token expired. Please recreate your auth token.');
       }
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid token');
     }
   }
 

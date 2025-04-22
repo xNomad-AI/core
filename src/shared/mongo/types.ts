@@ -318,13 +318,3 @@ export interface Order {
   updatedAt: Date;
   createdAt: Date;
 }
-
-export interface TokenAPIKey {
-  token: string;
-  apiKey: string;
-  userId: string;
-  roomId: string;
-  agentId: string;
-  createdAt: Date;
-  expiresAt: Date;
-}

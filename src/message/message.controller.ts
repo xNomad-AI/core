@@ -29,13 +29,18 @@ export class MessageController {
     @Request() req
   ): Promise<ChatCompletionResponse> {
     this.logger.debug('Processing chat completion request');
-    this.logger.debug(`Auth values: userId=${req.userId}, roomId=${req.roomId}, agentId=${req.agentId}`);
+    this.logger.debug(`Auth values from JWT: userId=${req.userId}, roomId=${req.roomId}, agentId=${req.agentId}`);
+    
+    // Validate that we have the required IDs from the JWT token
+    if (!req.userId || !req.roomId || !req.agentId) {
+      this.logger.warn(`Missing required IDs in JWT token. Include userId, roomId, and agentId in your login payload.`);
+    }
     
     // Extract the last user message from the messages array
     const lastMessage = body.messages[body.messages.length - 1];
     const userText = lastMessage.content;
 
-    // Get user Auth values from the AuthGuard using API key auth (req)
+    // Get user Auth values from the JWT token
     const request: ProcessMessageRequest = {
       text: userText,
       user: 'user',

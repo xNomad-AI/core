@@ -10,7 +10,6 @@ import {
   AINft,
   AINftActivity,
   AINftOwner,
-  TokenAPIKey,
   CollectionName,
   CopyTrade,
   CoreSettings,
@@ -175,9 +174,5 @@ export class MongoService implements OnModuleInit {
 
   get orders() {
     return this.getCollection<Order>('orders');
-  }
-
-  get authTokens() {
-    return this.getCollection<TokenAPIKey>('tokenAPIKey');
   }
 }

@@ -44,10 +44,16 @@ export class AddressController {
       chain,
       address,
       signature,
+      userId,
+      roomId,
+      agentId
     }: {
       chain: string;
       address: string;
       signature: string;
+      userId?: string;
+      roomId?: string;
+      agentId?: string;
     },
   ) {
     address = normalizeBlockchainAddress(chain, address);
@@ -60,7 +66,17 @@ export class AddressController {
     if (!isValid) {
       throw new BadRequestException('Invalid signature');
     }
-    const { accessToken } = this.authService.getAccessToken({ chain, address });
+    
+    // Create payload with optional user/room/agent IDs if provided
+    const payload = { 
+      chain, 
+      address,
+      ...(userId && { userId }),
+      ...(roomId && { roomId }),
+      ...(agentId && { agentId })
+    };
+    
+    const { accessToken } = this.authService.getAccessToken(payload);
     return {
       accessToken,
     };
