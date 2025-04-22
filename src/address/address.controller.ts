@@ -14,7 +14,6 @@ import { AuthService } from '../shared/auth/auth.service.js';
 import { normalizeBlockchainAddress } from '../nft/nft.types.js';
 import { SwapTokenService, GetSwapCallDataDto } from '@elizaos/plugin-evm';
 import { ConfigService } from '@nestjs/config';
-import { AuthGuard } from '@nestjs/passport';
 @Controller('/address')
 export class AddressController {
   constructor(
@@ -50,7 +49,6 @@ export class AddressController {
   // This is used to configure the session for the user,
   // it will add the userId, roomId, and agentId to this New JWT token
   @Post('/session/configure')
-  @UseGuards(AuthGuard)
   async configureSession(
     @Request() req,
     @Body() { userId, roomId, agentId }
