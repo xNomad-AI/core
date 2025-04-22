@@ -5,6 +5,8 @@ import {
   Get,
   Post,
   Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { AddressService } from './address.service.js';
 import { NonceType } from '../shared/mongo/types.js';
@@ -12,6 +14,7 @@ import { AuthService } from '../shared/auth/auth.service.js';
 import { normalizeBlockchainAddress } from '../nft/nft.types.js';
 import { SwapTokenService, GetSwapCallDataDto } from '@elizaos/plugin-evm';
 import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '@nestjs/passport';
 @Controller('/address')
 export class AddressController {
   constructor(
@@ -38,48 +41,27 @@ export class AddressController {
   }
 
   @Post('/login')
-  async login(
-    @Body()
-    {
-      chain,
-      address,
-      signature,
-      userId,
-      roomId,
-      agentId
-    }: {
-      chain: string;
-      address: string;
-      signature: string;
-      userId?: string;
-      roomId?: string;
-      agentId?: string;
-    },
+  async login(@Body() { chain, address, signature }) {
+    // Verify signature
+    const { accessToken } = this.authService.getAccessToken({ chain, address });
+    return { accessToken };
+  }
+
+  // This is used to configure the session for the user,
+  // it will add the userId, roomId, and agentId to this New JWT token
+  @Post('/session/configure')
+  @UseGuards(AuthGuard)
+  async configureSession(
+    @Request() req,
+    @Body() { userId, roomId, agentId }
   ) {
-    address = normalizeBlockchainAddress(chain, address);
-    const isValid = await this.addressService.verifySignature(
-      chain,
-      address,
-      'login',
-      signature,
-    );
-    if (!isValid) {
-      throw new BadRequestException('Invalid signature');
-    }
-    
-    // Create payload with optional user/room/agent IDs if provided
-    const payload = { 
-      chain, 
-      address,
-      ...(userId && { userId }),
-      ...(roomId && { roomId }),
-      ...(agentId && { agentId })
+    const newPayload = { 
+      chain: req['X-USER-CHAIN'], 
+      address: req['X-USER-ADDRESS'],
+      userId, roomId, agentId 
     };
-    
-    const { accessToken } = this.authService.getAccessToken(payload);
-    return {
-      accessToken,
-    };
+    const { accessToken } = this.authService.getAccessToken(newPayload);
+    return { accessToken };
   }
 
   @Post('/swap/calldata')
@@ -93,3 +75,4 @@ export class AddressController {
       return txReq;
     }
 }
+

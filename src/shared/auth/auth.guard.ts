@@ -31,7 +31,6 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    // Extract JWT token from Authorization header
     const token = this.extractTokenFromHeader(request);
     if (!token) {
       this.logger.error('No JWT token found in Authorization header');
@@ -39,6 +38,7 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
+
       this.logger.debug('Validating JWT token');
       const decoded = await this.jwtService.verifyAsync(token);
       this.logger.debug(`JWT token verified: ${JSON.stringify(decoded)}`);
@@ -46,8 +46,6 @@ export class AuthGuard implements CanActivate {
       // Set values from JWT token on request object
       request['X-USER-ADDRESS'] = decoded.address;
       request['X-USER-CHAIN'] = decoded.chain;
-      
-      // Extract user, room, and agent IDs from the token if present
       if (decoded.userId) request['userId'] = decoded.userId;
       if (decoded.roomId) request['roomId'] = decoded.roomId;
       if (decoded.agentId) request['agentId'] = decoded.agentId;
