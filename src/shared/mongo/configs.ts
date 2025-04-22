@@ -162,4 +162,19 @@ export const COLLECTIONS = [
     indexes: [],
     uniqueIndexes: [],
   },
+  {
+    db: DB_NAME,
+    name: 'authTokens',
+    indexes: [
+      { expiresAt: 1 },
+      { userId: 1 },
+      { roomId: 1 },
+      { agentId: 1 },
+      { apiKey: 1 },
+    ],
+    uniqueIndexes: [
+      { token: 1 },
+      { apiKey: 1 }
+    ],
+  },
 ] as const;

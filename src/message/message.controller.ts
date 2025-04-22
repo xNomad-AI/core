@@ -28,7 +28,7 @@ export class MessageController {
       id: Date.now().toString(),
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: 'gpt-3.5-turbo',
+      model: '',
       choices: [{
         index: 0,
         message: {
