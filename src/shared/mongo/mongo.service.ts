@@ -178,6 +178,6 @@ export class MongoService implements OnModuleInit {
   }
 
   get authTokens() {
-    return this.getCollection<TokenAPIKey>('authTokens');
+    return this.getCollection<TokenAPIKey>('tokenAPIKey');
   }
 }

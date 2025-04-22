@@ -18,6 +18,13 @@ export class MessageService {
   }
 
   async processMessage(request: ProcessMessageRequest): Promise<ProcessMessageResponse> {
+    this.logger.debug(`Processing message for agent ${request.agentId}`);
+    
+    if (!request.agentId) {
+      this.logger.error('Missing agentId in request');
+      throw new Error('Agent ID is required');
+    }
+    
     const response = await this.request(request.agentId, {
       text: request.text,
       stream: request.stream === 'true',
@@ -26,18 +33,28 @@ export class MessageService {
       user: request.user,
     });
 
+    this.logger.debug('Message processed successfully');
     return { text: response[response.length - 1].text };
   }
 
   private async request(agentId: string, body: any) {
+    this.logger.debug(`Sending request to agent ${agentId}`);
+    
+    if (!agentId) {
+      this.logger.error('Critical error: agentId is undefined or empty');
+      throw new Error('Agent ID is required for message processing');
+    }
+    
     const port = this.appConfig.get<number>('AGENT_SERVER_PORT');
     const url = `http://localhost:${port}/${agentId}/message`;
     
-    console.log('URL:', url);
-    console.log('BODY:', JSON.stringify(body, null, 2));
-    
-    this.logger.log(`Making request to: ${url}`);
-    this.logger.log(`Request body: ${JSON.stringify(body, null, 2)}`);
+    this.logger.debug(`Request URL: ${url}`);
+    this.logger.debug(`Request payload: ${JSON.stringify({
+      text: body.text?.substring(0, 50) + (body.text?.length > 50 ? '...' : ''),
+      stream: body.stream,
+      roomId: body.roomId,
+      userId: body.userId
+    })}`);
     
     try {
       const response = await firstValueFrom(
@@ -46,23 +63,16 @@ export class MessageService {
         })
       );
       
-      console.log('-- REQUEST SUCCESSFUL --');
-      console.log('STATUS:', response.status);
-      
-      this.logger.log(`Response status: ${response.status}`);
-      this.logger.log(`Response data: ${JSON.stringify(response.data, null, 2)}`);
+      this.logger.debug(`Response received: status=${response.status}`);
       return response.data;
     } catch (error) {
-      console.log('ERROR:', error.message);
-      if (error.response) {
-        console.log('STATUS:', error.response.status);
-        console.log('DATA:', JSON.stringify(error.response.data, null, 2));
-      }
+      this.logger.error(`Request failed: ${error.message}`);
+      this.logger.error(`Failed endpoint: ${url}`);
+      this.logger.error(`Agent ID: ${agentId}`);
       
-      this.logger.error(`Failed to process message: ${error.message}`);
       if (error.response) {
         this.logger.error(`Response status: ${error.response.status}`);
-        this.logger.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
+        this.logger.error(`Error details: ${JSON.stringify(error.response.data)}`);
       }
       throw error;
     }

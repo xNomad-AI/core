@@ -1,10 +1,9 @@
-
 export interface ProcessMessageRequest {
     text: string;
     user: string;
-    roomId: string;
-    userId: string;
-    agentId: string;
+    roomId?: string;
+    userId?: string;
+    agentId?: string;
     stream: string;
     model?: string;
     temperature?: number;

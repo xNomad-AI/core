@@ -164,7 +164,7 @@ export const COLLECTIONS = [
   },
   {
     db: DB_NAME,
-    name: 'authTokens',
+    name: 'tokenAPIKey',
     indexes: [
       { expiresAt: 1 },
       { userId: 1 },

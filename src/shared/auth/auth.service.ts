@@ -2,15 +2,20 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
 import { MongoService } from '../mongo/mongo.service.js';
+import { TransientLoggerService } from '../transient-logger.service.js';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
-    private mongoService: MongoService
-  ) {}
+    private mongoService: MongoService,
+    private logger: TransientLoggerService
+  ) {
+    this.logger.setContext('AuthService');
+  }
 
   getAccessToken(payload: object): { accessToken: string } {
+    this.logger.debug(`Generating access token for payload: ${JSON.stringify(payload)}`);
     return {
       accessToken: this.jwtService.sign(payload, {
         expiresIn: '2d',
@@ -26,7 +31,8 @@ export class AuthService {
   }
 
   async createAndStoreAPIKey(userId: string, roomId: string, agentId: string): Promise<{ token: string, apiKey: string }> {
-   
+    this.logger.debug(`Creating API key for userId=${userId}, roomId=${roomId}, agentId=${agentId}`);
+    
     const existingToken = await this.mongoService.authTokens.findOne({
       userId,
       roomId,
@@ -34,6 +40,7 @@ export class AuthService {
     });
 
     if (existingToken && existingToken.expiresAt > new Date()) {
+      this.logger.debug(`Found existing valid token for user=${userId}, returning it`);
       return {
         token: existingToken.token,
         apiKey: existingToken.apiKey
@@ -59,6 +66,8 @@ export class AuthService {
     const expiresAt = new Date(now);
     expiresAt.setDate(now.getDate() + 2);
 
+    this.logger.debug(`Storing new token for user=${userId}, expires=${expiresAt.toISOString()}`);
+    
     // Store in database
     await this.mongoService.authTokens.insertOne({
       token: accessToken,
@@ -78,24 +87,36 @@ export class AuthService {
 
   // Validate API key
   async validateApiKey(apiKey: string): Promise<{ userId: string, roomId: string, agentId: string }> {
-    // Find the token record by API key
-    const tokenRecord = await this.mongoService.authTokens.findOne({ apiKey });
+    this.logger.debug(`Validating API key: ${apiKey}`);
     
-    if (!tokenRecord) {
-      throw new UnauthorizedException('Invalid API key');
-    }
+    try {
+      // Find the token record by API key
+      const tokenRecord = await this.mongoService.authTokens.findOne({ apiKey });
+      
+      if (!tokenRecord) {
+        this.logger.warn(`API key not found in database: ${apiKey}`);
+        throw new UnauthorizedException('Invalid API key');
+      }
+      
+      this.logger.debug(`Token found: userId=${tokenRecord.userId}, roomId=${tokenRecord.roomId}, agentId=${tokenRecord.agentId}`);
 
-    // Check if token is expired
-    if (tokenRecord.expiresAt < new Date()) {
-      // Remove expired token
-      await this.mongoService.authTokens.deleteOne({ apiKey });
-      throw new UnauthorizedException('API key expired. Please recreate your auth token.');
-    }
+      // Check if token is expired
+      if (tokenRecord.expiresAt < new Date()) {
+        // Remove expired token
+        this.logger.warn(`API key expired: ${apiKey}, expires=${tokenRecord.expiresAt.toISOString()}`);
+        await this.mongoService.authTokens.deleteOne({ apiKey });
+        throw new UnauthorizedException('API key expired. Please recreate your auth token.');
+      }
 
-    return {
-      userId: tokenRecord.userId,
-      roomId: tokenRecord.roomId,
-      agentId: tokenRecord.agentId
-    };
+      this.logger.debug(`API key validated successfully: ${apiKey}`);
+      return {
+        userId: tokenRecord.userId,
+        roomId: tokenRecord.roomId,
+        agentId: tokenRecord.agentId
+      };
+    } catch (error) {
+      this.logger.error(`Error validating API key: ${error.message}`);
+      throw new UnauthorizedException('Error validating API key');
+    }
   }
 }
