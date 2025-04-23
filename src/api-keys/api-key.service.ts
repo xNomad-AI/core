@@ -170,4 +170,23 @@ export class ApiKeyService {
     return success;
   }
 
+  /**
+   * Delete an API key
+   */
+  async deleteApiKey(apiKeyId: string, userId: string): Promise<boolean> {
+    const result = await this.apiKeysCollection.deleteOne({
+      _id: new ObjectId(apiKeyId),
+      userId
+    });
+
+    const success = result.deletedCount > 0;
+    if (success) {
+      this.logger.debug(`API key ${apiKeyId} permanently deleted for user ${userId}`);
+    } else {
+      this.logger.debug(`Failed to delete API key ${apiKeyId} for user ${userId}`);
+    }
+    
+    return success;
+  }
+
 } 
