@@ -5,8 +5,6 @@ import {
   Get,
   Post,
   Query,
-  Request,
-  UseGuards,
 } from '@nestjs/common';
 import { AddressService } from './address.service.js';
 import { NonceType } from '../shared/mongo/types.js';
@@ -79,4 +77,3 @@ export class AddressController {
       return txReq;
     }
 }
-

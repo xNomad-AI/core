@@ -56,7 +56,8 @@ export class MessageService {
 
         this.logger.debug(`Context from API key: userId=${userId}, roomId=${roomId}, agentId=${agentId}`);
     
-      const response = await this.request(agentId, {
+      const response = await this.request( {
+        agentId: agentId,
         text: request.text,
         stream: request.stream === 'true',
         roomId: roomId,
@@ -77,16 +78,16 @@ export class MessageService {
 }
 
 
-  private async request(agentId: string, body: any) {
-    this.logger.debug(`Sending request to agent ${agentId}`);
+  private async request(body: any) {
+    this.logger.debug(`Sending request to agent ${body.agentId}`);
     
-    if (!agentId) {
+    if (!body.agentId) {
       this.logger.error('Critical error: agentId is undefined or empty');
       throw new Error('Agent ID is required for message processing');
     }
     
     const port = this.appConfig.get<number>('AGENT_SERVER_PORT');
-    const url = `http://localhost:${port}/${agentId}/message`;
+    const url = `http://localhost:${port}/${body.agentId}/message`;
     
     this.logger.debug(`Request URL: ${url}`);
     this.logger.debug(`Request payload: ${JSON.stringify({
@@ -108,7 +109,7 @@ export class MessageService {
     } catch (error) {
       this.logger.error(`Request failed: ${error.message}`);
       this.logger.error(`Failed endpoint: ${url}`);
-      this.logger.error(`Agent ID: ${agentId}`);
+      this.logger.error(`Agent ID: ${body.agentId}`);
       
       if (error.response) {
         this.logger.error(`Response status: ${error.response.status}`);
