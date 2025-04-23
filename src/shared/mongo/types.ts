@@ -318,3 +318,19 @@ export interface Order {
   updatedAt: Date;
   createdAt: Date;
 }
+
+export interface ApiKey {
+  _id?: ObjectId;
+  key: string;
+  userId: string;
+  chain: string;
+  address: string;
+  roomId?: string;
+  agentId?: string;
+  tokenPayload?: object;
+  name: string;
+  createdAt: Date;
+  expiresAt: Date;
+  lastUsed?: Date;
+  active: boolean;
+}
