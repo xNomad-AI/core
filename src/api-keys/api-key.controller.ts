@@ -7,6 +7,7 @@ import {
   Post,
   Request,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiKeyService } from './api-key.service.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
@@ -36,7 +37,7 @@ export class ApiKeyController {
     },
   ) {
     // Use userId from request if not provided in body
-    const userId = createDto.userId || req['userId'] || req['X-USER-ADDRESS'];
+    const userId = createDto.userId;
     
     if (!userId) {
       this.logger.error('Failed to create API key: User ID not found in request or body');
@@ -60,17 +61,49 @@ export class ApiKeyController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async listApiKeys(@Request() req) {
-    this.logger.debug(`Listing API keys for user ${req['userId']}`);
-    const keys = await this.apiKeyService.listApiKeys(req['userId']);
+  async listApiKeys(@Request() req, @Query('userId') userId?: string) {
+
+    if (!userId) {
+      this.logger.error('Failed to list API keys: User ID not found');
+      throw new Error('User ID is required to list API keys');
+    }
+    
+    this.logger.debug(`Listing API keys for user ${userId}`);
+    const keys = await this.apiKeyService.listApiKeys(userId);
     return { keys };
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  async revokeApiKey(@Param('id') id: string, @Request() req) {
-    this.logger.debug(`Revoking API key ${id} for user ${req['userId']}`);
-    const success = await this.apiKeyService.revokeApiKey(id, req['userId']);
+  async revokeApiKey(
+    @Param('id') id: string, 
+    @Request() req,
+    @Query('userId') userId?: string
+  ) {
+    if (!userId) {
+      this.logger.error('Failed to revoke API key: User ID not found');
+      throw new Error('User ID is required to revoke an API key');
+    }
+    
+    this.logger.debug(`Revoking API key ${id} for user ${userId}`);
+    const success = await this.apiKeyService.revokeApiKey(id, userId);
+    return { success };
+  }
+
+  @Delete(':id/permanent')
+  @UseGuards(AuthGuard)
+  async deleteApiKey(
+    @Param('id') id: string, 
+    @Request() req,
+    @Query('userId') userId?: string
+  ) {
+    if (!userId) {
+      this.logger.error('Failed to delete API key: User ID not found');
+      throw new Error('User ID is required to delete an API key');
+    }
+    
+    this.logger.debug(`Permanently deleting API key ${id} for user ${userId}`);
+    const success = await this.apiKeyService.deleteApiKey(id, userId);
     return { success };
   }
 } 
