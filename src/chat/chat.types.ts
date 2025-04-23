@@ -1,17 +1,24 @@
 export interface ProcessMessageRequest {
     text: string;
     user: string;
-    roomId?: string;
-    userId?: string;
-    agentId?: string;
     stream: string;
-    model?: string;
+    apiKey?: string;
+    userId?: string;
+    roomId?: string;
+    agentId?: string;
     temperature?: number;
     max_tokens?: number;
-  }
+    model?: string;
+}
 
 export interface ProcessMessageResponse {
   text: string;
+}
+
+export interface UserContext {
+  userId: string;
+  roomId?: string;
+  agentId?: string;
 }
 
 export interface ChatCompletionResponse {

@@ -1,5 +1,5 @@
 import { CacheModule } from '@nestjs/cache-manager';
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -16,7 +16,9 @@ import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { TokenModule } from './token/token.module.js';
 import { OrderModule } from './order/order.module.js';
-import { MessageModule } from './message/message.module.js';
+import { MessageModule } from './chat/chat.module.js';
+import { ApiKeyModule } from './api-keys/api-key.module.js';
+import { ApiKeyMiddleware } from './api-keys/api-key.middleware.js';
 
 EventEmitter.defaultMaxListeners = 10;
 
@@ -43,8 +45,15 @@ EventEmitter.defaultMaxListeners = 10;
     CallbackModule,
     OrderModule,
     MessageModule,
+    ApiKeyModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(ApiKeyMiddleware)
+      .forRoutes('*'); // Apply to all routes
+  }
+}

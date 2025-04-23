@@ -68,22 +68,6 @@ export class AddressController {
     };
   }
 
-  // This is used to configure the session for the user,
-  // it will add the userId, roomId, and agentId to this New JWT token
-  @Post('/session/configure')
-  async configureSession(
-    @Request() req,
-    @Body() { userId, roomId, agentId }
-  ) {
-    const newPayload = { 
-      chain: req['X-USER-CHAIN'], 
-      address: req['X-USER-ADDRESS'],
-      userId, roomId, agentId 
-    };
-    const { accessToken } = this.authService.getAccessToken(newPayload);
-    return { accessToken };
-  }
-
   @Post('/swap/calldata')
   async getSwapTxCallData(
     @Body() req: GetSwapCallDataDto) {

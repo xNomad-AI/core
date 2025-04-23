@@ -1,9 +1,9 @@
 import { Body, Controller, Post, UseGuards, Param, UseInterceptors, UploadedFile, Request } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
-import { MessageService } from './message.service.js';
+import { MessageService } from './chat.service.js';
 import { encode } from 'gpt-tokenizer';
-import { ProcessMessageRequest, ChatCompletionResponse } from './message.types.js';
+import { ProcessMessageRequest, ChatCompletionResponse } from './chat.types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 
 @Controller('/v1/chat')
@@ -29,25 +29,23 @@ export class MessageController {
     @Request() req
   ): Promise<ChatCompletionResponse> {
     this.logger.debug('Processing chat completion request');
-    this.logger.debug(`Auth values from JWT: userId=${req.userId}, roomId=${req.roomId}, agentId=${req.agentId}`);
-    
-    // Validate that we have the required IDs from the JWT token
-    if (!req.userId || !req.roomId || !req.agentId) {
-      this.logger.warn(`Missing required IDs in JWT token. Include userId, roomId, and agentId in your login payload.`);
-    }
     
     // Extract the last user message from the messages array
     const lastMessage = body.messages[body.messages.length - 1];
     const userText = lastMessage.content;
-
-    // Get user Auth values from the JWT token
+    
+    // Check for API key in header
+    const apiKey = req.headers['x-api-key'] as string;
+    
+    // Extract userId from JWT token as fallback
+    const userId = req.userId;
+    
+    // Create the request object
     const request: ProcessMessageRequest = {
       text: userText,
       user: 'user',
       stream: body.stream ? 'true' : 'false',
-      userId: req.userId,
-      roomId: req.roomId,
-      agentId: req.agentId,
+      apiKey, // Pass the API key directly
       temperature: body.temperature,
       max_tokens: body.max_tokens,
       model: body.model
@@ -55,9 +53,8 @@ export class MessageController {
     
     this.logger.debug(`Sending to message service: ${JSON.stringify({
       text: userText.substring(0, 50) + (userText.length > 50 ? '...' : ''),
-      userId: req.userId,
-      roomId: req.roomId,
-      agentId: req.agentId,
+      hasApiKey: !!apiKey,
+      hasUserId: !!userId,
       model: body.model
     })}`);
 
@@ -88,4 +85,4 @@ export class MessageController {
       }
     };
   }
-} 
+}
