@@ -25,13 +25,34 @@ export class ApiKeyController {
   @UseGuards(AuthGuard)
   async createApiKey(
     @Request() req,
-    @Body() createDto: { name: string },
+    @Body() createDto: { 
+      name: string, 
+      expirationDays?: number, 
+      userId?: string,
+      roomId?: string,
+      agentId?: string,
+      chain?: string,
+      address?: string,
+    },
   ) {
-    this.logger.debug(`Creating API key for user ${req['userId']}`);
+    // Use userId from request if not provided in body
+    const userId = createDto.userId || req['userId'] || req['X-USER-ADDRESS'];
+    
+    if (!userId) {
+      this.logger.error('Failed to create API key: User ID not found in request or body');
+      throw new Error('User ID is required to create an API key');
+    }
+    
+    this.logger.debug(`Creating API key for user ${userId}`);
     
     const key = await this.apiKeyService.createApiKey(
-      req['userId'],
-      createDto.name
+      userId,
+      createDto.name,
+      createDto.expirationDays,
+      createDto.roomId,
+      createDto.agentId,
+      createDto.chain,
+      createDto.address
     );
     
     return { key };

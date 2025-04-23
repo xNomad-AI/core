@@ -18,19 +18,6 @@ export class MessageService {
     logger.setContext(MessageService.name);
   }
 
-  async getUserContext(userId: string): Promise<UserContext> {
-    this.logger.debug(`Fetching user context for userId: ${userId}`);
-    
-    try {
-      // Use ApiKeyService to get user context
-      const userContext = await this.apiKeyService.getUserInfo(userId);
-      this.logger.debug(`Retrieved user context: ${JSON.stringify(userContext || {})}`);
-      return userContext;
-    } catch (error) {
-      this.logger.error(`Error getting user context: ${error.message}`);
-      return { userId };
-    }
-  }
 
   async processMessage(request: ProcessMessageRequest): Promise<ProcessMessageResponse> {
     
@@ -43,10 +30,8 @@ export class MessageService {
 
         // Use userId from API key
         const userId = keyData.userId;
-      
-        const userContext = await this.apiKeyService.getUserInfo(userId);
-        const roomId = userContext.roomId;
-        const agentId = userContext.agentId;
+        const roomId = keyData.roomId;
+        const agentId = keyData.agentId;
     
         // Ensure we have an agentId for processing
         if (!agentId) {

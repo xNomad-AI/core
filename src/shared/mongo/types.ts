@@ -325,6 +325,8 @@ export interface ApiKey {
   userId: string;
   chain: string;
   address: string;
+  roomId?: string;
+  agentId?: string;
   tokenPayload?: object;
   name: string;
   createdAt: Date;

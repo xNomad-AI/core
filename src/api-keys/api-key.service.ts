@@ -4,12 +4,16 @@ import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { ApiKey } from '../shared/mongo/types.js';
 import { ObjectId } from 'mongodb';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ApiKeyService {
+  private DEFAULT_API_KEY_EXPIRATION_DAYS = 30;
+
   constructor(
     private mongoService: MongoService,
     private logger: TransientLoggerService,
+    private configService: ConfigService,
   ) {
     this.logger.setContext('ApiKeyService');
   }
@@ -60,30 +64,51 @@ export class ApiKeyService {
   async createApiKey(
     userId: string,
     name: string,
+    customExpirationDays?: number,
+    roomId?: string,
+    agentId?: string,
+    chain?: string,
+    address?: string,
   ): Promise<string> {
+    if (!userId) {
+      this.logger.error('Cannot create API key: userId is required');
+      throw new Error('User ID is required to create an API key');
+    }
+
     const key = this.generateSecureKey();
     const hashedKey = this.hashKey(key);
     
-    // Get user data
     const userInfo = await this.getUserInfo(userId);
     
-    // Set expiration (90 days)
+    
+    // Get max expiration days from config or use default
+    const maxExpirationDays = this.configService.get<number>('API_KEY_EXPIRATION_DAYS') 
+      || this.DEFAULT_API_KEY_EXPIRATION_DAYS;
+    
+
+    if (customExpirationDays && customExpirationDays > 0 && customExpirationDays > maxExpirationDays) {
+      throw new Error(`Custom expiration days ${customExpirationDays} exceeds max ${maxExpirationDays}`);
+    }
+    
+    // Set expiration date
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 90);
+    expiresAt.setDate(expiresAt.getDate() + customExpirationDays);
 
     // Store minimal data in API key record
     await this.apiKeysCollection.insertOne({
       key: hashedKey,
       userId,
-      chain: userInfo.chain,
-      address: userInfo.address,
+      chain,
+      address,
+      roomId,
+      agentId,
       name,
       createdAt: new Date(),
       expiresAt,
       active: true,
     });
 
-    this.logger.debug(`Created API key for user ${userId}`);
+    this.logger.debug(`Created API key for user ${userId} with roomId ${roomId} and agentId ${agentId}`);
     return key;
   }
 
