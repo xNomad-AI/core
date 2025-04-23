@@ -11,8 +11,6 @@ export interface SolanaTradeSettingsDTO extends TradeSettingsSolana {}
 
 export interface EvmTradeSettingsDTO extends TradeSettingsEvm {}
 
-
-
 export interface TestTweetDto {
   twitterUsername: string;
   maxTweetLength: number;
@@ -44,5 +42,4 @@ export function validateTradeSettingsEvm(dto: EvmTradeSettingsDTO) {
       throw new BadRequestException('Gas must be set when gas mode is set to custom');
     }
   }
-
 }

@@ -40,10 +40,32 @@ export class AddressController {
   }
 
   @Post('/login')
-  async login(@Body() { chain, address, signature }) {
-    // Verify signature
+  async login(
+    @Body()
+    {
+      chain,
+      address,
+      signature,
+    }: {
+      chain: string;
+      address: string;
+      signature: string;
+    },
+  ) {
+    address = normalizeBlockchainAddress(chain, address);
+    const isValid = await this.addressService.verifySignature(
+      chain,
+      address,
+      'login',
+      signature,
+    );
+    if (!isValid) {
+      throw new BadRequestException('Invalid signature');
+    }
     const { accessToken } = this.authService.getAccessToken({ chain, address });
-    return { accessToken };
+    return {
+      accessToken,
+    };
   }
 
   // This is used to configure the session for the user,
