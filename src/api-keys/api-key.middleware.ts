@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ApiKeyService } from './api-key.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { extractTokenFromHeader, isJwtToken } from '../shared/utils/auth.utils.js';
 
 @Injectable()
 export class ApiKeyMiddleware implements NestMiddleware {
@@ -15,31 +16,35 @@ export class ApiKeyMiddleware implements NestMiddleware {
   }
 
   async use(req: Request, res: Response, next: NextFunction) {
-    // Only process if no Auth header but has API key
-    if (!req.headers.authorization && req.headers['x-api-key']) {
-      this.logger.debug('Found API key in headers, validating...');
+    // Only process requests with Authorization header
+    if (req.headers.authorization) {
+      const token = extractTokenFromHeader(req);
       
-      const apiKey = req.headers['x-api-key'] as string;
-      const keyData = await this.apiKeyService.validateApiKey(apiKey);
-      
-      if (keyData) {
-        this.logger.debug(`API key valid for user ${keyData.userId}`);
+      // If token exists and doesn't look like a JWT, treat it as an API key
+      if (token && !isJwtToken(token)) {
+        this.logger.debug('Found API key in Authorization header, validating...');
+        const keyData = await this.apiKeyService.validateApiKey(token);
         
-        // Generate minimal JWT token with chain, and address (similar to /login)
-        const tokenPayload = {
-          chain: keyData.chain,
-          address: keyData.address
-        };
-        
-        const token = this.jwtService.sign(tokenPayload);
-        
-        // Set Authorization header with the generated token
-        req.headers.authorization = `Bearer ${token}`;
-        
-        this.logger.debug('API key converted to minimal JWT token');
-      } else {
-        this.logger.debug('Invalid API key');
+        if (keyData) {
+          this.logger.debug(`API key valid for user ${keyData.userId}`);
+          
+          // Generate minimal JWT token
+          const tokenPayload = {
+            chain: keyData.chain,
+            address: keyData.address
+          };
+          
+          const jwtToken = this.jwtService.sign(tokenPayload);
+          
+          // Replace the Authorization header with the JWT
+          req.headers.authorization = `Bearer ${jwtToken}`;
+          
+          this.logger.debug('API key converted to minimal JWT token');
+        } else {
+          this.logger.debug('Invalid API key in Authorization header');
+        }
       }
+      // If it's a JWT token, nothing to do, it will be validated by AuthGuard
     }
     
     next();
