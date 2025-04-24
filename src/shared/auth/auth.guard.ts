@@ -7,7 +7,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { extractTokenFromHeader } from '../utils/auth.utils.js';
 
 import { DISABLE_API_SERVER_AUTH } from '../../static-settings.js';
 
@@ -20,7 +19,7 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = extractTokenFromHeader(request);
+    const token = this.extractTokenFromHeader(request);
 
     // if in local debug mode, return true
     if (DISABLE_API_SERVER_AUTH) {
