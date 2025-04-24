@@ -186,4 +186,20 @@ export class ApiKeyService {
     return success;
   }
 
+  /**
+   * Get an API key by its ID
+   */
+  async getApiKeyById(apiKeyId: string): Promise<ApiKey | null> {
+    try {
+      const apiKey = await this.apiKeysCollection.findOne({
+        _id: new ObjectId(apiKeyId)
+      });
+      
+      return apiKey;
+    } catch (error) {
+      this.logger.error(`Failed to retrieve API key ${apiKeyId}: ${error.message}`);
+      return null;
+    }
+  }
+
 } 
