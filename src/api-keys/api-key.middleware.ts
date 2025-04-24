@@ -28,6 +28,9 @@ export class ApiKeyMiddleware implements NestMiddleware {
         if (keyData) {
           this.logger.debug(`API key valid for user ${keyData.userId}`);
           
+          req['hasApiKey'] = true;
+          req['apiKey'] = token;
+
           // Generate minimal JWT token
           const tokenPayload = {
             chain: keyData.chain,
