@@ -1,24 +1,24 @@
 import { Body, Controller, Post, UseGuards, Param, UseInterceptors, UploadedFile, Request } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
-import { MessageService } from './chat.service.js';
+import { ChatService } from './chat.service.js';
 import { encode } from 'gpt-tokenizer';
-import { ProcessMessageRequest, ChatCompletionResponse } from './chat.types.js';
+import { ProcessChatRequest, ChatCompletionResponse } from './chat.types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 
 @Controller('/v1/chat')
-export class MessageController {
+export class ChatController {
   constructor(
-    private readonly messageService: MessageService,
+    private readonly chatService: ChatService,
     private readonly logger: TransientLoggerService,
   ) {
-    this.logger.setContext('MessageController');
+    this.logger.setContext('ChatController');
   }
 
   @Post('/completions')
   @UseInterceptors(FileInterceptor('file'))
   @UseGuards(AuthGuard)
-  async processMessage(
+  async processChat(
     @Body() body: {
       model?: string;
       messages: { role: string; content: string }[];
@@ -34,31 +34,39 @@ export class MessageController {
     const lastMessage = body.messages[body.messages.length - 1];
     const userText = lastMessage.content;
     
-    // Check for API key in header
-    const apiKey = req.headers['x-api-key'] as string;
+    // Check for API key in header or from middleware
+    const apiKey = req['apiKey'];
+
+    if (!apiKey) {
+      this.logger.error('No API key found');
+      throw new Error('No API key found');
+    }
+
+    this.logger.debug(`API key present: ${!!apiKey} (Source: ${req.headers['x-api-key'] ? 'X-API-Key header' : (req['apiKey'] ? 'Authorization header' : 'None')})`);
     
     // Extract userId from JWT token as fallback
     const userId = req.userId;
     
     // Create the request object
-    const request: ProcessMessageRequest = {
+    const request: ProcessChatRequest = {
       text: userText,
       user: 'user',
       stream: body.stream ? 'true' : 'false',
-      apiKey, // Pass the API key directly
+      apiKey,
       temperature: body.temperature,
       max_tokens: body.max_tokens,
       model: body.model
     };
     
-    this.logger.debug(`Sending to message service: ${JSON.stringify({
+    this.logger.debug(`Sending to chat service: ${JSON.stringify({
       text: userText.substring(0, 50) + (userText.length > 50 ? '...' : ''),
       hasApiKey: !!apiKey,
       hasUserId: !!userId,
+      apiKeyValue: apiKey ? apiKey.substring(0, 5) + '...' : null,
       model: body.model
     })}`);
 
-    const response = await this.messageService.processMessage(request);
+    const response = await this.chatService.processChat(request);
 
     // Count tokens
     const promptTokens = encode(userText).length;

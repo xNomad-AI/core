@@ -1,4 +1,4 @@
-export interface ProcessMessageRequest {
+export interface ProcessChatRequest {
     text: string;
     user: string;
     stream: string;
@@ -11,7 +11,7 @@ export interface ProcessMessageRequest {
     model?: string;
 }
 
-export interface ProcessMessageResponse {
+export interface ProcessChatResponse {
   text: string;
 }
 

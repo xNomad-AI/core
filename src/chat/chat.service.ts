@@ -4,62 +4,57 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { ProcessMessageRequest, ProcessMessageResponse, UserContext } from './chat.types.js';
+import { ProcessChatRequest, ProcessChatResponse, UserContext } from './chat.types.js';
 import { ApiKeyService } from '../api-keys/api-key.service.js';
 
 @Injectable()
-export class MessageService {
+export class ChatService {
   constructor(
     private readonly logger: TransientLoggerService,
     private readonly appConfig: ConfigService,
     private readonly httpService: HttpService,
     private readonly apiKeyService: ApiKeyService,
   ) {
-    logger.setContext(MessageService.name);
+    this.logger.setContext(ChatService.name);
   }
 
 
-  async processMessage(request: ProcessMessageRequest): Promise<ProcessMessageResponse> {
+  async processChat(request: ProcessChatRequest): Promise<ProcessChatResponse> {
     
     // If apiKey is provided, use it to get user info directly
-    if (request.apiKey) {
-      this.logger.debug('API key provided, validating and retrieving user context');
-      const keyData = await this.apiKeyService.validateApiKey(request.apiKey);
-      
-      if (keyData) {
-
-        // Use userId from API key
-        const userId = keyData.userId;
-        const roomId = keyData.roomId;
-        const agentId = keyData.agentId;
+    this.logger.debug('API key provided, validating and retrieving user context');
+    const keyData = await this.apiKeyService.validateApiKey(request.apiKey);
     
-        // Ensure we have an agentId for processing
-        if (!agentId) {
-          this.logger.error('Missing agentId, cannot process message');
-          throw new Error('Agent ID is required for message processing');
-        }
+    if (keyData) {
 
-        this.logger.debug(`Context from API key: userId=${userId}, roomId=${roomId}, agentId=${agentId}`);
-    
-      const response = await this.request( {
-        agentId: agentId,
-        text: request.text,
-        stream: request.stream === 'true',
-        roomId: roomId,
-        userId: userId,
-        user: request.user,
-      });
+      // Use userId from API key
+      const userId = keyData.userId;
+      const roomId = keyData.roomId;
+      const agentId = keyData.agentId;
+  
+      // Ensure we have an agentId for processing
+      if (!agentId) {
+        this.logger.error('Missing agentId, cannot process message');
+        throw new Error('Agent ID is required for message processing');
+      }
 
-      this.logger.debug('Message processed successfully');
-      return { text: response[response.length - 1].text };
+      this.logger.debug(`Context from API key: userId=${userId}, roomId=${roomId}, agentId=${agentId}`);
+  
+    const response = await this.request( {
+      agentId: agentId,
+      text: request.text,
+      stream: request.stream === 'true',
+      roomId: roomId,
+      userId: userId,
+      user: request.user,
+    });
+
+    this.logger.debug('Message processed successfully');
+    return { text: response[response.length - 1].text };
     
     }else{
       throw new Error('API key is not Valid');
     }
-  }else{
-    this.logger.error('No API key provided');
-    throw new Error('No API key provided');
-  }
 }
 
 
