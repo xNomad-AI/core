@@ -16,7 +16,7 @@ import { AuthModule } from './shared/auth/auth.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { TokenModule } from './token/token.module.js';
 import { OrderModule } from './order/order.module.js';
-import { MessageModule } from './chat/chat.module.js';
+import { ChatModule } from './chat/chat.module.js';
 import { ApiKeyModule } from './api-keys/api-key.module.js';
 import { ApiKeyMiddleware } from './api-keys/api-key.middleware.js';
 
@@ -44,7 +44,7 @@ EventEmitter.defaultMaxListeners = 10;
     MetricsModule,
     CallbackModule,
     OrderModule,
-    MessageModule,
+    ChatModule,
     ApiKeyModule,
   ],
   controllers: [],
