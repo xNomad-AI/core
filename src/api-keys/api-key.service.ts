@@ -77,10 +77,7 @@ export class ApiKeyService {
 
     const key = this.generateSecureKey();
     const hashedKey = this.hashKey(key);
-    
-    const userInfo = await this.getUserInfo(userId);
-    
-    
+ 
     // Get max expiration days from config or use default
     const maxExpirationDays = this.configService.get<number>('API_KEY_EXPIRATION_DAYS') 
       || this.DEFAULT_API_KEY_EXPIRATION_DAYS;

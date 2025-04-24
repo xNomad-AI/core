@@ -8,6 +8,7 @@ import {
   Request,
   UseGuards,
   Query,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiKeyService } from './api-key.service.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
@@ -32,30 +33,49 @@ export class ApiKeyController {
       userId?: string,
       roomId?: string,
       agentId?: string,
-      chain?: string,
-      address?: string,
     },
   ) {
-    // Use userId from request if not provided in body
-    const userId = createDto.userId;
+
+    // Get authenticated user's address from JWT token
+    const authenticatedAddress = req['X-USER-ADDRESS'];
+    const authenticatedChain = req['X-USER-CHAIN'];
+    if (!authenticatedAddress) {
+      this.logger.error('Failed to create API key: No authenticated user found');
+      throw new UnauthorizedException('Authentication required to create API keys');
+    }
     
-    if (!userId) {
-      this.logger.error('Failed to create API key: User ID not found in request or body');
+    // Get the userId associated with the authenticated address
+    const requestedUserId = createDto.userId;
+    if (!requestedUserId) {
+      this.logger.error('Failed to create API key: User ID not provided');
       throw new Error('User ID is required to create an API key');
     }
     
-    this.logger.debug(`Creating API key for user ${userId}`);
+    // Verify ownership: Check if the requestedUserId belongs to the authenticated address, and if the agentId is owned by the user
+    const userInfo = await this.apiKeyService.getUserInfo(requestedUserId);
+    if (!userInfo || userInfo.address !== authenticatedAddress) {
+      this.logger.error(`Security violation: Address ${authenticatedAddress} attempted to create API key for userId ${requestedUserId} they don't own`);
+      throw new UnauthorizedException('You can only create API keys for your own user account');
+    }
+    
+    if (createDto.agentId && userInfo.agentId !== createDto.agentId) {
+      this.logger.error(`Security violation: User ${requestedUserId} attempted to use unauthorized agentId ${createDto.agentId}`);
+      throw new UnauthorizedException('You can only use agents that belong to your account');
+    }
+    
+    this.logger.debug(`Creating API key for validated user ${requestedUserId}`);
     
     const key = await this.apiKeyService.createApiKey(
-      userId,
+      requestedUserId,
       createDto.name,
       createDto.expirationDays,
       createDto.roomId,
       createDto.agentId,
-      createDto.chain,
-      createDto.address
+      authenticatedChain,
+      authenticatedAddress
     );
     
+    this.logger.debug(`Successfully created API key for user ${requestedUserId}`);
     return { key };
   }
 
