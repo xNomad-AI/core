@@ -21,7 +21,7 @@ export interface ProcessChatResponse {
 export interface ChatRequestBody {
   agentId: string;
   text: string;
-  stream: boolean;
+  stream: string;
   roomId?: string;
   userId: string;
   user: string;

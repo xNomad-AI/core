@@ -41,7 +41,7 @@ export class ChatService {
     const chatRequestBody: ChatRequestBody = {
       agentId,
       text: request.text,
-      stream: request.stream === 'true',
+      stream: request.stream,
       roomId,
       userId,
       user: request.user,
