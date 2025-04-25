@@ -36,27 +36,6 @@ export class ApiKeyService {
     return createHash('sha256').update(key).digest('hex');
   }
 
-  /**
-   * Get all user information from MongoDB
-   */
-  async getUserInfo(userId: string) {
-    // Get user data from memories collection
-    const memory = await this.mongoService.client
-      .db('agent')
-      .collection('memories')
-      .findOne(
-        { userId },
-        { sort: { createdAt: -1 } }
-      );
-    
-    return {
-      userId,
-      chain: memory?.chain,
-      address: memory?.address,
-      roomId: memory?.roomId,
-      agentId: memory?.agentId
-    };
-  }
 
   /**
    * Create a new API key for a user
@@ -77,10 +56,7 @@ export class ApiKeyService {
 
     const key = this.generateSecureKey();
     const hashedKey = this.hashKey(key);
-    
-    const userInfo = await this.getUserInfo(userId);
-    
-    
+ 
     // Get max expiration days from config or use default
     const maxExpirationDays = this.configService.get<number>('API_KEY_EXPIRATION_DAYS') 
       || this.DEFAULT_API_KEY_EXPIRATION_DAYS;
@@ -140,11 +116,11 @@ export class ApiKeyService {
   }
 
   /**
-   * Get all API keys for a user
+   * Get all API keys for a user by address
    */
-  async listApiKeys(userId: string): Promise<Omit<ApiKey, 'key'>[]> {
+  async listApiKeys(address: string): Promise<Omit<ApiKey, 'key'>[]> {
     const apiKeys = await this.apiKeysCollection
-      .find({ userId, active: true })
+      .find({ address, active: true })
       .toArray();
 
     // Don't return the hashed key to the client
@@ -154,17 +130,17 @@ export class ApiKeyService {
   /**
    * Revoke an API key
    */
-  async revokeApiKey(apiKeyId: string, userId: string): Promise<boolean> {
+  async revokeApiKey(apiKeyId: string, address: string): Promise<boolean> {
     const result = await this.apiKeysCollection.updateOne(
-      { _id: new ObjectId(apiKeyId), userId },
+      { _id: new ObjectId(apiKeyId), address },
       { $set: { active: false } },
     );
 
     const success = result.modifiedCount > 0;
     if (success) {
-      this.logger.debug(`API key ${apiKeyId} revoked for user ${userId}`);
+      this.logger.debug(`API key ${apiKeyId} revoked for address ${address}`);
     } else {
-      this.logger.debug(`Failed to revoke API key ${apiKeyId} for user ${userId}`);
+      this.logger.debug(`Failed to revoke API key ${apiKeyId} for address ${address}`);
     }
     
     return success;
@@ -173,20 +149,36 @@ export class ApiKeyService {
   /**
    * Delete an API key
    */
-  async deleteApiKey(apiKeyId: string, userId: string): Promise<boolean> {
+  async deleteApiKey(apiKeyId: string, address: string): Promise<boolean> {
     const result = await this.apiKeysCollection.deleteOne({
       _id: new ObjectId(apiKeyId),
-      userId
+      address
     });
 
     const success = result.deletedCount > 0;
     if (success) {
-      this.logger.debug(`API key ${apiKeyId} permanently deleted for user ${userId}`);
+      this.logger.debug(`API key ${apiKeyId} permanently deleted for address ${address}`);
     } else {
-      this.logger.debug(`Failed to delete API key ${apiKeyId} for user ${userId}`);
+      this.logger.debug(`Failed to delete API key ${apiKeyId} for address ${address}`);
     }
     
     return success;
+  }
+
+  /**
+   * Get an API key by its ID
+   */
+  async getApiKeyById(apiKeyId: string): Promise<ApiKey | null> {
+    try {
+      const apiKey = await this.apiKeysCollection.findOne({
+        _id: new ObjectId(apiKeyId)
+      });
+      
+      return apiKey;
+    } catch (error) {
+      this.logger.error(`Failed to retrieve API key ${apiKeyId}: ${error.message}`);
+      return null;
+    }
   }
 
 } 

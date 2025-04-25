@@ -8,15 +8,20 @@ import {
   Request,
   UseGuards,
   Query,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiKeyService } from './api-key.service.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { NftService } from '../nft/nft.service.js';
+import { stringToUuid } from '../utils/string-to-uuid.js';
 
 @Controller('api-keys')
 export class ApiKeyController {
   constructor(
     private readonly apiKeyService: ApiKeyService,
+    private readonly nftService: NftService,
     private logger: TransientLoggerService,
   ) {
     this.logger.setContext('ApiKeyController');
@@ -28,48 +33,58 @@ export class ApiKeyController {
     @Request() req,
     @Body() createDto: { 
       name: string, 
-      expirationDays?: number, 
-      userId?: string,
-      roomId?: string,
-      agentId?: string,
-      chain?: string,
-      address?: string,
+      expirationDays?: number,
+      nftId: string,
     },
   ) {
-    // Use userId from request if not provided in body
-    const userId = createDto.userId;
+    // Get authenticated user's address from JWT token
+    const authenticatedAddress = req['X-USER-ADDRESS'];
+    const authenticatedChain = req['X-USER-CHAIN'];
     
-    if (!userId) {
-      this.logger.error('Failed to create API key: User ID not found in request or body');
-      throw new Error('User ID is required to create an API key');
+    // Validate NFT ownership using nftService
+    const isAdmin = await this.nftService.isNftAdmin(
+      authenticatedChain, 
+      authenticatedAddress, 
+      createDto.nftId
+    );
+    
+    if (!isAdmin) {
+      this.logger.error(`Security violation: Address ${authenticatedAddress} attempted to use NFT ${createDto.nftId} they don't own`);
+      throw new UnauthorizedException('You can only use NFTs that you own');
     }
     
-    this.logger.debug(`Creating API key for user ${userId}`);
+    // Get NFT data to extract agentId
+    const nft = await this.nftService.getNftById(authenticatedChain, createDto.nftId);
+    
+    // Generate userId from NFT ID
+    const userId = stringToUuid(authenticatedAddress);
+    const roomId = userId; // Set roomId equal to userId
+    const agentId = nft.agentId;
+
+    this.logger.debug(`Creating API key for NFT ${createDto.nftId} with userId ${userId}`);
     
     const key = await this.apiKeyService.createApiKey(
       userId,
       createDto.name,
       createDto.expirationDays,
-      createDto.roomId,
-      createDto.agentId,
-      createDto.chain,
-      createDto.address
+      roomId,
+      agentId,
+      authenticatedChain,
+      authenticatedAddress
     );
     
+    this.logger.debug(`Successfully created API key for NFT ${createDto.nftId}`);
     return { key };
   }
 
   @Get()
   @UseGuards(AuthGuard)
-  async listApiKeys(@Request() req, @Query('userId') userId?: string) {
-
-    if (!userId) {
-      this.logger.error('Failed to list API keys: User ID not found');
-      throw new Error('User ID is required to list API keys');
-    }
+  async listApiKeys(@Request() req) {
+    // Get authenticated user's address from JWT token
+    const authenticatedAddress = req['X-USER-ADDRESS'];
     
-    this.logger.debug(`Listing API keys for user ${userId}`);
-    const keys = await this.apiKeyService.listApiKeys(userId);
+    this.logger.debug(`Listing API keys for address ${authenticatedAddress}`);
+    const keys = await this.apiKeyService.listApiKeys(authenticatedAddress);
     return { keys };
   }
 
@@ -77,16 +92,24 @@ export class ApiKeyController {
   @UseGuards(AuthGuard)
   async revokeApiKey(
     @Param('id') id: string, 
-    @Request() req,
-    @Query('userId') userId?: string
+    @Request() req
   ) {
-    if (!userId) {
-      this.logger.error('Failed to revoke API key: User ID not found');
-      throw new Error('User ID is required to revoke an API key');
+    // Get authenticated user's address from JWT token
+    const authenticatedAddress = req['X-USER-ADDRESS'];
+    
+    // Verify the API key belongs to this address
+    const apiKey = await this.apiKeyService.getApiKeyById(id);
+    if (!apiKey) {
+      throw new UnauthorizedException('API key not found');
     }
     
-    this.logger.debug(`Revoking API key ${id} for user ${userId}`);
-    const success = await this.apiKeyService.revokeApiKey(id, userId);
+    if (apiKey.address !== authenticatedAddress) {
+      this.logger.error(`Security violation: Address ${authenticatedAddress} attempted to revoke API key ${id} belonging to another address`);
+      throw new ForbiddenException('You can only revoke your own API keys');
+    }
+    
+    this.logger.debug(`Revoking API key ${id} for address ${authenticatedAddress}`);
+    const success = await this.apiKeyService.revokeApiKey(id, authenticatedAddress);
     return { success };
   }
 
@@ -94,16 +117,24 @@ export class ApiKeyController {
   @UseGuards(AuthGuard)
   async deleteApiKey(
     @Param('id') id: string, 
-    @Request() req,
-    @Query('userId') userId?: string
+    @Request() req
   ) {
-    if (!userId) {
-      this.logger.error('Failed to delete API key: User ID not found');
-      throw new Error('User ID is required to delete an API key');
+    // Get authenticated user's address from JWT token
+    const authenticatedAddress = req['X-USER-ADDRESS'];
+    
+    // Verify the API key belongs to this address
+    const apiKey = await this.apiKeyService.getApiKeyById(id);
+    if (!apiKey) {
+      throw new UnauthorizedException('API key not found');
     }
     
-    this.logger.debug(`Permanently deleting API key ${id} for user ${userId}`);
-    const success = await this.apiKeyService.deleteApiKey(id, userId);
+    if (apiKey.address !== authenticatedAddress) {
+      this.logger.error(`Security violation: Address ${authenticatedAddress} attempted to delete API key ${id} belonging to another address`);
+      throw new ForbiddenException('You can only delete your own API keys');
+    }
+    
+    this.logger.debug(`Permanently deleting API key ${id} for address ${authenticatedAddress}`);
+    const success = await this.apiKeyService.deleteApiKey(id, authenticatedAddress);
     return { success };
   }
 } 

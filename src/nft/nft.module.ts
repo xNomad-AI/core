@@ -13,6 +13,6 @@ import { NftBaseService } from './nft-base.service.js';
   imports: [AgentModule, AddressModule, TasksModule],
   providers: [NftService, NftSyncService, NftConfigService, NftBaseService],
   controllers: [NftController],
-  exports: [],
+  exports: [NftService, NftBaseService, NftConfigService],
 })
 export class NftModule {}

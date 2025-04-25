@@ -15,6 +15,20 @@ export interface ProcessChatResponse {
   text: string;
 }
 
+/**
+ * Interface for the request body sent to the agent service
+ */
+export interface ChatRequestBody {
+  agentId: string;
+  text: string;
+  stream: string;
+  roomId?: string;
+  userId: string;
+  user: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
 export interface UserContext {
   userId: string;
   roomId?: string;

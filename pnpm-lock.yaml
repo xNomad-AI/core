@@ -180,6 +180,9 @@ importers:
       https-proxy-agent:
         specifier: ^7.0.6
         version: 7.0.6
+      js-sha1:
+        specifier: ^0.7.0
+        version: 0.7.0
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
