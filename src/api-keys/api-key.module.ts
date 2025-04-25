@@ -3,6 +3,7 @@ import { ApiKeyService } from './api-key.service.js';
 import { ApiKeyController } from './api-key.controller.js';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { NftModule } from '../nft/nft.module.js';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
       inject: [ConfigService],
     }),
+    NftModule,
   ],
   controllers: [ApiKeyController],
   providers: [ApiKeyService],

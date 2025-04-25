@@ -14,47 +14,17 @@ import {
 import { ApiKeyService } from './api-key.service.js';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { NftService } from '../nft/nft.service.js';
+import { stringToUuid } from '../utils/string-to-uuid.js';
 
 @Controller('api-keys')
 export class ApiKeyController {
   constructor(
     private readonly apiKeyService: ApiKeyService,
+    private readonly nftService: NftService,
     private logger: TransientLoggerService,
   ) {
     this.logger.setContext('ApiKeyController');
-  }
-
-  // Validate that the authenticated user owns the userId and specified resources
-  private async validateUserOwnership(
-    authenticatedAddress: string, 
-    userId: string,
-    resourceId?: { agentId?: string }
-  ) {
-    if (!authenticatedAddress) {
-      this.logger.error('Security violation: No authenticated address found');
-      throw new UnauthorizedException('Authentication required');
-    }
-
-    if (!userId) {
-      this.logger.error('Security violation: No userId provided');
-      throw new UnauthorizedException('User ID is required');
-    }
-
-    // Verify user ownership
-    const userInfo = await this.apiKeyService.getUserInfo(userId);
-    
-    if (!userInfo || userInfo.address !== authenticatedAddress) {
-      this.logger.error(`Security violation: Address ${authenticatedAddress} attempted to access userId ${userId} they don't own`);
-      throw new UnauthorizedException('You can only access your own account resources');
-    }
-
-    // Verify resource ownership if specified
-    if (resourceId?.agentId && userInfo.agentId !== resourceId.agentId) {
-      this.logger.error(`Security violation: User ${userId} attempted to use unauthorized agentId ${resourceId.agentId}`);
-      throw new ForbiddenException('You can only use agents that belong to your account');
-    }
-
-    return userInfo;
   }
 
   @Post()
@@ -63,36 +33,47 @@ export class ApiKeyController {
     @Request() req,
     @Body() createDto: { 
       name: string, 
-      expirationDays?: number, 
-      userId?: string,
-      roomId?: string,
-      agentId?: string,
+      expirationDays?: number,
+      nftId: string,
     },
   ) {
     // Get authenticated user's address from JWT token
     const authenticatedAddress = req['X-USER-ADDRESS'];
     const authenticatedChain = req['X-USER-CHAIN'];
     
-    // Validate user ownership and resources
-    const userInfo = await this.validateUserOwnership(
-      authenticatedAddress,
-      createDto.userId,
-      { agentId: createDto.agentId }
+    // Validate NFT ownership using nftService
+    const isAdmin = await this.nftService.isNftAdmin(
+      authenticatedChain, 
+      authenticatedAddress, 
+      createDto.nftId
     );
     
-    this.logger.debug(`Creating API key for validated user ${createDto.userId}`);
+    if (!isAdmin) {
+      this.logger.error(`Security violation: Address ${authenticatedAddress} attempted to use NFT ${createDto.nftId} they don't own`);
+      throw new UnauthorizedException('You can only use NFTs that you own');
+    }
+    
+    // Get NFT data to extract agentId
+    const nft = await this.nftService.getNftById(authenticatedChain, createDto.nftId);
+    
+    // Generate userId from NFT ID
+    const userId = stringToUuid(createDto.nftId);
+    const roomId = userId; // Set roomId equal to userId
+    const agentId = nft.agentId;
+
+    this.logger.debug(`Creating API key for NFT ${createDto.nftId} with userId ${userId}`);
     
     const key = await this.apiKeyService.createApiKey(
-      createDto.userId,
+      userId,
       createDto.name,
       createDto.expirationDays,
-      createDto.roomId ,
-      createDto.agentId,
+      roomId,
+      agentId,
       authenticatedChain,
       authenticatedAddress
     );
     
-    this.logger.debug(`Successfully created API key for user ${createDto.userId}`);
+    this.logger.debug(`Successfully created API key for NFT ${createDto.nftId}`);
     return { key };
   }
 
@@ -101,9 +82,6 @@ export class ApiKeyController {
   async listApiKeys(@Request() req, @Query('userId') userId?: string) {
     // Get authenticated user's address from JWT token
     const authenticatedAddress = req['X-USER-ADDRESS'];
-    
-    // Validate user ownership
-    await this.validateUserOwnership(authenticatedAddress, userId);
     
     this.logger.debug(`Listing API keys for validated user ${userId}`);
     const keys = await this.apiKeyService.listApiKeys(userId);
@@ -120,9 +98,7 @@ export class ApiKeyController {
     // Get authenticated user's address from JWT token
     const authenticatedAddress = req['X-USER-ADDRESS'];
     
-    // Validate user ownership
-    await this.validateUserOwnership(authenticatedAddress, userId);
-    
+ 
     // Additional validation: verify the API key belongs to this user
     const apiKey = await this.apiKeyService.getApiKeyById(id);
     if (!apiKey) {
@@ -148,9 +124,6 @@ export class ApiKeyController {
   ) {
     // Get authenticated user's address from JWT token
     const authenticatedAddress = req['X-USER-ADDRESS'];
-    
-    // Validate user ownership
-    await this.validateUserOwnership(authenticatedAddress, userId);
     
     // Additional validation: verify the API key belongs to this user
     const apiKey = await this.apiKeyService.getApiKeyById(id);

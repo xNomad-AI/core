@@ -36,27 +36,6 @@ export class ApiKeyService {
     return createHash('sha256').update(key).digest('hex');
   }
 
-  /**
-   * Get all user information from MongoDB
-   */
-  async getUserInfo(userId: string) {
-    // Get user data from memories collection
-    const memory = await this.mongoService.client
-      .db('agent')
-      .collection('memories')
-      .findOne(
-        { userId },
-        { sort: { createdAt: -1 } }
-      );
-    
-    return {
-      userId,
-      chain: memory?.chain,
-      address: memory?.address,
-      roomId: memory?.roomId,
-      agentId: memory?.agentId
-    };
-  }
 
   /**
    * Create a new API key for a user
