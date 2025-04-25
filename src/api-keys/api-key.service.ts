@@ -116,11 +116,11 @@ export class ApiKeyService {
   }
 
   /**
-   * Get all API keys for a user
+   * Get all API keys for a user by address
    */
-  async listApiKeys(userId: string): Promise<Omit<ApiKey, 'key'>[]> {
+  async listApiKeys(address: string): Promise<Omit<ApiKey, 'key'>[]> {
     const apiKeys = await this.apiKeysCollection
-      .find({ userId, active: true })
+      .find({ address, active: true })
       .toArray();
 
     // Don't return the hashed key to the client
@@ -130,17 +130,17 @@ export class ApiKeyService {
   /**
    * Revoke an API key
    */
-  async revokeApiKey(apiKeyId: string, userId: string): Promise<boolean> {
+  async revokeApiKey(apiKeyId: string, address: string): Promise<boolean> {
     const result = await this.apiKeysCollection.updateOne(
-      { _id: new ObjectId(apiKeyId), userId },
+      { _id: new ObjectId(apiKeyId), address },
       { $set: { active: false } },
     );
 
     const success = result.modifiedCount > 0;
     if (success) {
-      this.logger.debug(`API key ${apiKeyId} revoked for user ${userId}`);
+      this.logger.debug(`API key ${apiKeyId} revoked for address ${address}`);
     } else {
-      this.logger.debug(`Failed to revoke API key ${apiKeyId} for user ${userId}`);
+      this.logger.debug(`Failed to revoke API key ${apiKeyId} for address ${address}`);
     }
     
     return success;
@@ -149,17 +149,17 @@ export class ApiKeyService {
   /**
    * Delete an API key
    */
-  async deleteApiKey(apiKeyId: string, userId: string): Promise<boolean> {
+  async deleteApiKey(apiKeyId: string, address: string): Promise<boolean> {
     const result = await this.apiKeysCollection.deleteOne({
       _id: new ObjectId(apiKeyId),
-      userId
+      address
     });
 
     const success = result.deletedCount > 0;
     if (success) {
-      this.logger.debug(`API key ${apiKeyId} permanently deleted for user ${userId}`);
+      this.logger.debug(`API key ${apiKeyId} permanently deleted for address ${address}`);
     } else {
-      this.logger.debug(`Failed to delete API key ${apiKeyId} for user ${userId}`);
+      this.logger.debug(`Failed to delete API key ${apiKeyId} for address ${address}`);
     }
     
     return success;

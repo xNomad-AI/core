@@ -57,7 +57,7 @@ export class ApiKeyController {
     const nft = await this.nftService.getNftById(authenticatedChain, createDto.nftId);
     
     // Generate userId from NFT ID
-    const userId = stringToUuid(createDto.nftId);
+    const userId = stringToUuid(authenticatedAddress);
     const roomId = userId; // Set roomId equal to userId
     const agentId = nft.agentId;
 
@@ -79,12 +79,12 @@ export class ApiKeyController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async listApiKeys(@Request() req, @Query('userId') userId?: string) {
+  async listApiKeys(@Request() req) {
     // Get authenticated user's address from JWT token
     const authenticatedAddress = req['X-USER-ADDRESS'];
     
-    this.logger.debug(`Listing API keys for validated user ${userId}`);
-    const keys = await this.apiKeyService.listApiKeys(userId);
+    this.logger.debug(`Listing API keys for address ${authenticatedAddress}`);
+    const keys = await this.apiKeyService.listApiKeys(authenticatedAddress);
     return { keys };
   }
 
@@ -92,26 +92,24 @@ export class ApiKeyController {
   @UseGuards(AuthGuard)
   async revokeApiKey(
     @Param('id') id: string, 
-    @Request() req,
-    @Query('userId') userId?: string
+    @Request() req
   ) {
     // Get authenticated user's address from JWT token
     const authenticatedAddress = req['X-USER-ADDRESS'];
     
- 
-    // Additional validation: verify the API key belongs to this user
+    // Verify the API key belongs to this address
     const apiKey = await this.apiKeyService.getApiKeyById(id);
     if (!apiKey) {
       throw new UnauthorizedException('API key not found');
     }
     
-    if (apiKey.userId !== userId) {
-      this.logger.error(`Security violation: User ${userId} attempted to revoke API key ${id} belonging to another user`);
+    if (apiKey.address !== authenticatedAddress) {
+      this.logger.error(`Security violation: Address ${authenticatedAddress} attempted to revoke API key ${id} belonging to another address`);
       throw new ForbiddenException('You can only revoke your own API keys');
     }
     
-    this.logger.debug(`Revoking API key ${id} for validated user ${userId}`);
-    const success = await this.apiKeyService.revokeApiKey(id, userId);
+    this.logger.debug(`Revoking API key ${id} for address ${authenticatedAddress}`);
+    const success = await this.apiKeyService.revokeApiKey(id, authenticatedAddress);
     return { success };
   }
 
@@ -119,25 +117,24 @@ export class ApiKeyController {
   @UseGuards(AuthGuard)
   async deleteApiKey(
     @Param('id') id: string, 
-    @Request() req,
-    @Query('userId') userId?: string
+    @Request() req
   ) {
     // Get authenticated user's address from JWT token
     const authenticatedAddress = req['X-USER-ADDRESS'];
     
-    // Additional validation: verify the API key belongs to this user
+    // Verify the API key belongs to this address
     const apiKey = await this.apiKeyService.getApiKeyById(id);
     if (!apiKey) {
       throw new UnauthorizedException('API key not found');
     }
     
-    if (apiKey.userId !== userId) {
-      this.logger.error(`Security violation: User ${userId} attempted to delete API key ${id} belonging to another user`);
+    if (apiKey.address !== authenticatedAddress) {
+      this.logger.error(`Security violation: Address ${authenticatedAddress} attempted to delete API key ${id} belonging to another address`);
       throw new ForbiddenException('You can only delete your own API keys');
     }
     
-    this.logger.debug(`Permanently deleting API key ${id} for validated user ${userId}`);
-    const success = await this.apiKeyService.deleteApiKey(id, userId);
+    this.logger.debug(`Permanently deleting API key ${id} for address ${authenticatedAddress}`);
+    const success = await this.apiKeyService.deleteApiKey(id, authenticatedAddress);
     return { success };
   }
 } 
