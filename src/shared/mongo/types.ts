@@ -57,6 +57,7 @@ export interface AINft {
     solana: string;
     evm: string;
   };
+  minted: boolean; // true if minted on chain
   updatedAt: Date;
   createdAt: Date;
 }
@@ -316,4 +317,20 @@ export interface Order {
   blockNumber?: number;
   updatedAt: Date;
   createdAt: Date;
+}
+
+export interface ApiKey {
+  _id?: ObjectId;
+  key: string;
+  userId: string;
+  chain: string;
+  address: string;
+  roomId?: string;
+  agentId?: string;
+  tokenPayload?: object;
+  name: string;
+  createdAt: Date;
+  expiresAt: Date;
+  lastUsed?: Date;
+  active: boolean;
 }

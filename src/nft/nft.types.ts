@@ -86,6 +86,7 @@ export async function transformToAINft(nft: Nft): Promise<AINft> {
     aiAgent: aiAgent as AIAgent,
     agentAccount: undefined,
     agentId: undefined,
+    minted: true,
     updatedAt: new Date(),
     createdAt: new Date(),
   };

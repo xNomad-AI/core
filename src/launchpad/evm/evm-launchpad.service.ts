@@ -8,6 +8,7 @@ import { StoreMemory } from '@web3-storage/w3up-client/stores/memory';
 import { ethers } from 'ethers';
 import { ElizaManagerService } from '../../agent/eliza-manager.service.js';
 import { MongoService } from '../../shared/mongo/mongo.service.js';
+import { AIAgent } from '../../shared/mongo/types.js';
 import { TransientLoggerService } from '../../shared/transient-logger.service.js';
 import { CommonCollectionAbi } from './abi.js';
 
@@ -133,12 +134,39 @@ export class EvmLaunchpadService {
       agentAddressValue,
     });
 
+    await this.mongo.nfts.insertOne({
+      nftId: `${chain}:${contractAddress}:${tokenId.toString()}`,
+      chain,
+      collectionId: this.getCommonCollectionId(),
+      collectionName: 'Nomad Society',
+      contractAddress,
+      image: nft.image,
+      name: nft.name,
+      mint: null,
+      tokenId: tokenId.toString(),
+      tokenURI: uri,
+      rarity: null,
+      traits: [],
+      aiAgent: metadata.ai_agent as AIAgent,
+      agentAccount: null,
+      agentId: null,
+      minted: false,
+      updatedAt: new Date(),
+      createdAt: new Date(),
+    });
+
     return {
       tx,
       fee,
       feeAfterDiscount,
       discountPercentage,
     };
+  }
+
+  getCommonCollectionId() {
+    return process.env.RUN_ENV === 'dev'
+      ? 'dc6c78596874d160275de78a4df42209'
+      : '1a8b4660af2f42ab6c783c224875ce59';
   }
 
   async constructMintTx({
