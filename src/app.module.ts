@@ -19,6 +19,7 @@ import { OrderModule } from './order/order.module.js';
 import { ChatModule } from './chat/chat.module.js';
 import { ApiKeyModule } from './api-keys/api-key.module.js';
 import { ApiKeyMiddleware } from './api-keys/api-key.middleware.js';
+import { AlphaModule } from './alpha/alpha.module.js';
 
 EventEmitter.defaultMaxListeners = 10;
 
@@ -46,6 +47,7 @@ EventEmitter.defaultMaxListeners = 10;
     OrderModule,
     ChatModule,
     ApiKeyModule,
+    AlphaModule
   ],
   controllers: [],
   providers: [],
