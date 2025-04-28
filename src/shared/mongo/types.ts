@@ -359,4 +359,6 @@ export interface TwitterKOL {
   isAutomated: boolean;
   automatedBy?: string;
   lastUpdated: Date;
+  pnl30d?: number;
+  pnl30dAmount?: number;  // e.g., 92.9
 }

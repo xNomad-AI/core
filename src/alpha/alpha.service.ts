@@ -18,21 +18,31 @@ export class AlphaService {
     if (search) {
       query = {
         $or: [
-          { twitterHandle: { $regex: search, $options: 'i' } },
-          { userName: { $regex: search, $options: 'i' } },
-          { name: { $regex: search, $options: 'i' } },
-        ],
+          { twitterHandle: { $regex: `^${search}`, $options: 'i' } },
+          { userName: { $regex: `^${search}`, $options: 'i' } },
+          { name: { $regex: `^${search}`, $options: 'i' } },
+        ]
       };
     }
 
+    // Add filter to only show KOLs with PnL data
+    const queryWithPnl = {
+      ...query,
+      pnl30d: { $exists: true },
+      pnl30dAmount: { $exists: true }
+    };
+
     const [items, total] = await Promise.all([
       this.mongoService.twitterKols
-        .find(query)
-        .sort({ pnl_30d: -1 })
+        .find(queryWithPnl)
+        .sort({ 
+          pnl30d: -1,  // Primary sort by percentage
+          pnl30dAmount: -1  // Secondary sort by amount
+        })
         .skip(skip)
         .limit(limit)
         .toArray(),
-      this.mongoService.twitterKols.countDocuments(query),
+      this.mongoService.twitterKols.countDocuments(queryWithPnl),
     ]);
 
     return {
