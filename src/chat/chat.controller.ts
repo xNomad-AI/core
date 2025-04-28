@@ -51,7 +51,7 @@ export class ChatController {
     const request: ProcessChatRequest = {
       text: userText,
       user: 'user',
-      stream: body.stream ? 'true' : 'false',
+      stream: 'false', // Disable streaming for now
       apiKey,
       temperature: body.temperature,
       max_tokens: body.max_tokens,
