@@ -20,6 +20,7 @@ import {
   Swarm,
   Order, CollectionConfig,
   LimitOrder,
+  TwitterKOL,
 } from './types.js';
 
 @Injectable()
@@ -175,4 +176,8 @@ export class MongoService implements OnModuleInit {
   get orders() {
     return this.getCollection<Order>('orders');
   }
+
+get twitterKols() {
+  return this.getCollection<TwitterKOL>('twitterKols');
+}
 }
