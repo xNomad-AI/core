@@ -28,7 +28,7 @@ export class AlphaService {
     const [items, total] = await Promise.all([
       this.mongoService.twitterKols
         .find(query)
-        .sort({ followers: -1 })
+        .sort({ pnl_30d: -1 })
         .skip(skip)
         .limit(limit)
         .toArray(),
