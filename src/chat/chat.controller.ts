@@ -1,16 +1,18 @@
-import { Body, Controller, Post, UseGuards, Param, UseInterceptors, UploadedFile, Request } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Param, UseInterceptors, UploadedFile, Request, HttpException, HttpStatus } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../shared/auth/auth.guard.js';
 import { ChatService } from './chat.service.js';
 import { encode } from 'gpt-tokenizer';
 import { ProcessChatRequest, ChatCompletionResponse } from './chat.types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { RateLimitService } from '../shared/rate-limit.service.js';
 
 @Controller('/v1/chat')
 export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly logger: TransientLoggerService,
+    private readonly rateLimitService: RateLimitService,
   ) {
     this.logger.setContext('ChatController');
   }
@@ -30,6 +32,19 @@ export class ChatController {
   ): Promise<ChatCompletionResponse> {
     this.logger.debug('Processing chat completion request');
     
+    // Check rate limit
+    const userAddress = req['X-USER-ADDRESS'];
+    const isAllowed = await this.rateLimitService.checkRateLimit(userAddress);
+    
+    if (!isAllowed) {
+      const remainingTime = await this.rateLimitService.getResetTime(userAddress);
+      throw new HttpException({
+        status: HttpStatus.TOO_MANY_REQUESTS,
+        error: 'Rate limit exceeded',
+        message: `Please try again in ${Math.ceil((remainingTime - Date.now()) / 1000)} seconds`,
+      }, HttpStatus.TOO_MANY_REQUESTS);
+    }
+    
     // Extract the last user message from the messages array
     const lastMessage = body.messages[body.messages.length - 1];
     const userText = lastMessage.content;
@@ -44,14 +59,11 @@ export class ChatController {
 
     this.logger.debug(`API key present: ${!!apiKey} (Source: ${req.headers['x-api-key'] ? 'X-API-Key header' : (req['apiKey'] ? 'Authorization header' : 'None')})`);
     
-    // Extract userId from JWT token as fallback
-    const userId = req.userId;
-    
     // Create the request object
     const request: ProcessChatRequest = {
       text: userText,
       user: 'user',
-      stream: 'false', // Disable streaming for now
+      stream: body.stream ? 'true' : 'false',
       apiKey,
       temperature: body.temperature,
       max_tokens: body.max_tokens,
@@ -61,7 +73,6 @@ export class ChatController {
     this.logger.debug(`Sending to chat service: ${JSON.stringify({
       text: userText.substring(0, 50) + (userText.length > 50 ? '...' : ''),
       hasApiKey: !!apiKey,
-      hasUserId: !!userId,
       apiKeyValue: apiKey ? apiKey.substring(0, 5) + '...' : null,
       model: body.model
     })}`);
