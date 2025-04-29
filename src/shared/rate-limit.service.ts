@@ -20,7 +20,7 @@ interface RateLimitInfo {
  * - Per-user rate limiting
  * 
  * Configuration:
- * - RATE_LIMIT_DEFAULT_LIMIT: Maximum number of requests per window (default: 100)
+ * - RATE_LIMIT_DEFAULT_LIMIT: Maximum number of requests per window (default: 600)
  * - RATE_LIMIT_DEFAULT_WINDOW: Time window in seconds (default: 3600)
  */
 @Injectable()
@@ -28,7 +28,7 @@ export class RateLimitService {
   private readonly rateLimits: Map<RateLimitKey, RateLimitInfo> = new Map();
   
   // Configuration constants
-  private readonly DEFAULT_REQUESTS_PER_WINDOW = 100;  // Default requests allowed per window
+  private readonly DEFAULT_REQUESTS_PER_WINDOW = 600;  // Default requests allowed per window
   private readonly DEFAULT_WINDOW_SECONDS = 3600;      // Default window size (1 hour)
   private readonly defaultLimit: number;
   private readonly defaultWindow: number;
