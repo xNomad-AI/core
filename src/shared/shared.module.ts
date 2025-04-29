@@ -11,7 +11,6 @@ import { ConfigModule } from '@nestjs/config';
 import { SharedProvider as SolanaSharedProvider } from '@elizaos/plugin-solana';
 import { SharedProvider as EvmSharedProvider } from '@elizaos/plugin-evm';
 import { FourMemeApi } from './fourmeme.js';
-import { RateLimitService } from './rate-limit.service.js';
 
 @Global()
 @Module({
@@ -29,7 +28,6 @@ import { RateLimitService } from './rate-limit.service.js';
     ElevenlabsService,
     TokenInfoService,
     TradeMonitorService,
-    RateLimitService,
   ],
   exports: [
     TransientLoggerService,
@@ -39,7 +37,6 @@ import { RateLimitService } from './rate-limit.service.js';
     ElevenlabsService,
     TokenInfoService,
     TradeMonitorService,
-    RateLimitService,
   ],
 })
 export class SharedModule implements OnModuleInit {
