@@ -3,6 +3,7 @@ import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { EventEmitter } from 'events';
 import { TaskManagerModule } from '@xnomad/task-manager';
 
@@ -30,6 +31,10 @@ EventEmitter.defaultMaxListeners = 10;
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{
+      ttl: 60,
+      limit: 3,
+    }]),
     CacheModule.register({
       isGlobal: true,
       ttl: 120,

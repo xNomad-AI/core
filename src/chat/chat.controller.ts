@@ -5,53 +5,22 @@ import { ChatService } from './chat.service.js';
 import { encode } from 'gpt-tokenizer';
 import { ProcessChatRequest, ChatCompletionResponse } from './chat.types.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { RateLimitService } from '../shared/rate-limit.service.js';
-import PQueue from 'p-queue';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('/v1/chat')
+@UseGuards(ThrottlerGuard)
 export class ChatController {
-  private readonly userQueues: Map<string, PQueue> = new Map();
-  
-  private readonly MAX_QUEUE_SIZE = 2;  // Maximum requests in queue per user
-  private readonly MAX_CONCURRENT_PER_USER = 3;  // Maximum concurrent requests per user
-  private readonly REQUEST_TIMEOUT_MS = 20000;  // Request timeout in milliseconds
-
   constructor(
     private readonly chatService: ChatService,
     private readonly logger: TransientLoggerService,
-    private readonly rateLimitService: RateLimitService,
   ) {
     this.logger.setContext('ChatController');
-  }
-
-  private getOrCreateUserQueue(userAddress: string): PQueue {
-    let queue = this.userQueues.get(userAddress);
-    if (!queue) {
-      queue = new PQueue({ 
-        concurrency: this.MAX_CONCURRENT_PER_USER,
-        autoStart: true,
-        timeout: this.REQUEST_TIMEOUT_MS,
-        throwOnTimeout: true
-      });
-
-      // Monitor queue size
-      queue.on('add', () => {
-        this.logger.debug(`Queue size for user ${userAddress}: ${queue.size}, Pending: ${queue.pending}`);
-      });
-
-      // Handle queue errors
-      queue.on('error', (error) => {
-        this.logger.error(`Queue error for user ${userAddress}: ${error.message}`);
-      });
-
-      this.userQueues.set(userAddress, queue);
-    }
-    return queue;
   }
 
   @Post('/completions')
   @UseInterceptors(FileInterceptor('file'))
   @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 3, ttl: 30000 } })
   async processChat(
     @Body() body: {
       model?: string;
@@ -65,42 +34,10 @@ export class ChatController {
     try {
       const userAddress = req['X-USER-ADDRESS'];
       const accessToken = req.headers['authorization']?.split(' ')[1] || '';
-      const userQueue = this.getOrCreateUserQueue(userAddress);
 
-      // Check if user's queue is too full
-      if (userQueue.size >= this.MAX_QUEUE_SIZE) {
-        throw new HttpException({
-          status: HttpStatus.SERVICE_UNAVAILABLE,
-          error: 'Service busy',
-          message: `Too many requests in queue for this user (max ${this.MAX_QUEUE_SIZE}), please try again later`,
-        }, HttpStatus.SERVICE_UNAVAILABLE);
-      }
-
-      return new Promise<ChatCompletionResponse>((resolve, reject) => {
-        userQueue.add(async () => {
-          try {
-            this.logger.debug('Processing chat completion request');
-            
-            // Check rate limit (requests per hour)
-            const isAllowed = await this.rateLimitService.checkRateLimit(userAddress);
-            
-            if (!isAllowed) {
-              const remainingTime = await this.rateLimitService.getResetTime(userAddress);
-              throw new HttpException({
-                status: HttpStatus.TOO_MANY_REQUESTS,
-                error: 'Rate limit exceeded',
-                message: `Please try again in ${Math.ceil((remainingTime - Date.now()) / 1000)} seconds`,
-              }, HttpStatus.TOO_MANY_REQUESTS);
-            }
-
-            // Process the request
-            const response = await this.processRequest(body, req, userAddress, accessToken);
-            resolve(response);
-          } catch (error) {
-            reject(error);
-          }
-        });
-      });
+      this.logger.debug('Processing chat completion request');
+      const response = await this.processRequest(body, req, userAddress, accessToken);
+      return response;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
