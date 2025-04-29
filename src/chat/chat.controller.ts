@@ -10,7 +10,11 @@ import PQueue from 'p-queue';
 
 @Controller('/v1/chat')
 export class ChatController {
-  private readonly requestQueue: PQueue;
+  private readonly userQueues: Map<string, PQueue> = new Map();
+  
+  private readonly MAX_QUEUE_SIZE = 50;  // Maximum requests in queue per user
+  private readonly MAX_CONCURRENT_PER_USER = 3;  // Maximum concurrent requests per user
+  private readonly REQUEST_TIMEOUT_MS = 20000;  // Request timeout in milliseconds
 
   constructor(
     private readonly chatService: ChatService,
@@ -18,23 +22,31 @@ export class ChatController {
     private readonly rateLimitService: RateLimitService,
   ) {
     this.logger.setContext('ChatController');
-    // Process 3 requests concurrently, max 200 in queue
-    this.requestQueue = new PQueue({ 
-      concurrency: 3,
-      autoStart: true,
-      timeout: 30000, // 30 second timeout
-      throwOnTimeout: true
-    });
+  }
 
-    // Monitor queue size
-    this.requestQueue.on('add', () => {
-      this.logger.debug(`Queue size: ${this.requestQueue.size}, Pending: ${this.requestQueue.pending}`);
-    });
+  private getOrCreateUserQueue(userAddress: string): PQueue {
+    let queue = this.userQueues.get(userAddress);
+    if (!queue) {
+      queue = new PQueue({ 
+        concurrency: this.MAX_CONCURRENT_PER_USER,
+        autoStart: true,
+        timeout: this.REQUEST_TIMEOUT_MS,
+        throwOnTimeout: true
+      });
 
-    // Handle queue errors
-    this.requestQueue.on('error', (error) => {
-      this.logger.error(`Queue error: ${error.message}`);
-    });
+      // Monitor queue size
+      queue.on('add', () => {
+        this.logger.debug(`Queue size for user ${userAddress}: ${queue.size}, Pending: ${queue.pending}`);
+      });
+
+      // Handle queue errors
+      queue.on('error', (error) => {
+        this.logger.error(`Queue error for user ${userAddress}: ${error.message}`);
+      });
+
+      this.userQueues.set(userAddress, queue);
+    }
+    return queue;
   }
 
   @Post('/completions')
@@ -51,22 +63,24 @@ export class ChatController {
     @Request() req
   ): Promise<ChatCompletionResponse> {
     try {
-      // Check if queue is too full
-      if (this.requestQueue.size >= 200) {
+      const userAddress = req['X-USER-ADDRESS'];
+      const userQueue = this.getOrCreateUserQueue(userAddress);
+
+      // Check if user's queue is too full
+      if (userQueue.size >= this.MAX_QUEUE_SIZE) {
         throw new HttpException({
           status: HttpStatus.SERVICE_UNAVAILABLE,
           error: 'Service busy',
-          message: 'Too many requests in queue, please try again later',
+          message: `Too many requests in queue for this user (max ${this.MAX_QUEUE_SIZE}), please try again later`,
         }, HttpStatus.SERVICE_UNAVAILABLE);
       }
 
       return new Promise<ChatCompletionResponse>((resolve, reject) => {
-        this.requestQueue.add(async () => {
+        userQueue.add(async () => {
           try {
             this.logger.debug('Processing chat completion request');
             
-            // Check rate limit
-            const userAddress = req['X-USER-ADDRESS'];
+            // Check rate limit (requests per hour)
             const isAllowed = await this.rateLimitService.checkRateLimit(userAddress);
             
             if (!isAllowed) {
@@ -78,17 +92,10 @@ export class ChatController {
               }, HttpStatus.TOO_MANY_REQUESTS);
             }
 
-            try {
-              // Process the request
-              const response = await this.processRequest(body, req, userAddress);
-              resolve(response);
-            } finally {
-              // Always mark the request as complete
-              await this.rateLimitService.completeRequest(userAddress);
-            }
+            // Process the request
+            const response = await this.processRequest(body, req, userAddress);
+            resolve(response);
           } catch (error) {
-            // Make sure to complete the request even on error
-            await this.rateLimitService.completeRequest(req['X-USER-ADDRESS']);
             reject(error);
           }
         });
