@@ -23,23 +23,6 @@ interface RateLimitInfo {
  * - RATE_LIMIT_DEFAULT_LIMIT: Maximum number of requests per window (default: 100)
  * - RATE_LIMIT_DEFAULT_WINDOW: Time window in seconds (default: 3600)
  * 
- * Usage:
- * ```typescript
- * // In a controller:
- * @Injectable()
- * export class MyController {
- *   constructor(private rateLimitService: RateLimitService) {}
- * 
- *   async myEndpoint(req: Request) {
- *     const userId = req.userId;
- *     const isAllowed = await this.rateLimitService.checkRateLimit(userId);
- *     if (!isAllowed) {
- *       throw new HttpException('Rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
- *     }
- *     // Process request...
- *   }
- * }
- * ```
  */
 @Injectable()
 export class RateLimitService {
