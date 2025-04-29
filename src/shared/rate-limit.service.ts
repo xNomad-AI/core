@@ -22,11 +22,14 @@ interface RateLimitInfo {
  * Configuration:
  * - RATE_LIMIT_DEFAULT_LIMIT: Maximum number of requests per window (default: 100)
  * - RATE_LIMIT_DEFAULT_WINDOW: Time window in seconds (default: 3600)
- * 
  */
 @Injectable()
 export class RateLimitService {
   private readonly rateLimits: Map<RateLimitKey, RateLimitInfo> = new Map();
+  
+  // Configuration constants
+  private readonly DEFAULT_REQUESTS_PER_WINDOW = 100;  // Default requests allowed per window
+  private readonly DEFAULT_WINDOW_SECONDS = 3600;      // Default window size (1 hour)
   private readonly defaultLimit: number;
   private readonly defaultWindow: number;
 
@@ -34,10 +37,10 @@ export class RateLimitService {
     private readonly configService: ConfigService,
     private readonly logger: TransientLoggerService,
   ) {
-    this.defaultLimit = this.configService.get<number>('RATE_LIMIT_DEFAULT_LIMIT') || 100;
-    this.defaultWindow = this.configService.get<number>('RATE_LIMIT_DEFAULT_WINDOW') || 3600;
+    this.defaultLimit = this.configService.get<number>('RATE_LIMIT_DEFAULT_LIMIT') || this.DEFAULT_REQUESTS_PER_WINDOW;
+    this.defaultWindow = this.configService.get<number>('RATE_LIMIT_DEFAULT_WINDOW') || this.DEFAULT_WINDOW_SECONDS;
     this.logger.setContext('RateLimitService');
-    this.logger.debug(`Rate limit service initialized with limit: ${this.defaultLimit}, window: ${this.defaultWindow}s`);
+    this.logger.debug(`Rate limit service initialized with limit: ${this.defaultLimit} requests per ${this.defaultWindow}s window`);
   }
 
   /**
@@ -51,16 +54,17 @@ export class RateLimitService {
     this.logger.debug(`Checking rate limit for key: ${key}`);
     
     const currentTime = Date.now();
-    const rateLimit = this.rateLimits.get(key);
+    let rateLimit = this.rateLimits.get(key);
     const actualLimit = limit || this.defaultLimit;
     const actualWindow = window || this.defaultWindow;
 
     if (!rateLimit || currentTime > rateLimit.resetTime) {
       this.logger.debug(`Creating new rate limit for key: ${key}`);
-      this.rateLimits.set(key, {
+      rateLimit = {
         count: 1,
         resetTime: currentTime + actualWindow * 1000,
-      });
+      };
+      this.rateLimits.set(key, rateLimit);
       return true;
     }
 
