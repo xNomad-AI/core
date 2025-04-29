@@ -64,6 +64,7 @@ export class ChatController {
   ): Promise<ChatCompletionResponse> {
     try {
       const userAddress = req['X-USER-ADDRESS'];
+      const accessToken = req.headers['authorization']?.split(' ')[1] || '';
       const userQueue = this.getOrCreateUserQueue(userAddress);
 
       // Check if user's queue is too full
@@ -93,7 +94,7 @@ export class ChatController {
             }
 
             // Process the request
-            const response = await this.processRequest(body, req, userAddress);
+            const response = await this.processRequest(body, req, userAddress, accessToken);
             resolve(response);
           } catch (error) {
             reject(error);
@@ -113,7 +114,7 @@ export class ChatController {
     }
   }
 
-  private async processRequest(body: any, req: any, userAddress: string): Promise<ChatCompletionResponse> {
+  private async processRequest(body: any, req: any, userAddress: string, accessToken: string): Promise<ChatCompletionResponse> {
     // Extract the last user message from the messages array
     const lastMessage = body.messages[body.messages.length - 1];
     const userText = lastMessage.content;
@@ -136,7 +137,8 @@ export class ChatController {
       apiKey,
       temperature: body.temperature,
       max_tokens: body.max_tokens,
-      model: body.model
+      model: body.model,
+      accessToken
     };
     
     const response = await this.chatService.processChat(request);
