@@ -12,7 +12,7 @@ import PQueue from 'p-queue';
 export class ChatController {
   private readonly userQueues: Map<string, PQueue> = new Map();
   
-  private readonly MAX_QUEUE_SIZE = 50;  // Maximum requests in queue per user
+  private readonly MAX_QUEUE_SIZE = 2;  // Maximum requests in queue per user
   private readonly MAX_CONCURRENT_PER_USER = 3;  // Maximum concurrent requests per user
   private readonly REQUEST_TIMEOUT_MS = 20000;  // Request timeout in milliseconds
 
