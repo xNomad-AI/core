@@ -32,7 +32,7 @@ EventEmitter.defaultMaxListeners = 10;
     }),
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{
-      ttl: 60,
+      ttl: 10,
       limit: 3,
     }]),
     CacheModule.register({
