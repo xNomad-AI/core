@@ -8,7 +8,8 @@ export interface ProcessChatRequest {
     agentId?: string;
     temperature?: number;
     max_tokens?: number;
-    model?: string;
+    model?: string,
+    accessToken?: string;
 }
 
 export interface ProcessChatResponse {
@@ -27,6 +28,7 @@ export interface ChatRequestBody {
   user: string;
   temperature?: number;
   max_tokens?: number;
+  accessToken?: string;
 }
 
 export interface UserContext {

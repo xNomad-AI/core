@@ -46,7 +46,8 @@ export class ChatService {
       userId,
       user: request.user,
       temperature: request.temperature,
-      max_tokens: request.max_tokens
+      max_tokens: request.max_tokens,
+      accessToken: request.accessToken
     };
 
     const response = await this.request(chatRequestBody);
@@ -77,10 +78,16 @@ export class ChatService {
     })}`);
     
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      if (body.accessToken) {
+        headers['Authorization'] = `Bearer ${body.accessToken}`;
+      }
+
       const response = await firstValueFrom(
-        this.httpService.post<any[]>(url, body, {
-          headers: { 'Content-Type': 'application/json' }
-        })
+        this.httpService.post<any[]>(url, body, { headers })
       );
       
       this.logger.debug(`Response received: status=${response.status}`);

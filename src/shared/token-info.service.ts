@@ -46,6 +46,7 @@ export interface TokenTwitterInfoResponse {
   verified: boolean;
   avatar: string;
   can_dm: boolean;
+  pnl_30d?: number;
   tokenInfo: {
     tokenAddress: string;
     symbol: string;

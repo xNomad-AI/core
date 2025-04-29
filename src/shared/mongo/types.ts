@@ -334,3 +334,31 @@ export interface ApiKey {
   lastUsed?: Date;
   active: boolean;
 }
+
+export interface TwitterKOL {
+  twitterHandle: string;
+  solanaAddress: string;
+  twitterId: string;
+  name: string;
+  userName: string;
+  location?: string;
+  url?: string;
+  description?: string;
+  protected: boolean;
+  isVerified: boolean;
+  isBlueVerified: boolean;
+  followers: number;
+  following: number;
+  favouritesCount: number;
+  statusesCount: number;
+  mediaCount: number;
+  createdAt: string;
+  coverPicture?: string;
+  profilePicture?: string;
+  canDm: boolean;
+  isAutomated: boolean;
+  automatedBy?: string;
+  lastUpdated: Date;
+  pnl30d?: number;
+  pnl30dAmount?: number;  // e.g., 92.9
+}

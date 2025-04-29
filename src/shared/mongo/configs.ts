@@ -162,4 +162,14 @@ export const COLLECTIONS = [
     indexes: [],
     uniqueIndexes: [],
   },
+  {
+    db: DB_NAME,
+    name: 'twitterKols',
+    indexes: [
+      { followers: -1 },
+      { pnl30d: -1 },
+      { pnl30dAmount: -1 }
+    ],
+    uniqueIndexes: [{ twitterHandle: 1 }],
+  }
 ] as const;
