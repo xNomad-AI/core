@@ -84,18 +84,25 @@ export class ChatController {
     const promptTokens = encode(userText).length;
     const completionTokens = encode(response.text).length;
 
+    // Generate OpenAI-like ID
+    const randomString = [...Array(29)].map(() => 
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".charAt(
+        Math.floor(Math.random() * 62)
+      )
+    ).join('');
+    
     return {
-      id: `chatcmpl-${Date.now()}`,
+      id: `chatcmpl-${randomString}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: body.model || 'default-model',
+      model: '',
       choices: [{
         index: 0,
         message: {
           role: 'assistant',
           content: response.text
         },
-        finish_reason: 'stop'
+        finish_reason: ''
       }],
       usage: {
         prompt_tokens: promptTokens,
