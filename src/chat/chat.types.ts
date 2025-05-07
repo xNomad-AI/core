@@ -32,15 +32,15 @@ export interface ProcessChatResponse {
  * Interface for the request body sent to the agent service
  */
 export interface ChatRequestBody {
-    agentId: string;
-    text: string;
-    stream: string;
-    roomId?: string;
-    userId: string;
-    user: string;
-    temperature?: number;
-    max_tokens?: number;
-    accessToken?: string;
+  agentId: string;
+  text: string;
+  stream: string;
+  roomId?: string;
+  userId: string;
+  user: string;
+  temperature?: number;
+  max_tokens?: number;
+  accessToken?: string;
 }
 
 export interface UserContext {
@@ -50,21 +50,21 @@ export interface UserContext {
 }
 
 export interface ChatCompletionResponse {
-    id: string;
-    object: string;
-    created: number;
-    model: string;
-    choices: {
-        index: number;
-        message: {
-            role: 'assistant';
-            content: string;  // JSON string with text and analysis
-        };
-        finish_reason: string;
-    }[];
-    usage: {
-        prompt_tokens: number;
-        completion_tokens: number;
-        total_tokens: number;
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: {
+    index: number;
+    message: {
+      role: 'assistant';
+      content: string;  // JSON string with text and analysis
     };
+    finish_reason: string;
+}[];
+usage: {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+};
 }
