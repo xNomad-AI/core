@@ -82,9 +82,14 @@ export class ChatController {
 
     // Count tokens
     const promptTokens = encode(userText).length;
-    const responseContent = response.text + (response.analysis ? '\n' + JSON.stringify(response.analysis) : '');
+    const responseContent = [
+      response.text,
+      response.analysis ? JSON.stringify(response.analysis) : '',
+      response.status || '',
+      response.result || ''
+    ].filter(Boolean).join('\n');
     const completionTokens = encode(responseContent).length;
-
+    
     // Generate OpenAI-like ID
     const randomString = [...Array(29)].map(() => 
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".charAt(
