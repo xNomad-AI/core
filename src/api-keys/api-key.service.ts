@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ApiKeyService {
-  private DEFAULT_API_KEY_EXPIRATION_DAYS = 30;
+  private DEFAULT_API_KEY_EXPIRATION_DAYS = 366;
 
   constructor(
     private mongoService: MongoService,
