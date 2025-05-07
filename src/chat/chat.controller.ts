@@ -100,7 +100,10 @@ export class ChatController {
         index: 0,
         message: {
           role: 'assistant',
-          content: response.text
+          content: JSON.stringify({
+            text: response.text,
+            analysis: response.analysis
+          })
         },
         finish_reason: ''
       }],

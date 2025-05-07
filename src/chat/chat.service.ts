@@ -4,7 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { ProcessChatRequest, ProcessChatResponse, UserContext, ChatRequestBody } from './chat.types.js';
+import { ProcessChatRequest, ProcessChatResponse, ChatRequestBody } from './chat.types.js';
 import { ApiKeyService } from '../api-keys/api-key.service.js';
 
 @Injectable()
@@ -51,14 +51,26 @@ export class ChatService {
     };
 
     const response = await this.request(chatRequestBody);
+  
+    if (!Array.isArray(response) || response.length === 0) {
+      throw new Error('Invalid response format from agent service');
+    }
 
     this.logger.debug('Message processed successfully');
-    return { text: response[response.length - 1].text };
-
+    const lastMessage = response[response.length - 1];
+    
+    return {
+      text: lastMessage.text,
+      displayType: lastMessage.displayType,
+      action: lastMessage.action,
+      status: lastMessage.status,
+      result: lastMessage.result,
+      webAction: lastMessage.webAction,
+      analysis: lastMessage.analysis
+    };
   }
 
-
-  private async request(body: ChatRequestBody): Promise<any[]> {
+  private async request(body: ChatRequestBody): Promise<ProcessChatResponse[]> {
     this.logger.debug(`Sending request to agent ${body.agentId}`);
     
     if (!body.agentId) {
@@ -87,7 +99,7 @@ export class ChatService {
       }
 
       const response = await firstValueFrom(
-        this.httpService.post<any[]>(url, body, { headers })
+        this.httpService.post<ProcessChatResponse[]>(url, body, { headers })
       );
       
       this.logger.debug(`Response received: status=${response.status}`);
