@@ -103,7 +103,9 @@ export class ChatController {
           role: 'assistant',
           content: JSON.stringify({
             text: response.text,
-            analysis: response.analysis
+            analysis: response.analysis,
+            status: response.status,
+            result: response.result
           })
         },
         finish_reason: ''
