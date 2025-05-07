@@ -33,7 +33,7 @@ EventEmitter.defaultMaxListeners = 10;
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{
       ttl: 10000,
-      limit: 3,
+      limit: 40,
     }]),
     CacheModule.register({
       isGlobal: true,

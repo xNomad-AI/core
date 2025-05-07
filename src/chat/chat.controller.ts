@@ -20,7 +20,7 @@ export class ChatController {
   @Post('/completions')
   @UseInterceptors(FileInterceptor('file'))
   @UseGuards(AuthGuard)
-  @Throttle({ default: { limit: 3, ttl: 10000 } })
+  @Throttle({ default: { limit: 40, ttl: 10000 } })
   async processChat(
     @Body() body: {
       model?: string;
