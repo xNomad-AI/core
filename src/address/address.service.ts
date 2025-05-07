@@ -36,21 +36,20 @@ export class AddressService {
     nonceType: NonceType,
     signature: string,
   ) {
-    // const nonce = await this.mongo.addressNonces.findOne({
-    //   chain,
-    //   address,
-    //   nonceType,
-    // });
-    // if (!nonce || nonce.expiration.getTime() < Date.now()) {
-    //   throw new BadRequestException('Nonce expired');
-    // }
-    // if (chain === 'solana') {
-    //   return SolanaService.verifySignature(nonce.message, signature, address);
-    // } else if (ChainUtils.isEvm(chain)) {
-    //   return EvmService.verifySignature(nonce.message, signature, address);
-    // } else {
-    //   throw new BadRequestException(`Unsupported chain: ${chain}`);
-    // }
-    return true;
+    const nonce = await this.mongo.addressNonces.findOne({
+      chain,
+      address,
+      nonceType,
+    });
+    if (!nonce || nonce.expiration.getTime() < Date.now()) {
+      throw new BadRequestException('Nonce expired');
+    }
+    if (chain === 'solana') {
+      return SolanaService.verifySignature(nonce.message, signature, address);
+    } else if (ChainUtils.isEvm(chain)) {
+      return EvmService.verifySignature(nonce.message, signature, address);
+    } else {
+      throw new BadRequestException(`Unsupported chain: ${chain}`);
+    }
   }
 }
