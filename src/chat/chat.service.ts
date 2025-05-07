@@ -101,7 +101,7 @@ export class ChatService {
       const response = await firstValueFrom(
         this.httpService.post<ProcessChatResponse[]>(url, body, { headers })
       );
-      
+      this.logger.debug('Response data:', response.data);
       this.logger.debug(`Response received: status=${response.status}`);
       return response.data;
     } catch (error) {
