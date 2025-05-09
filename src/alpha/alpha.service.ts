@@ -71,10 +71,13 @@ export class AlphaService {
     if (!Array.isArray(data)) return { deleted: 0, inserted: 0, errors: ['Input is not an array'] };
     try {
       const deleteResult = await this.mongoService.twitterKols.deleteMany({});
-      const normalized = data.map(item => ({
-        ...item,
-        lastUpdated: toDate(item.lastUpdated),
-      }));
+      const normalized = data.map(item => {
+        const { _id, ...rest } = item as any;
+        return {
+          ...rest,
+          lastUpdated: toDate(item.lastUpdated),
+        };
+      });
       const insertResult = await this.mongoService.twitterKols.insertMany(normalized);
       return {
         deleted: deleteResult.deletedCount,
