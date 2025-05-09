@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { TwitterKolDto } from './alpha.types.js';
 
 @Injectable()
 export class AlphaService {
@@ -65,4 +66,34 @@ export class AlphaService {
       ] 
     });
   }
+
+  async bulkUpdatePnl(data: TwitterKolDto[]) {
+    if (!Array.isArray(data)) return { deleted: 0, inserted: 0, errors: ['Input is not an array'] };
+    try {
+      const deleteResult = await this.mongoService.twitterKols.deleteMany({});
+      const normalized = data.map(item => {
+        const { _id, ...rest } = item as any;
+        return {
+          ...rest,
+          lastUpdated: toDate(item.lastUpdated),
+        };
+      });
+      const insertResult = await this.mongoService.twitterKols.insertMany(normalized);
+      return {
+        deleted: deleteResult.deletedCount,
+        inserted: insertResult.insertedCount,
+        errors: []
+      };
+    } catch (err) {
+      return { deleted: 0, inserted: 0, errors: [err.message] };
+    }
+  }
+}
+
+function toDate(val: any): Date | null {
+  if (!val) return null;
+  if (val instanceof Date) return val;
+  if (typeof val === 'object' && '$date' in val) return new Date(val.$date);
+  if (typeof val === 'string') return new Date(val);
+  return null;
 }
