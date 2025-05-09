@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, Post, Body} from '@nestjs/common';
 import { AlphaService } from './alpha.service.js';
+import { TwitterKolDto } from './alpha.types.js';
 
 @Controller('/alpha')
 export class AlphaController {
@@ -17,5 +18,10 @@ export class AlphaController {
   @Get('/twitter-kols/:handle')
   async findTwitterKolByHandle(@Param('handle') handle: string) {
     return this.alphaService.findByHandle(handle);
+  }
+
+  @Post('/twitter-kols/bulk-update')
+  async bulkUpdateTwitterKols(@Body() data: TwitterKolDto[]) {
+    return this.alphaService.bulkUpdatePnl(data);
   }
 }
