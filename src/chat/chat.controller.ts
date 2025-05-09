@@ -20,7 +20,7 @@ export class ChatController {
   @Post('/completions')
   @UseInterceptors(FileInterceptor('file'))
   @UseGuards(AuthGuard)
-  @Throttle({ default: { limit: 3, ttl: 10000 } })
+  @Throttle({ default: { limit: 40, ttl: 10000 } })
   async processChat(
     @Body() body: {
       model?: string;
@@ -82,20 +82,38 @@ export class ChatController {
 
     // Count tokens
     const promptTokens = encode(userText).length;
-    const completionTokens = encode(response.text).length;
-
+    const responseContent = [
+      response.text,
+      response.analysis ? JSON.stringify(response.analysis) : '',
+      response.status || '',
+      response.result || ''
+    ].filter(Boolean).join('\n');
+    const completionTokens = encode(responseContent).length;
+    
+    // Generate OpenAI-like ID
+    const randomString = [...Array(29)].map(() => 
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".charAt(
+        Math.floor(Math.random() * 62)
+      )
+    ).join('');
+    
     return {
-      id: `chatcmpl-${Date.now()}`,
+      id: `chatcmpl-${randomString}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: body.model || 'default-model',
+      model: '',
       choices: [{
         index: 0,
         message: {
           role: 'assistant',
-          content: response.text
+          content: JSON.stringify({
+            text: response.text,
+            analysis: response.analysis,
+            status: response.status,
+            result: response.result
+          })
         },
-        finish_reason: 'stop'
+        finish_reason: ''
       }],
       usage: {
         prompt_tokens: promptTokens,

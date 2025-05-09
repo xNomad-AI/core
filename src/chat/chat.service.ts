@@ -4,8 +4,9 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
-import { ProcessChatRequest, ProcessChatResponse, UserContext, ChatRequestBody } from './chat.types.js';
+import { ProcessChatRequest, ProcessChatResponse, ChatRequestBody } from './chat.types.js';
 import { ApiKeyService } from '../api-keys/api-key.service.js';
+import { TokenInfoService } from '../shared/token-info.service.js';
 
 @Injectable()
 export class ChatService {
@@ -14,6 +15,7 @@ export class ChatService {
     private readonly appConfig: ConfigService,
     private readonly httpService: HttpService,
     private readonly apiKeyService: ApiKeyService,
+    private readonly tokenInfo: TokenInfoService,
   ) {
     this.logger.setContext(ChatService.name);
   }
@@ -51,14 +53,61 @@ export class ChatService {
     };
 
     const response = await this.request(chatRequestBody);
+  
+    if (!Array.isArray(response) || response.length === 0) {
+      throw new Error('Invalid response format from agent service');
+    }
 
     this.logger.debug('Message processed successfully');
-    return { text: response[response.length - 1].text };
+    const lastMessage = response[response.length - 1];
+    
+    // Get token analysis if we detect onetoken analysis request
+    let analysis = lastMessage.analysis;
+    if (lastMessage.action === 'ANALYZE_TOKEN' && lastMessage.text?.includes('token:')) {
+      this.logger.debug(`Processing token analysis request: ${lastMessage.text}`);
+      const tokenAddress = lastMessage.text.split('token:')[1]?.trim();
+      this.logger.debug(`Extracted token address: ${tokenAddress}`);
+      
+      if (!tokenAddress || tokenAddress === 'None') {
+        return {
+          ...lastMessage,
+          status: 'error',
+          result: 'No valid token address provided',
+          analysis: null
+        };
+      }
 
+      try {
+        const tokenInfo = await this.tokenInfo.getTokenInfo(tokenAddress, 'solana');
+        if (!tokenInfo?.address) {
+          return {
+            ...lastMessage,
+            status: 'error',
+            result: 'Invalid token symbol or address',
+            analysis: null
+          };
+        }
+
+        const [news, twitter] = await Promise.all([
+          this.tokenInfo.getTokenNews(tokenAddress, 'solana'),
+          this.tokenInfo.getTokenTwitterInfo(tokenAddress, 'solana')
+        ]);
+        analysis = { info: tokenInfo, news, twitter };
+      } catch (error) {
+        this.logger.error(`Error getting token analysis: ${error.message}`);
+        return {
+          ...lastMessage,
+          status: 'error',
+          result: error.message,
+          analysis: null
+        };
+      }
+    }
+    
+    return { ...lastMessage, analysis };
   }
 
-
-  private async request(body: ChatRequestBody): Promise<any[]> {
+  private async request(body: ChatRequestBody): Promise<ProcessChatResponse[]> {
     this.logger.debug(`Sending request to agent ${body.agentId}`);
     
     if (!body.agentId) {
@@ -87,9 +136,9 @@ export class ChatService {
       }
 
       const response = await firstValueFrom(
-        this.httpService.post<any[]>(url, body, { headers })
+        this.httpService.post<ProcessChatResponse[]>(url, body, { headers })
       );
-      
+      this.logger.debug('Response data:', response.data);
       this.logger.debug(`Response received: status=${response.status}`);
       return response.data;
     } catch (error) {

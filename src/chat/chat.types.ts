@@ -1,19 +1,31 @@
+import { TokenInfoResponse, TokenTwitterInfoResponse, TokenNewsResponse } from '../shared/token-info.service.js';
+
 export interface ProcessChatRequest {
-    text: string;
-    user: string;
-    stream: string;
-    apiKey?: string;
-    userId?: string;
-    roomId?: string;
-    agentId?: string;
-    temperature?: number;
-    max_tokens?: number;
-    model?: string,
-    accessToken?: string;
+  text: string;
+  user: string;
+  stream: string;
+  apiKey?: string;
+  userId?: string;
+  roomId?: string;
+  agentId?: string;
+  temperature?: number;
+  max_tokens?: number;
+  model?: string;
+  accessToken?: string;
 }
 
 export interface ProcessChatResponse {
   text: string;
+  displayType?: string;
+  action?: string;
+  status?: string;
+  result?: string;
+  webAction?: string;
+  analysis?: {
+    info?: TokenInfoResponse;
+    twitter?: TokenTwitterInfoResponse;
+    news?: TokenNewsResponse[];
+  };
 }
 
 /**
@@ -46,13 +58,13 @@ export interface ChatCompletionResponse {
     index: number;
     message: {
       role: 'assistant';
-      content: string;
+      content: string;  // JSON string with text and analysis
     };
     finish_reason: string;
-  }[];
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
+}[];
+usage: {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+};
 }
