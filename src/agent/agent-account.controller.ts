@@ -141,7 +141,7 @@ export class AgentAccountController {
 
     const portfolios: any[] = [];
     this.logger.log(`Too many agents, start chunk array, agents: ${extendedAgents.length}`);
-    const batches = chunkArray(extendedAgents, 3);
+    const batches = chunkArray(extendedAgents, 5);
     
     for (const batch of batches) {
       const results = await Promise.all(
