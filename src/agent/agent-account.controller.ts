@@ -129,29 +129,65 @@ export class AgentAccountController {
         isPrimary: false,
       })),
     ];
-    const portfolios = await Promise.all(
-      extendedAgents.map(async (agent) => {
-        let portfolio;
-        switch (chain) {
-          case 'solana':
-            portfolio = await this.birdEye.getWalletPortfolio({ chain, address: agent.agentAccount.solana });
-            break;
-          default:
-            const moralisApikey = this.config.get('MORALIS_API_KEY');
-            portfolio = await getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
-            break;
-        }
-        return {
-          ...portfolio,
-          nft: agent.isPrimary ? undefined : agent,
-        };
-      })
-    );
-    if (portfolios.length === 0) {
-      return {
-        portfolios
+
+    const chunkArray = <T>(arr: T[], size: number): T[][] => {
+      const result: T[][] = [];
+      for (let i = 0; i < arr.length; i += size) {
+        result.push(arr.slice(i, i + size));
       }
+      return result;
+    };
+
+    const portfolios: any[] = [];
+    const batches = chunkArray(extendedAgents, 5);
+
+    for (const batch of batches) {
+      const results = await Promise.all(
+        batch.map(async (agent) => {
+          let portfolio;
+          switch (chain) {
+            case 'solana':
+              portfolio = await this.birdEye.getWalletPortfolio({ chain, address: agent.agentAccount.solana });
+              break;
+            default:
+              const moralisApikey = this.config.get('MORALIS_API_KEY');
+              portfolio = await getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
+              break;
+          }
+          return {
+            ...portfolio,
+            nft: agent.isPrimary ? undefined : agent,
+          };
+        })
+      );
+      portfolios.push(...results);
     }
+    if (portfolios.length === 0) {
+      return { portfolios };
+    }
+    // const portfolios = await Promise.all(
+    //   extendedAgents.map(async (agent) => {
+    //     let portfolio;
+    //     switch (chain) {
+    //       case 'solana':
+    //         portfolio = await this.birdEye.getWalletPortfolio({ chain, address: agent.agentAccount.solana });
+    //         break;
+    //       default:
+    //         const moralisApikey = this.config.get('MORALIS_API_KEY');
+    //         portfolio = await getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
+    //         break;
+    //     }
+    //     return {
+    //       ...portfolio,
+    //       nft: agent.isPrimary ? undefined : agent,
+    //     };
+    //   })
+    // );
+    // if (portfolios.length === 0) {
+    //   return {
+    //     portfolios
+    //   }
+    // }
     const tokens: string[] = Array.from(
       new Set(
         portfolios.flatMap((portfolio) =>
