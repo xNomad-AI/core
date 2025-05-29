@@ -27,6 +27,7 @@ import { firstValueFrom } from 'rxjs';
 import { BirdeyeService } from '../shared/birdeye.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
+import { sleep } from "../shared/utils.service.js";
 
 @Controller('/agent-account')
 export class AgentAccountController {
@@ -162,6 +163,9 @@ export class AgentAccountController {
         })
       );
       portfolios.push(...results);
+      if (portfolios.length !== extendedAgents.length) {
+        await sleep(1000);
+      }
     }
     if (portfolios.length === 0) {
       return { portfolios };
@@ -229,6 +233,7 @@ export class AgentAccountController {
         }
       });
     });
+    this.logger.log(`Portfolios length: ${portfolios.length}`);
     return {
       portfolios: portfolios.filter((portfolio) => portfolio.items.length > 0)
     };
