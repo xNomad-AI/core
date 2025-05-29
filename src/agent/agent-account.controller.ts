@@ -27,6 +27,7 @@ import { firstValueFrom } from 'rxjs';
 import { BirdeyeService } from '../shared/birdeye.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
 import { ElizaManagerService } from './eliza-manager.service.js';
+import { sleep } from "../shared/utils.service.js";
 
 @Controller('/agent-account')
 export class AgentAccountController {
@@ -129,29 +130,69 @@ export class AgentAccountController {
         isPrimary: false,
       })),
     ];
-    const portfolios = await Promise.all(
-      extendedAgents.map(async (agent) => {
-        let portfolio;
-        switch (chain) {
-          case 'solana':
-            portfolio = await this.birdEye.getWalletPortfolio({ chain, address: agent.agentAccount.solana });
-            break;
-          default:
-            const moralisApikey = this.config.get('MORALIS_API_KEY');
-            portfolio = await getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
-            break;
-        }
-        return {
-          ...portfolio,
-          nft: agent.isPrimary ? undefined : agent,
-        };
-      })
-    );
-    if (portfolios.length === 0) {
-      return {
-        portfolios
+
+    const chunkArray = <T>(arr: T[], size: number): T[][] => {
+      const result: T[][] = [];
+      for (let i = 0; i < arr.length; i += size) {
+        result.push(arr.slice(i, i + size));
+      }
+      return result;
+    };
+
+    const portfolios: any[] = [];
+    this.logger.log(`Too many agents, start chunk array, agents: ${extendedAgents.length}`);
+    const batches = chunkArray(extendedAgents, 5);
+    
+    for (const batch of batches) {
+      const results = await Promise.all(
+        batch.map(async (agent) => {
+          let portfolio;
+          switch (chain) {
+            case 'solana':
+              portfolio = await this.birdEye.getWalletPortfolio({ chain, address: agent.agentAccount.solana });
+              break;
+            default:
+              const moralisApikey = this.config.get('MORALIS_API_KEY');
+              portfolio = await getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
+              break;
+          }
+          return {
+            ...portfolio,
+            nft: agent.isPrimary ? undefined : agent,
+          };
+        })
+      );
+      portfolios.push(...results);
+      if (portfolios.length !== extendedAgents.length) {
+        await sleep(1000);
       }
     }
+    if (portfolios.length === 0) {
+      return { portfolios };
+    }
+    // const portfolios = await Promise.all(
+    //   extendedAgents.map(async (agent) => {
+    //     let portfolio;
+    //     switch (chain) {
+    //       case 'solana':
+    //         portfolio = await this.birdEye.getWalletPortfolio({ chain, address: agent.agentAccount.solana });
+    //         break;
+    //       default:
+    //         const moralisApikey = this.config.get('MORALIS_API_KEY');
+    //         portfolio = await getWalletPortfolio(agent.agentAccount.evm, chain, { moralisApikey });
+    //         break;
+    //     }
+    //     return {
+    //       ...portfolio,
+    //       nft: agent.isPrimary ? undefined : agent,
+    //     };
+    //   })
+    // );
+    // if (portfolios.length === 0) {
+    //   return {
+    //     portfolios
+    //   }
+    // }
     const tokens: string[] = Array.from(
       new Set(
         portfolios.flatMap((portfolio) =>
@@ -192,6 +233,7 @@ export class AgentAccountController {
         }
       });
     });
+    this.logger.log(`Portfolios length: ${portfolios.length}`);
     return {
       portfolios: portfolios.filter((portfolio) => portfolio.items.length > 0)
     };

@@ -35,19 +35,19 @@ importers:
         version: 0.30.1(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
       '@elizaos/adapter-mongodb':
         specifier: file:data/eliza/packages/adapter-mongodb
-        version: file:data/eliza/packages/adapter-mongodb(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: file:data/eliza/packages/adapter-mongodb(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/client-direct':
         specifier: file:data/eliza/packages/client-direct
-        version: file:data/eliza/packages/client-direct(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)
+        version: file:data/eliza/packages/client-direct(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)
       '@elizaos/client-telegram':
         specifier: file:data/eliza/packages/client-telegram
-        version: file:data/eliza/packages/client-telegram(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: file:data/eliza/packages/client-telegram(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/client-twitter':
         specifier: file:data/client-twitter/packages/client-twitter
-        version: file:data/client-twitter/packages/client-twitter(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: file:data/client-twitter/packages/client-twitter(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/core':
         specifier: file:data/eliza/packages/core
-        version: file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/plugin-chat':
         specifier: workspace:*
         version: link:src/eliza/packages/plugin-chat
@@ -59,7 +59,7 @@ importers:
         version: link:src/eliza/packages/plugin-solana
       '@elizaos/plugin-tee':
         specifier: file:data/eliza/packages/plugin-tee
-        version: file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(postcss@8.5.3)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)
+        version: file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(postcss@8.5.3)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)
       '@ipld/dag-ucan':
         specifier: 3.4.5
         version: 3.4.5
@@ -131,7 +131,7 @@ importers:
         version: 6.0.2(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.2))(prom-client@15.1.3)
       '@xnomad/task-manager':
         specifier: file:data/client-twitter/packages/task-manager
-        version: file:data/client-twitter/packages/task-manager(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(class-transformer@0.5.1)(react@19.0.0)(reflect-metadata@0.1.14)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: file:data/client-twitter/packages/task-manager(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(class-transformer@0.5.1)(react@19.0.0)(reflect-metadata@0.1.14)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@xnomad/task-manager-cli':
         specifier: file:data/client-twitter/packages/task-manager-cli
         version: file:data/client-twitter/packages/task-manager-cli
@@ -329,10 +329,10 @@ importers:
         version: 0.30.1(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)
       '@elizaos/core':
         specifier: file:../../../../data/eliza/packages/core
-        version: file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@elizaos/plugin-tee':
         specifier: file:../../../../data/eliza/packages/plugin-tee
-        version: file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(postcss@8.5.3)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.23.8)
+        version: file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(postcss@8.5.3)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.23.8)
       '@solana/spl-token':
         specifier: 0.4.9
         version: 0.4.9(@solana/web3.js@1.95.8(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.3)(utf-8-validate@5.0.10)
@@ -566,6 +566,7 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@anush008/tokenizers-win32-x64-msvc@0.0.0':
     resolution: {integrity: sha512-/5kP0G96+Cr6947F0ZetXnmL31YCaN15dbNbh2NHg7TXXRwfqk95+JtPP5Q7v4jbR2xxAmuseBqB4H/V7zKWuw==}
@@ -1624,67 +1625,79 @@ packages:
     resolution: {integrity: sha512-9B+taZ8DlyyqzZQnoeIvDVR/2F4EbMepXMc/NdVbkzsJbzkUjhXv/70GQJ7tdLA4YJgNP25zukcxpX2/SueNrA==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linux-arm@1.0.5':
     resolution: {integrity: sha512-gvcC4ACAOPRNATg/ov8/MnbxFDJqf/pDePbBnuBDcjsI8PssmjoKMAz4LtLaVi+OnSb5FK/yIOamqDwGmXW32g==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linux-s390x@1.0.4':
     resolution: {integrity: sha512-u7Wz6ntiSSgGSGcjZ55im6uvTrOxSIS8/dgoVMoiGE9I6JAfU50yH5BoDlYA1tcuGS7g/QNtetJnxA6QEsCVTA==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linux-x64@1.0.4':
     resolution: {integrity: sha512-MmWmQ3iPFZr0Iev+BAgVMb3ZyC4KeFc3jFxnNbEPas60e1cIfevbtuyf9nDGIzOaW9PdnDciJm+wFFaTlj5xYw==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linuxmusl-arm64@1.0.4':
     resolution: {integrity: sha512-9Ti+BbTYDcsbp4wfYib8Ctm1ilkugkA/uscUn6UXK1ldpC1JjiXbLfFZtRlBhjPZ5o1NCLiDbg8fhUPKStHoTA==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@img/sharp-libvips-linuxmusl-x64@1.0.4':
     resolution: {integrity: sha512-viYN1KX9m+/hGkJtvYYp+CCLgnJXwiQB39damAO7WMdKWlIhmYTfHjwSbQeUK/20vY154mwezd9HflVFM1wVSw==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@img/sharp-linux-arm64@0.33.5':
     resolution: {integrity: sha512-JMVv+AMRyGOHtO1RFBiJy/MBsgz0x4AWrT6QoEVVTyh1E39TrCUpTRI7mx9VksGX4awWASxqCYLCV4wBZHAYxA==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linux-arm@0.33.5':
     resolution: {integrity: sha512-JTS1eldqZbJxjvKaAkxhZmBqPRGmxgu+qFKSInv8moZ2AmT5Yib3EQ1c6gp493HvrvV8QgdOXdyaIBrhvFhBMQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linux-s390x@0.33.5':
     resolution: {integrity: sha512-y/5PCd+mP4CA/sPDKl2961b+C9d+vPAveS33s6Z3zfASk2j5upL6fXVPZi7ztePZ5CuH+1kW8JtvxgbuXHRa4Q==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linux-x64@0.33.5':
     resolution: {integrity: sha512-opC+Ok5pRNAzuvq1AG0ar+1owsu842/Ab+4qvU879ippJBHvyY5n2mxF1izXqkPYlGuP/M556uh53jRLJmzTWA==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linuxmusl-arm64@0.33.5':
     resolution: {integrity: sha512-XrHMZwGQGvJg2V/oRSUfSAfjfPxO+4DkiRh6p2AFjLQztWUuY/o8Mq0eMQVIY7HJ1CDQUJlxGGZRw1a5bqmd1g==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@img/sharp-linuxmusl-x64@0.33.5':
     resolution: {integrity: sha512-WT+d/cgqKkkKySYmqoZ8y3pxx7lx9vVejxW/W4DOFMYVSkErR+w7mf2u8m/y4+xHe7yY9DAXQMWQhpnMuFfScw==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@img/sharp-wasm32@0.33.5':
     resolution: {integrity: sha512-ykUW4LVGaMcU9lu9thv85CbRMAwfeadCJHRsg2GmeRa/cJxsVY9Rbd57JcMxBkKHag5U/x7TSBpScF4U8ElVzg==}
@@ -2497,51 +2510,61 @@ packages:
     resolution: {integrity: sha512-A4iphFGNkWRd+5m3VIGuqHnG3MVnqKe7Al57u9mwgbyZ2/xF9Jio72MaY7xxh+Y87VAHmGQr73qoKL9HPbXj1g==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.34.8':
     resolution: {integrity: sha512-S0lqKLfTm5u+QTxlFiAnb2J/2dgQqRy/XvziPtDd1rKZFXHTyYLoVL58M/XFwDI01AQCDIevGLbQrMAtdyanpA==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.34.8':
     resolution: {integrity: sha512-jpz9YOuPiSkL4G4pqKrus0pn9aYwpImGkosRKwNi+sJSkz+WU3anZe6hi73StLOQdfXYXC7hUfsQlTnjMd3s1A==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.34.8':
     resolution: {integrity: sha512-KdSfaROOUJXgTVxJNAZ3KwkRc5nggDk+06P6lgi1HLv1hskgvxHUKZ4xtwHkVYJ1Rep4GNo+uEfycCRRxht7+Q==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loongarch64-gnu@4.34.8':
     resolution: {integrity: sha512-NyF4gcxwkMFRjgXBM6g2lkT58OWztZvw5KkV2K0qqSnUEqCVcqdh2jN4gQrTn/YUpAcNKyFHfoOZEer9nwo6uQ==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-powerpc64le-gnu@4.34.8':
     resolution: {integrity: sha512-LMJc999GkhGvktHU85zNTDImZVUCJ1z/MbAJTnviiWmmjyckP5aQsHtcujMjpNdMZPT2rQEDBlJfubhs3jsMfw==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.34.8':
     resolution: {integrity: sha512-xAQCAHPj8nJq1PI3z8CIZzXuXCstquz7cIOL73HHdXiRcKk8Ywwqtx2wrIy23EcTn4aZ2fLJNBB8d0tQENPCmw==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-s390x-gnu@4.34.8':
     resolution: {integrity: sha512-DdePVk1NDEuc3fOe3dPPTb+rjMtuFw89gw6gVWxQFAuEqqSdDKnrwzZHrUYdac7A7dXl9Q2Vflxpme15gUWQFA==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.34.8':
     resolution: {integrity: sha512-8y7ED8gjxITUltTUEJLQdgpbPh1sUQ0kMTmufRF/Ns5tI9TNMNlhWtmPKKHCU0SilX+3MJkZ0zERYYGIVBYHIA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.34.8':
     resolution: {integrity: sha512-SCXcP0ZpGFIe7Ge+McxY5zKxiEI5ra+GT3QRxL0pMMtxPfpyLAKleZODi1zdRHkz5/BhueUrYtYVgubqe9JBNQ==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-win32-arm64-msvc@4.34.8':
     resolution: {integrity: sha512-YHYsgzZgFJzTRbth4h7Or0m5O74Yda+hLin0irAIobkLQFRQd1qWmnoVfwmKm9TXIZVAD0nZ+GEb2ICicLyCnQ==}
@@ -9336,9 +9359,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@elizaos/adapter-mongodb@0.1.9(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@elizaos/adapter-mongodb@0.1.9(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       mongodb: 6.15.0
       uuid: 9.0.1
     transitivePeerDependencies:
@@ -9373,9 +9396,9 @@ snapshots:
       - vue
       - ws
 
-  '@elizaos/adapter-mongodb@file:data/eliza/packages/adapter-mongodb(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@elizaos/adapter-mongodb@file:data/eliza/packages/adapter-mongodb(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       mongodb: 6.13.1
       uuid: 9.0.1
     transitivePeerDependencies:
@@ -9410,9 +9433,9 @@ snapshots:
       - vue
       - ws
 
-  '@elizaos/client-direct@file:data/eliza/packages/client-direct(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)':
+  '@elizaos/client-direct@file:data/eliza/packages/client-direct(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@types/body-parser': 1.19.5
       '@types/cors': 2.8.17
       '@types/express': 5.0.0
@@ -9451,9 +9474,9 @@ snapshots:
       - ws
       - zod
 
-  '@elizaos/client-telegram@file:data/eliza/packages/client-telegram(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@elizaos/client-telegram@file:data/eliza/packages/client-telegram(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@telegraf/types': 7.1.0
       telegraf: 4.16.3
       zod: 3.23.8
@@ -9482,9 +9505,9 @@ snapshots:
       - vue
       - ws
 
-  '@elizaos/client-twitter@file:data/client-twitter/packages/client-twitter(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@elizaos/client-twitter@file:data/client-twitter/packages/client-twitter(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@xnomad/task-manager-cli': file:data/client-twitter/packages/task-manager-cli
       agent-twitter-client: https://codeload.github.com/xNomad-AI/agent-twitter-client/tar.gz/8af978f5fbf5e02555efa423d2355ba1a8cb804a(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       axios: 1.8.1
@@ -9638,7 +9661,7 @@ snapshots:
       - vue
       - ws
 
-  '@elizaos/plugin-tee@file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(postcss@8.5.3)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)':
+  '@elizaos/plugin-tee@file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(postcss@8.5.3)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.23.8)':
     dependencies:
       '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@phala/dstack-sdk': 0.1.7(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.23.8)
@@ -9683,7 +9706,7 @@ snapshots:
       - yaml
       - zod
 
-  '@elizaos/plugin-tee@file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(postcss@8.5.3)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.23.8)':
+  '@elizaos/plugin-tee@file:data/eliza/packages/plugin-tee(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(encoding@0.1.13)(postcss@8.5.3)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)':
     dependencies:
       '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@phala/dstack-sdk': 0.1.7(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.23.8)
@@ -12561,11 +12584,11 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@xnomad/task-manager@file:data/client-twitter/packages/task-manager(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(class-transformer@0.5.1)(react@19.0.0)(reflect-metadata@0.1.14)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+  '@xnomad/task-manager@file:data/client-twitter/packages/task-manager(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(bufferutil@4.0.9)(class-transformer@0.5.1)(react@19.0.0)(reflect-metadata@0.1.14)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
-      '@elizaos/adapter-mongodb': 0.1.9(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@elizaos/client-twitter': file:data/client-twitter/packages/client-twitter(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.73.0(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/adapter-mongodb': 0.1.9(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/client-twitter': file:data/client-twitter/packages/client-twitter(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(whatwg-url@14.1.1)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@elizaos/core': file:data/eliza/packages/core(@google-cloud/vertexai@1.9.3)(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(@langchain/groq@0.1.3(@langchain/core@0.3.40(openai@4.85.4(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.23.8)))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(axios@1.8.1)(react@19.0.0)(sswr@2.1.0(svelte@5.20.4))(svelte@5.20.4)(vue@3.5.13(typescript@5.7.3))(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@nestjs/common': 10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.2)
       '@nestjs/config': 3.3.0(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/core': 10.4.15(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/platform-express@11.0.9)(reflect-metadata@0.1.14)(rxjs@7.8.2)
