@@ -28,10 +28,11 @@ export class SwapTokenService {
   private readonly logger: Console;
   private readonly LAMPORTS_PER_SOL = 1000000000;
   private readonly SOL_ADDRESS = '11111111111111111111111111111111';
+  private readonly JUP_API_HOST = 'https://lite-api.jup.ag';
+
   constructor() {
     this.logger = console;
   }
-
 
   async swapTokenJupiter(
     {
@@ -55,7 +56,8 @@ export class SwapTokenService {
       // only add fee account if the token is not a 2022 token
       // https://station.jup.ag/docs/swap-api/add-fees-to-swap#important-notes
       let tokenFeeAccount: PublicKey = undefined;
-      let url = `https://api.jup.ag/swap/v1/quote?inputMint=${inputTokenCA}&outputMint=${outputTokenCA}&amount=${amount.toString()}&dynamicSlippage=true&autoSlippage=true&maxAccounts=64&onlyDirectRoutes=false&asLegacyTransaction=false&restrictIntermediateTokens=true`;
+      const endpoint = new URL("/swap/v1/quote", this.JUP_API_HOST);
+      let url = `${endpoint.toString()}?inputMint=${inputTokenCA}&outputMint=${outputTokenCA}&amount=${amount.toString()}&dynamicSlippage=true&autoSlippage=true&maxAccounts=64&onlyDirectRoutes=false&asLegacyTransaction=false&restrictIntermediateTokens=true`;
       // decide use which token to re collect fees
       const feeTokenCA = outputTokenCA === NATIVE_MINT.toBase58() ? outputTokenCA : inputTokenCA;
       const feeProgramId = feeTokenCA === outputTokenCA ? outProgramId : inputProgramId;
@@ -124,7 +126,7 @@ export class SwapTokenService {
 
       this.logger.log('Requesting swap with body:', swapRequestBody);
 
-      const swapResponse = await fetch('https://api.jup.ag/swap/v1/swap', {
+      const swapResponse = await fetch(new URL('/swap/v1/swap', this.JUP_API_HOST).toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
