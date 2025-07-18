@@ -171,5 +171,11 @@ export const COLLECTIONS = [
       { pnl30dAmount: -1 }
     ],
     uniqueIndexes: [{ twitterHandle: 1 }],
-  }
+  },
+  {
+    db: DB_NAME,
+    name: 'tmpNfts',
+    indexes: [],
+    uniqueIndexes: [],
+  },
 ] as const;

@@ -18,7 +18,8 @@ import {
   NftPrimaryCoin,
   NftPrologues,
   Swarm,
-  Order, CollectionConfig,
+  Order,
+  CollectionConfig,
   LimitOrder,
   TwitterKOL,
 } from './types.js';
@@ -111,6 +112,10 @@ export class MongoService implements OnModuleInit {
     return this.getCollection<AICollection>('collections');
   }
 
+  get tmpNfts() {
+    return this.getCollection<AINft>('tmpNfts');
+  }
+
   get nfts() {
     return this.getCollection<AINft>('nfts');
   }
@@ -177,7 +182,7 @@ export class MongoService implements OnModuleInit {
     return this.getCollection<Order>('orders');
   }
 
-get twitterKols() {
-  return this.getCollection<TwitterKOL>('twitterKols');
-}
+  get twitterKols() {
+    return this.getCollection<TwitterKOL>('twitterKols');
+  }
 }

@@ -12,7 +12,9 @@ import { MongoService } from '../shared/mongo/mongo.service.js';
 import { ConfigService } from '@nestjs/config';
 import { stringToUuid } from '@elizaos/core';
 import { ElizaManagerService } from '../agent/eliza-manager.service.js';
-import { AICollection } from '../shared/mongo/types';
+import { AICollection, AINft } from '../shared/mongo/types';
+import { ObjectId } from 'mongodb';
+import { Connection, PublicKey } from '@solana/web3.js';
 
 const SYNC_NFTS_INTERVAL = 1000 * 15;
 const SYNC_TXS_INTERVAL = 1000 * 10;
@@ -103,20 +105,18 @@ export class NftSyncService implements OnApplicationBootstrap {
     let cursor = await this.mongo.getKeyStore(key);
     do {
       try {
-        const result = await this.nftgo.getCollectionNfts(
-          chain,
-          collectionId,
-          {
-            limit: 50,
-            cursor,
-          },
-        );
+        // const result = await this.nftgo.getCollectionNfts(chain, collectionId, {
+        //   limit: 50,
+        //   cursor,
+        // });
+        const result = await this.getCollectionNftsTmp(collectionId, chain);
         this.logger.log(
           `Fetched ${result?.nfts.length} nfts for collection: ${collectionId}, cursor: ${cursor}, name: ${result?.nfts[0]?.name}`,
         );
         const nfts = [];
         for (const nft of result.nfts) {
-          const transformedNft = await transformToAINft(nft);
+          // const transformedNft = await transformToAINft(nft);
+          const transformedNft = nft;
           if (!transformedNft.aiAgent) {
             this.logger.warn(
               `this nft is not AI-NFT, nftId: ${transformedNft.nftId}`,
@@ -154,6 +154,57 @@ export class NftSyncService implements OnApplicationBootstrap {
         await sleep(60000);
       }
     } while (cursor);
+  }
+
+  async getCollectionNftsTmp(collectionId: string, chain: string) {
+    const docs = await this.mongo.tmpNfts
+      .find({
+        collectionId,
+        chain,
+        createdAt: { $gt: new Date(Date.now() - 10 * 60 * 1000) },
+      })
+      .toArray();
+    let nfts: AINft[] = [];
+
+    for (const doc of docs) {
+      const connection = new Connection(this.config.get('SOLANA_RPC_URL'));
+      const account = await connection.getAccountInfo(
+        new PublicKey(doc.contractAddress),
+        'processed',
+      );
+      if (account) {
+        nfts.push({
+          nftId: `${doc.chain}:${doc.contractAddress}:${doc.tokenId}`,
+          chain: doc.chain,
+          collectionId: doc.collectionId,
+          collectionName: doc.collectionName,
+          contractAddress: doc.contractAddress,
+          image: doc.image,
+          name: doc.name,
+          mint: {
+            to: '',
+            quantity: 1,
+            timestamp: 0,
+            blockNumber: 0,
+            txHash: '',
+          },
+          tokenId: doc.tokenId,
+          tokenURI: doc.image,
+          rarity: doc.rarity || { rank: 1, score: 0 },
+          traits: doc.traits,
+          aiAgent: doc.aiAgent,
+          agentAccount: null,
+          agentId: null,
+          minted: true,
+          updatedAt: new Date(),
+          createdAt: new Date(),
+        });
+      }
+    }
+    return {
+      nfts,
+      next_cursor: null,
+    };
   }
 
   async processCollectionTxs(collectionId: string, txs: CollectionTxs) {

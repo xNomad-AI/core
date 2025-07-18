@@ -23,6 +23,7 @@ import { ElizaManagerService } from '../agent/eliza-manager.service.js';
 import { AmazonS3 } from '../shared/amazon-s3.js';
 import { MongoService } from '../shared/mongo/mongo.service.js';
 import { TransientLoggerService } from '../shared/transient-logger.service.js';
+import { AIAgent } from '../shared/mongo/types.js';
 
 const MIN_BALANCE_FOR_RENT_EXEMPTION = 0.003;
 /**
@@ -163,12 +164,39 @@ export class LaunchpadService {
     tx.sign(signers);
     const serializedTx = tx.serialize();
 
+    await this.mongo.nfts.insertOne({
+      nftId: `${chain}:${asset.publicKey.toBase58()}:${asset.publicKey.toBase58()}`,
+      chain,
+      collectionId: this.getCommonCollectionId(),
+      collectionName: 'Nomad Society',
+      contractAddress: asset.publicKey.toBase58(),
+      image: nft.image,
+      name: nft.name,
+      mint: null,
+      tokenId: asset.publicKey.toBase58(),
+      tokenURI: uri,
+      rarity: null,
+      traits: [],
+      aiAgent: metadata.ai_agent as AIAgent,
+      agentAccount: null,
+      agentId: null,
+      minted: false,
+      updatedAt: new Date(),
+      createdAt: new Date(),
+    });
+
     return {
       tx: Buffer.from(serializedTx).toString('hex'),
       fee,
       feeAfterDiscount,
       discountPercentage,
     };
+  }
+
+  private getCommonCollectionId() {
+    return process.env.RUN_ENV === 'dev'
+      ? 'fd6f475863723a0a27cae7ec4e2c3468'
+      : 'fd6f475863723a0a27cae7ec4e2c3468';
   }
 
   async calculateMintFee(userAddress: string) {
